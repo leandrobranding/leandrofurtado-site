@@ -1,0 +1,185 @@
+{# ============================================================
+   Template pai das 3 demos do Lab (Admita/Notável/Caderneta) — Plano 2.
+   NÃO herda base.html (mesma lógica das outras páginas autônomas do repo),
+   mas reproduz a MOLDURA do site à mão (§3 "CONCEITO DA MOLDURA" da spec,
+   decisão do Leandro 20/08, verbatim: "É um hub de sistemas dentro do
+   universo do leandro"): cabeçalho e faixa de copyright são os MESMOS
+   parciais do site inteiro (app/templates/_cabecalho.html,
+   _copyright.html — reforço do dono, 20/08: "Isso serve para o cabeçalho
+   também, só mudando a marca do lab: Minha marca | LAB" / "o mesmo rodapé
+   copyright que tem no site inteiro"), reproduzidos aqui à mão porque
+   este template não estende base.html (`{% include %}` funciona igual,
+   estender ou não) — os DOIS FIXOS na identidade do Leandro (Space
+   Grotesk, mono preto/branco, via as MESMAS classes do site — `.site-
+   header`/`.brand`/`.site-nav`/`.nav-link`/`.footer-bottom`/`.mono-
+   label` — portadas com os MESMOS valores em lab-moldura.css, que as
+   demos não carregam main.css). Só o MIOLO (o <main> do meio) veste a
+   identidade própria de cada demo.
+
+   O CTA de contato ("Gostou? Eu construo isso para a sua empresa") NÃO
+   sumiu — não é mais uma faixa do SHELL (irmã do cabeçalho/miolo), é a
+   última peça DENTRO do próprio miolo (`.lab-faixa`, agora filha de
+   `.lab-conteudo`, depois de `.lab-conteudo-corpo`): discreta, sempre
+   visível, sem disputar centralização com o conteúdo da demo acima dela.
+
+   CONSERTO 2 (decisão do dono, revendo a moldura original, verbatim: "As
+   demonstrações não precisam ter a barra de acessibilidade... Como são
+   demonstrações, precisam ter o básico para demonstração."): a barra de
+   acessibilidade do site (`_a11y.html`) SAIU da moldura — a moldura agora
+   tem só os dois elementos acima, não três. Mesma decisão puxou o
+   "PRINCÍPIO DO ENXUTO" pra spec (§3): nada de peso institucional do site
+   (tracking, consentimento, geolocalização, barra de a11y) entra aqui —
+   este template não inclui NENHUM parcial do site além do necessário para
+   a moldura (glifo da marca desenhado inline, sem macro de base.html).
+
+   LEI DA TELA CHEIA (§13b, decisão do Leandro 20/08, verbatim: "não pode
+   ter barra de rolagem em nenhum sistema e em nenhum momento"): o shell é
+   um grid vertical travado em 100dvh (cabeçalho auto + miolo 1fr + faixa
+   de copyright auto — igual à vitrine) — a PÁGINA nunca rola. Dentro do
+   miolo, `.lab-conteudo-corpo` centraliza o `demo_conteudo` nos dois eixos
+   no espaço que sobra acima da faixa de CTA. Excedente de conteúdo dentro
+   do miolo rola só DENTRO de um box com `.rola-interno` (utilitária de
+   lab-base.css), nunca como barra de rolagem de página.
+
+   Contexto EXIGIDO por quem estende este template: `demo` (uma das três
+   chaves de _DEMOS abaixo: 'admita' | 'notavel' | 'caderneta'). Todo o
+   resto (nome de exibição, tagline, CSS de marca) o próprio template
+   deriva daqui — nenhuma rota precisa repassar isso.
+
+   CONTRATO ESTÁVEL para quem já consome este template (a Task 2 está
+   renderizando rotas placeholder com ele EM PARALELO): os blocos jinja e a
+   variável `demo`/`_info` não mudam nesta reconstrução — só o shell visual
+   ao redor deles.
+
+   Blocos disponíveis para quem estende:
+     demo_titulo    — <title> (default: "<Nome> ·︎ Lab de Demos ·︎ <site>")
+     demo_descricao — <meta name="description">
+     demo_head      — tags extras dentro de <head> (ex.: OG de imagem real
+                       quando a Task 12 gerar as capturas)
+     demo_conteudo  — o corpo da tela, dentro do <main id="main"> (o
+                       miolo — território da marca da demo)
+     demo_scripts   — <script> extras antes de fechar o body
+
+   Classes utilitárias consumidas aqui e por TODO o resto das demos (Tasks
+   4-11): .celula / .kpi / .cartao-ia / .pill / .botao / .skeleton /
+   .rola-interno — todas nascem em lab-base.css, carregado abaixo.
+   ============================================================ #}
+{# `descricao` é o que aparece no preview de quem recebe o link, então ela
+   descreve o que o sistema FAZ HOJE. A do Admita prometia triagem de
+   currículo por IA, que não existe: promessa em cartão de compartilhamento
+   é a pior espécie, porque a pessoa só descobre depois de clicar. `og` é a
+   capa; sem ela, cai no cartão padrão do site.
+
+   Comentário aqui FORA do bloco `set` logo abaixo: dentro de uma expressão
+   Jinja não existe comentário, e pôr um ali derruba o template inteiro. #}
+{% set _DEMOS = {
+  "admita": {
+    "nome": "Admita",
+    "tagline": "Contratou? A gente cuida do resto.",
+    "css": "admita.css",
+    "og": "/static/lab/img/og-admita.jpg",
+    "descricao": "Esteira de admissão para RH que você usa agora, sem cadastro: mover candidato pelas etapas, conferir documentos, aprovar pelo RH e pelo gestor, marcar entrevista e acompanhar a trilha de auditoria.",
+  },
+  "notavel": {
+    "nome": "Notável",
+    "tagline": "A nota sai, o dinheiro entra, você vê tudo.",
+    "css": "notavel.css",
+    "descricao": "Sistema financeiro em desenvolvimento: emissão de nota fiscal, fluxo de caixa e conciliação. Em breve no Lab.",
+  },
+  "caderneta": {
+    "nome": "Caderneta",
+    "tagline": "Você lança a nota. O boletim se resolve.",
+    "css": "caderneta.css",
+    "descricao": "Sistema escolar em desenvolvimento: diário de classe, grade de notas e boletim. Em breve no Lab.",
+  },
+} %}
+{% set _info = _DEMOS[demo] %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{# `viewport-fit=cover` SAIU daqui (21/08). Era ele que mandava o Safari do
+   iPhone estender a página para debaixo da barra de status e da pílula de
+   endereço, criando a faixa onde o conteúdo aparecia por trás da barra fixa
+   de acessibilidade. Sem ele o Safari entrega a viewport já recortada e a
+   faixa deixa de existir. Os `env(safe-area-inset-*)` do CSS passam a valer
+   0 e continuam inofensivos. Só volte a usar `cover` se algum dia houver um
+   elemento que PRECISE pintar até a borda física da tela. #}
+<title>{% block demo_titulo %}{{ _info.nome }} ·︎ Lab de Demos ·︎ {{ site_name }}{% endblock %}</title>
+<meta name="description" content="{% block demo_descricao %}{{ _info.descricao }}{% endblock %}">
+{# Interna de demo: nunca indexada — só a vitrine (/lab) é pública para busca
+   (Global Constraints do Plano 2 + Task 3). #}
+<meta name="robots" content="noindex, nofollow">
+
+{# COMPARTILHAMENTO. `noindex` acima diz ao buscador para não listar a
+   página; não impede ninguém de COLAR o link num grupo ou no LinkedIn. Sem
+   estes cinco campos, o link do sistema chega como uma linha de texto seca.
+   Com eles, chega com a capa, o nome e o que ele faz.
+
+   A capa de cada demo vive em `_info.og` (app/lab/rotas.py). Quem ainda não
+   tem arte cai no cartão padrão do site, que é melhor do que uma imagem
+   quebrada no preview de quem recebeu. #}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ site_name }}">
+<meta property="og:title" content="{{ self.demo_titulo() }}">
+<meta property="og:description" content="{{ self.demo_descricao() }}">
+<meta property="og:url" content="{{ base_url }}/lab/{{ demo }}">
+<meta property="og:image" content="{{ base_url }}{{ _info.og if _info.og is defined and _info.og else '/static/img/og-default.png' }}?v={{ asset_v }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{ _info.nome }}, sistema de demonstração de {{ site_name }}">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="stylesheet" href="/static/lab/lab-base.css?v={{ asset_v }}">
+{#
+  Moldura compartilhada (cabeçalho + faixa de copyright) — MESMO arquivo
+  que a vitrine carrega (app/templates/lab/vitrine.html), rodada de 20/08:
+  "o mesmo cabeçalho e rodapé copyright... o mesmo visual, o mesmo
+  tamanho, o mesmo tudo" entre a vitrine e as demos.
+#}
+<link rel="stylesheet" href="/static/lab/lab-moldura.css?v={{ asset_v }}">
+<link rel="stylesheet" href="/static/lab/{{ _info.css }}?v={{ asset_v }}">
+{% block demo_head %}{% endblock %}
+</head>
+<body class="lab-body">
+<div class="lab-demo demo-{{ demo }}">
+  {% set moldura_lab = true %}
+  {% include "_cabecalho.html" %}
+  <main class="lab-conteudo" id="main">
+    {#
+      Rodada de direção de arte de 20/08 (reforço do dono, verbatim:
+      "mantenha padrão... footer copyright"): o rodapé de CTA que existia
+      aqui (faixa colorida "Gostou? Eu construo isso...") SAIU do grid do
+      shell — o shell agora tem só cabeçalho/miolo/copyright, igual à
+      vitrine. O CTA não foi descartado (é peça de captação de contato):
+      mudou de PAPEL, de "rodapé da tela" para "rodapé do próprio miolo"
+      — última faixa dentro de `.lab-conteudo`, discreta, sempre visível
+      sem competir com o conteúdo da demo acima dela (que continua
+      centralizado no espaço restante via `.lab-conteudo-corpo`).
+    #}
+    <div class="lab-conteudo-corpo">
+      {% block demo_conteudo %}{% endblock %}
+    </div>
+    {# No modo aplicativo (celular) a faixa de CTA sai de cena para a tela
+       ser do sistema, e a conversa de contratação vira este botão discreto
+       preso no topo: a conversão continua a um toque, sem roubar a área
+       útil nem competir com a barra de abas do rodapé. #}
+    <a class="lab-contato-app" href="/contato?origem=lab-{{ demo }}">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11v8h-11z M2.5 4.5 8 9l5.5-4.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+      Falar com o Leandro
+    </a>
+
+    <div class="lab-faixa">
+      <div class="lab-faixa-texto">
+        <p class="lab-faixa-convite">Gostou? Eu construo isso para a sua empresa.</p>
+        <p class="lab-faixa-tagline">{{ _info.tagline }}</p>
+      </div>
+      <a class="botao botao-primario" href="/contato?origem=lab-{{ demo }}">Falar com o Leandro →︎</a>
+    </div>
+  </main>
+  {% include "_copyright.html" %}
+</div>
+{% block demo_scripts %}{% endblock %}
+</body>
+</html>

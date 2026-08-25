@@ -1,0 +1,2289 @@
+/* ============================================================
+   Admita — RH, esteira de admissão. Alegreya (display) + Karla (UI),
+   coral #CF4227/#EF6351 + índigo #4338CA, ícones Phosphor Duotone.
+   Hex e pesos EXATOS das Global Constraints do Plano 2 e da prancha
+   aprovada (scratchpad/identidades-lab.html, bloco .b-admita). Este
+   arquivo só declara TOKENS — layout e utilitários vêm de lab-base.css,
+   carregado ANTES deste (ver app/templates/lab/_base_demo.html).
+   ============================================================ */
+
+.lab-demo.demo-admita {
+  /* --------------------------------------------------------- tipografia --
+     Alegreya 500/600/700 + itálico 500 (tagline); Karla 400/600/700 na UI. */
+  --marca-fonte-display: "Alegreya", Georgia, "Times New Roman", serif;
+  --marca-fonte-ui: "Karla", -apple-system, "Helvetica Neue", Arial, sans-serif;
+
+  /* -------------------------------------------------------------- cores --
+     Coral vivo (#EF6351) é decorativo; coral de ação (#CF4227, AA 4.7 sobre
+     branco) é quem carrega texto/botão. Índigo (#4338CA, AA 7.9) é a
+     assinatura funcional do prazo por item (ver "porquê" da prancha). */
+  --marca-fundo: #FAFAFA;
+  --marca-superficie: #FFFFFF;
+  --marca-superficie-realce: #F5F4F1;
+  --marca-texto: #1B1B1F;
+  --marca-texto-suave: #6E6A75;
+  --marca-borda: #ECEAE6;
+
+  --marca-primaria: #CF4227;
+  --marca-primaria-contraste: #FFFFFF;
+  --marca-primaria-decorativa: #EF6351;
+  --marca-secundaria: #4338CA;
+  --marca-secundaria-contraste: #FFFFFF;
+
+  --marca-positivo: #0E7C3F;
+  --marca-positivo-fundo: #E7F3EC;
+  --marca-alerta: #8A6414;
+  --marca-alerta-fundo: #FBF1DC;
+  --marca-negativo: #CF4227;
+  --marca-negativo-fundo: #FCE9E4;
+
+  /* Cartão de IA desta demo usa o tom do índigo (a cor que a prancha
+     associa à decisão automatizada — "Triagem da Mariana"), não o coral
+     (reservado para ação/urgência). */
+  --marca-superficie-ia: #F4F3FB;
+  --marca-borda-ia: #DDDAF2;
+
+  /* barra fina do topo e faixa de conversão do rodapé */
+  --marca-barra-fundo: #F5F4F1;
+  --marca-faixa-fundo: #1B1B1F;
+  --marca-faixa-texto: #FAFAFA;
+  --marca-faixa-cta: #CF4227;
+  --marca-faixa-cta-contraste: #FFFFFF;
+}
+
+/* Avatares/iniciais de candidato alternam entre as duas cores de marca —
+   "cor fixa por categoria" do kit, aplicada ao par coral/índigo. */
+.lab-demo.demo-admita .avatar.avatar-1 { background: #FCE9E4; color: var(--marca-primaria); }
+.lab-demo.demo-admita .avatar.avatar-2 { background: #E7E5F9; color: var(--marca-secundaria); }
+
+/* A tagline era serifa itálica da prancha de identidade. O dono pediu a
+   geométrica dos títulos e a cor do botão de CTA: a linha passa a fazer
+   parte da chamada em vez de sussurrar embaixo dela. */
+.lab-demo.demo-admita .lab-faixa-tagline {
+  font-style: normal;
+  font-weight: 700;
+}
+.lab-demo.demo-admita .lab-faixa {
+  --marca-faixa-cta-contraste: #FFFFFF;
+}
+.lab-demo.demo-admita .lab-faixa .lab-faixa-tagline { color: var(--marca-primaria-decorativa); }
+
+/* ============================================================
+   Esteira de admissão (Task 4 do Plano 2, §6.1). Miolo inteiro da tela
+   `/lab/admita` — sidebar de ícones + quadro kanban + painéis-overlay de
+   checklist/auditoria + modal "nova candidatura". Zero uso de
+   `.rola-interno` aqui (proibida nas demos por decisão desta rodada):
+   excedente de cards vira paginação client-side (admita.js), nunca
+   rolagem — §13b, Lei da tela cheia, "endurecida".
+   ============================================================ */
+
+.lab-demo.demo-admita .admita-app {
+  /* puxa para fora o padding lateral de `.lab-conteudo-corpo` só do lado
+     esquerdo, para a coluna do menu encostar na borda da tela (pedido do
+     dono). O miolo tem overflow:hidden, então isto não gera rolagem. */
+  --sangria-esq: clamp(16px, 4vw, 48px);
+  width: calc(100% + var(--sangria-esq));
+  margin-left: calc(-1 * var(--sangria-esq));
+  height: 100%;
+  align-self: stretch;
+}
+
+.lab-demo.demo-admita .icone-esq { transform: scaleX(-1); }
+
+/* --------------------------------------------------------------- shell --
+   Grid fixo: sidebar (60px) + miolo (1fr). A sidebar expande por CIMA
+   (position:absolute, overlay com sombra) — a coluna do grid NUNCA muda
+   de largura, então o quadro kanban nunca é empurrado nem pisca. */
+.lab-demo.demo-admita .admita-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  /* mesmo vão do quadro (`.admita-board`), senão a distância entre o menu
+     e a primeira coluna fica maior que a distância entre as colunas e o
+     olho pega o degrau na hora. */
+  gap: 10px;
+}
+
+/* ------------------------------------------------------------ sidebar --
+   Recolhida: só ícones + badge, ~60px, centralizados. O rótulo (texto)
+   fica com max-width:0 + overflow:hidden — nunca aparece nem cortado
+   (bug do dono: "apareciam letras C, D, A, A, A, P ao lado dos ícones").
+   Expande no hover E no foco por teclado (:focus-within, acessibilidade —
+   hover não pode ser a única via) para ~220px, overlay sobre o quadro. */
+.lab-demo.demo-admita .admita-sidebar {
+  position: relative;
+  height: 100%;
+  overflow: visible;
+}
+.lab-demo.demo-admita .admita-sidebar-nav {
+  /* altura pelo conteúdo e centrado no eixo vertical da tela do sistema:
+     a barra vira um bloco harmônico no canto, não uma faixa do topo ao pé. */
+  position: absolute;
+  left: 0;
+  width: 60px;
+  /* topo definido por admita.js: a barra é centrada no eixo do QUADRO, não
+     no do shell (que começa na linha do título). Sem isso ela nasce alta
+     demais e sobra espaço embaixo. */
+  top: 0;
+  justify-content: flex-start;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--admita-vao, 7px);
+  padding: clamp(10px, 1.6vh, 16px) 10px;
+  background: var(--marca-superficie);
+  border-radius: 0 var(--raio-lg) var(--raio-lg) 0;
+  box-shadow: var(--sombra-suave);
+  transition: width .22s cubic-bezier(.4,0,.2,1), box-shadow .22s ease;
+  z-index: 40;
+}
+.lab-demo.demo-admita .admita-sidebar:hover .admita-sidebar-nav,
+.lab-demo.demo-admita .admita-sidebar:focus-within .admita-sidebar-nav {
+  width: 246px;
+  overflow: visible;
+  box-shadow: var(--sombra-flutuante);
+}
+/* recolhida, cada linha centra o ícone no eixo da barra; expandida, o
+   conteúdo volta a alinhar à esquerda para o rótulo ler como uma lista. */
+.lab-demo.demo-admita .admita-sidebar-item { justify-content: center; }
+.lab-demo.demo-admita .admita-sidebar:hover .admita-sidebar-item,
+.lab-demo.demo-admita .admita-sidebar:focus-within .admita-sidebar-item { justify-content: flex-start; }
+.lab-demo.demo-admita .admita-sidebar-marca { justify-content: center; }
+.lab-demo.demo-admita .admita-sidebar:hover .admita-sidebar-marca,
+.lab-demo.demo-admita .admita-sidebar:focus-within .admita-sidebar-marca { justify-content: flex-start; }
+
+.lab-demo.demo-admita .admita-sidebar-item {
+  display: flex;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--marca-texto);
+  border-radius: var(--raio-sm);
+  padding: 0 clamp(3px, .55vh, 7px);
+  height: var(--admita-linha, clamp(32px, 4.4vh, 52px));
+  cursor: pointer;
+  text-align: left;
+  flex-shrink: 0;
+}
+.lab-demo.demo-admita button.admita-sidebar-item:hover,
+.lab-demo.demo-admita button.admita-sidebar-item:focus-visible {
+  background: var(--marca-superficie-realce);
+}
+.lab-demo.demo-admita .admita-sidebar-item-estatico { cursor: default; }
+.lab-demo.demo-admita .admita-sidebar-ic-wrap {
+  position: relative;
+  width: clamp(32px, calc(var(--admita-linha, 44px) - 10px), 40px);
+  height: clamp(32px, calc(var(--admita-linha, 44px) - 10px), 40px);
+  border-radius: 999px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--marca-superficie-realce);
+  color: var(--marca-secundaria);
+}
+.lab-demo.demo-admita .admita-sidebar-item-alerta .admita-sidebar-ic-wrap { color: var(--marca-primaria); }
+.lab-demo.demo-admita .admita-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--marca-secundaria);
+  color: #fff;
+  font-size: .625rem;
+  font-weight: 800;
+  line-height: 16px;
+  text-align: center;
+}
+.lab-demo.demo-admita .admita-badge-coral { background: var(--marca-primaria); }
+/* assinatura no canto inferior direito da tela: caixa transparente com
+   uma borda de um fio só. Fica FORA do fluxo (absolute no shell, que é
+   position:relative) para não empurrar o quadro nem criar rolagem, e
+   ganha um pouco de opacidade no hover para quem quiser reparar nela. */
+.lab-demo.demo-admita .admita-assinatura {
+  position: absolute;
+  /* o shell sangra `--sangria-esq` para a esquerda, então centrar em 50%
+     dele deixaria a marca fora do eixo da TELA: compensa metade da sangria */
+  left: calc(50% + var(--sangria-esq, 0px) / 2);
+  transform: translateX(-50%);
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  background: transparent;
+  pointer-events: none;
+}
+.lab-demo.demo-admita .admita-assinatura-barra {
+  width: 1px;
+  height: 15px;
+  background: var(--marca-borda);
+}
+.lab-demo.demo-admita .admita-assinatura-slogan {
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .74rem;
+  color: var(--marca-texto-suave);
+}
+.lab-demo.demo-admita .admita-assinatura-marca { height: 29px; width: auto; display: block; }
+
+/* marca no topo da sidebar: símbolo fixo + palavra que expande junto com
+   os rótulos (mesma curva e mesma duração, senão o logotipo "chega" depois
+   da barra e a animação parece quebrada). */
+.lab-demo.demo-admita .admita-sidebar-marca {
+  display: flex;
+  align-items: center;
+  padding: 0 0 clamp(8px, 1.2vh, 14px);
+  margin-bottom: clamp(4px, .8vh, 8px);
+  border-bottom: 1px solid var(--marca-borda);
+}
+.lab-demo.demo-admita .admita-marca-simbolo {
+  width: 26px;
+  height: auto;
+  flex-shrink: 0;
+}
+.lab-demo.demo-admita .admita-selo-beta {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  padding: 3px 7px;
+  border: 1px solid var(--marca-borda);
+  border-radius: 999px;
+  color: var(--marca-secundaria);
+  background: var(--marca-superficie-realce);
+  white-space: nowrap;
+}
+
+/* selo de versão dentro do menu: com a barra recolhida ele não pode ocupar
+   NADA, nem padding nem borda, senão empurra o símbolo para fora do eixo
+   da coluna (o dono viu o símbolo desalinhado). */
+.lab-demo.demo-admita .admita-selo-menu {
+  max-width: 0;
+  padding: 0;
+  border-width: 0;
+  margin: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width .22s ease, opacity .15s ease, padding .22s ease;
+}
+.lab-demo.demo-admita .admita-sidebar:hover .admita-selo-menu,
+.lab-demo.demo-admita .admita-sidebar:focus-within .admita-selo-menu {
+  margin-left: auto;
+  max-width: 70px;
+  padding: 3px 7px;
+  border-width: 1px;
+  opacity: 1;
+}
+
+.lab-demo.demo-admita .admita-marca-palavra {
+  height: 17px;
+  width: auto;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width .22s ease, opacity .15s ease, margin .22s ease;
+}
+.lab-demo.demo-admita .admita-sidebar:hover .admita-marca-palavra,
+.lab-demo.demo-admita .admita-sidebar:focus-within .admita-marca-palavra {
+  max-width: 120px;
+  opacity: 1;
+  margin-left: 9px;
+}
+
+.lab-demo.demo-admita .admita-sidebar-rotulo {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width .22s ease, opacity .15s ease, margin .22s ease;
+}
+.lab-demo.demo-admita .admita-sidebar:hover .admita-sidebar-rotulo,
+.lab-demo.demo-admita .admita-sidebar:focus-within .admita-sidebar-rotulo {
+  max-width: 178px;
+  opacity: 1;
+  margin-left: 10px;
+}
+.lab-demo.demo-admita .admita-sidebar-rotulo strong { font-size: .78rem; font-weight: 700; }
+.lab-demo.demo-admita .admita-sidebar-rotulo em {
+  font-style: normal;
+  font-size: .68rem;
+  color: var(--marca-texto-suave);
+}
+
+/* --------------------------------------------------------------- main --
+   Estrutura interna: barra de ações, navegador mobile (só aparece em
+   telas pequenas, ver media query no fim), quadro. */
+.lab-demo.demo-admita .admita-main {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+.lab-demo.demo-admita .admita-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.lab-demo.demo-admita .admita-toolbar-titulo h1 {
+  font-size: clamp(1.15rem, 2vw, 1.6rem);
+  margin: 0;
+}
+.lab-demo.demo-admita .admita-toolbar-titulo p {
+  margin: 2px 0 0;
+  font-size: .8rem;
+  color: var(--marca-texto-suave);
+}
+.lab-demo.demo-admita .admita-toolbar-acoes { display: flex; gap: 10px; flex-wrap: wrap; }
+.lab-demo.demo-admita .admita-toolbar-acoes .botao { padding: 9px 16px; font-size: .82rem; }
+
+.lab-demo.demo-admita .admita-etapas-mobile,
+.lab-demo.demo-admita .admita-fab,
+.lab-demo.demo-admita .admita-tabbar { display: none; }
+
+.lab-demo.demo-admita .admita-board {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  overflow: hidden;
+}
+
+/* ------------------------------------------------------------- coluna --
+   Arredondada, contador na cabeça — kanban confirmado como metáfora de
+   mercado (Convenia: "gerenciar todas as etapas da admissão pelo modelo
+   kanban", ver estudo setorial). */
+.lab-demo.demo-admita .admita-coluna {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--marca-superficie-realce);
+  border-radius: var(--raio-md);
+  padding: 10px;
+  overflow: hidden;
+}
+.lab-demo.demo-admita .admita-coluna-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.lab-demo.demo-admita .admita-coluna-cabecalho h2 {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-family: var(--marca-fonte-ui);
+  font-size: .78rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.lab-demo.demo-admita .admita-coluna-contador { flex-shrink: 0; padding: 2px 9px; font-size: .7rem; }
+.lab-demo.demo-admita .admita-coluna-corpo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow: hidden;
+}
+.lab-demo.demo-admita .admita-coluna-vazia {
+  margin: 0;
+  padding: 18px 6px;
+  text-align: center;
+  font-size: .75rem;
+  color: var(--marca-texto-suave);
+}
+.lab-demo.demo-admita .admita-mostrar-mais {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px dashed var(--marca-borda);
+  background: transparent;
+  color: var(--marca-texto-suave);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: .7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.lab-demo.demo-admita .admita-mostrar-mais:hover { background: var(--marca-superficie); }
+.lab-demo.demo-admita .admita-mostrar-mais .icone { width: .85em; height: .85em; }
+
+/* --------------------------------------------------------------- card --
+   Célula-padrão do kit + o diferencial de marca (chip de prazo). Setas
+   nos cantos: esquerda espelha `#i-seta-direita` por CSS (.icone-esq),
+   nunca um símbolo próprio — garante visualmente que "esquerda aponta
+   para a esquerda". */
+.lab-demo.demo-admita .admita-card {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  background: var(--marca-superficie);
+  border: 1px solid var(--marca-borda);
+  border-radius: var(--raio-sm);
+  padding: 7px;
+  box-shadow: var(--sombra-suave);
+  transition: opacity .15s ease;
+}
+.lab-demo.demo-admita .admita-card.admita-card-pendente { opacity: .5; }
+.lab-demo.demo-admita .admita-card-seta {
+  flex-shrink: 0;
+  width: 20px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--marca-texto-suave);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.lab-demo.demo-admita .admita-card-seta .icone { width: .85em; height: .85em; }
+.lab-demo.demo-admita .admita-card-seta:hover:not(:disabled) {
+  background: var(--marca-superficie-realce);
+  color: var(--marca-primaria);
+}
+.lab-demo.demo-admita .admita-card-seta:disabled { opacity: .2; cursor: not-allowed; }
+.lab-demo.demo-admita .admita-card-corpo {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  overflow: hidden;
+}
+.lab-demo.demo-admita .admita-card-celula { padding: 0; border: 0; background: transparent; gap: 8px; }
+.lab-demo.demo-admita .admita-card-celula .avatar { width: 30px; height: 30px; font-size: .66rem; }
+.lab-demo.demo-admita .admita-card-celula .celula-nome {
+  font-size: .8rem;
+  /* Num sistema de RH o nome do candidato é o identificador primário da
+     tela: cortar com reticências esconde justamente o que o recrutador
+     precisa ler. Quebra em duas linhas; a paginação de admita.js mede a
+     altura real do card, então o quadro continua cabendo sem rolagem. */
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+.lab-demo.demo-admita .admita-card-celula .celula-meta { font-size: .68rem; }
+
+.lab-demo.demo-admita .admita-chip-prazo {
+  align-self: flex-start;
+  max-width: 100%;
+  font-size: .64rem;
+  padding: 2px 9px;
+  gap: 4px;
+  white-space: normal;
+  line-height: 1.3;
+}
+.lab-demo.demo-admita .admita-chip-prazo .icone { width: .8em; height: .8em; }
+.lab-demo.demo-admita .admita-chip-coral { background: var(--marca-negativo-fundo); color: var(--marca-primaria); }
+.lab-demo.demo-admita .admita-chip-indigo { background: #E7E5F9; color: var(--marca-secundaria); }
+
+.lab-demo.demo-admita .admita-card-acoes { display: flex; flex-wrap: wrap; gap: 5px; }
+.lab-demo.demo-admita .admita-card-botao {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--marca-borda);
+  background: var(--marca-superficie);
+  color: var(--marca-texto);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: .64rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.lab-demo.demo-admita .admita-card-botao .icone { width: .8em; height: .8em; }
+.lab-demo.demo-admita .admita-card-botao:hover { background: var(--marca-superficie-realce); }
+/* O botão de aprovar tem fundo cheio e texto branco. Sem esta regra ele
+   herdava o hover claro dos outros e o texto sumia no branco: o dono viu
+   o botão virar uma moldura vazia ao passar o mouse. */
+.lab-demo.demo-admita .admita-card-botao-aprovar:hover {
+  background: var(--marca-secundaria);
+  color: var(--marca-secundaria-contraste);
+  filter: brightness(1.12);
+}
+.lab-demo.demo-admita .admita-card-botao-aprovar {
+  background: var(--marca-secundaria);
+  border-color: var(--marca-secundaria);
+  color: #fff;
+}
+.lab-demo.demo-admita .admita-card-botao-aprovar:hover { opacity: .9; }
+.lab-demo.demo-admita .admita-otimista { opacity: .55; pointer-events: none; }
+
+/* -------------------------------------------------------- painéis-overlay
+   Checklist de documentos e trilha de auditoria: nunca disputam espaço
+   com o quadro, flutuam por cima com sombra (mesmo espírito da sidebar). */
+.lab-demo.demo-admita .admita-checklist-painel,
+/* A trilha veste o mesmo azul da entrada do sistema: as duas falam da
+   mesma coisa, o registro de quem fez o quê, e a caixa escura separa o
+   histórico do trabalho do dia sem precisar de moldura. */
+.lab-demo.demo-admita .admita-auditoria {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  bottom: 8px;
+  width: min(376px, 88vw);
+  border-radius: var(--raio-lg);
+  box-shadow: 0 24px 60px rgba(8, 6, 30, .38);
+  padding: 20px 18px 16px;
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  z-index: 70;
+  background:
+    radial-gradient(120% 90% at 8% 0%, rgba(96, 75, 226, .55) 0%, transparent 58%),
+    radial-gradient(110% 80% at 100% 100%, rgba(207, 66, 39, .38) 0%, transparent 60%),
+    #10102A;
+  color: #F2F1F8;
+}
+.lab-demo.demo-admita .admita-auditoria .admita-painel-cabecalho h2 {
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-weight: 800;
+  letter-spacing: -.01em;
+  color: #FFFFFF;
+}
+.lab-demo.demo-admita .admita-auditoria .admita-painel-cabecalho p {
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  color: rgba(255, 255, 255, .62);
+}
+.lab-demo.demo-admita .admita-auditoria .admita-fechar {
+  border-color: rgba(255, 255, 255, .22);
+  color: rgba(255, 255, 255, .75);
+  background: transparent;
+}
+.lab-demo.demo-admita .admita-auditoria .admita-fechar:hover {
+  background: rgba(255, 255, 255, .12);
+  color: #fff;
+}
+
+/* fichas de limpar */
+.lab-demo.demo-admita .admita-auditoria-acoes { display: flex; gap: 7px; flex-shrink: 0; }
+.lab-demo.demo-admita .admita-chip-limpar {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, .22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .06);
+  color: rgba(255, 255, 255, .84);
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .68rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, color .18s ease;
+}
+.lab-demo.demo-admita .admita-chip-limpar:hover {
+  background: rgba(255, 255, 255, .16);
+  border-color: rgba(255, 255, 255, .4);
+  color: #fff;
+}
+.lab-demo.demo-admita .admita-chip-limpar .icone { width: 12px; height: 12px; }
+.lab-demo.demo-admita .admita-chip-limpar-tudo { color: #FFB7A6; border-color: rgba(255, 140, 116, .34); }
+.lab-demo.demo-admita .admita-chip-limpar-tudo:hover { background: rgba(207, 66, 39, .28); border-color: #EF6351; color: #fff; }
+
+/* cada evento é um cartão de notificação, separado por um fio */
+.lab-demo.demo-admita .admita-evento {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  transition: height .28s ease, margin .28s ease, opacity .28s ease;
+}
+.lab-demo.demo-admita .admita-evento + .admita-evento { margin-top: 10px; }
+.lab-demo.demo-admita .admita-evento + .admita-evento::before {
+  content: "";
+  position: absolute;
+  top: -5px; left: 12px; right: 12px;
+  height: 1px;
+  background: rgba(255, 255, 255, .09);
+}
+.lab-demo.demo-admita .admita-evento-corpo {
+  position: relative;
+  display: flex;
+  gap: 11px;
+  padding: 12px 13px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .055);
+  touch-action: pan-y;
+  cursor: grab;
+  will-change: transform;
+}
+.lab-demo.demo-admita .admita-evento-corpo.arrastando { cursor: grabbing; transition: none; }
+.lab-demo.demo-admita .admita-evento-corpo.voltando { transition: transform .28s cubic-bezier(.2,.8,.3,1); }
+.lab-demo.demo-admita .admita-evento-ic {
+  width: 30px; height: 30px; flex-shrink: 0;
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, .1);
+  color: #C7BEFF;
+}
+.lab-demo.demo-admita .admita-evento-ic .icone { width: 15px; height: 15px; }
+.lab-demo.demo-admita .admita-evento-texto { min-width: 0; display: grid; gap: 3px; }
+.lab-demo.demo-admita .admita-evento-acao {
+  margin: 0;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .78rem;
+  line-height: 1.4;
+  color: #F2F1F8;
+}
+.lab-demo.demo-admita .admita-evento-meta {
+  margin: 0;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .66rem;
+  color: rgba(255, 255, 255, .5);
+}
+/* o verde de arquivar aparece por baixo enquanto o cartão desliza */
+.lab-demo.demo-admita .admita-evento-arquivar {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: #0E7C66;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 20px;
+  color: #fff;
+  opacity: 0;
+  transition: opacity .18s ease;
+}
+.lab-demo.demo-admita .admita-evento-arquivar .icone { width: 17px; height: 17px; }
+.lab-demo.demo-admita .admita-evento.deslizando .admita-evento-arquivar { opacity: 1; }
+.lab-demo.demo-admita .admita-evento.saindo { opacity: 0; }
+
+.lab-demo.demo-admita .admita-auditoria-vazio-aviso {
+  margin: 0;
+  padding: 18px 12px;
+  text-align: center;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .72rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, .55);
+}
+.lab-demo.demo-admita .admita-auditoria-vazio-aviso[hidden] { display: none; }
+
+/* marca no pé do painel */
+.lab-demo.demo-admita .admita-auditoria-marca {
+  margin-top: auto;
+  padding-top: 12px;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+  flex-shrink: 0;
+}
+.lab-demo.demo-admita .admita-auditoria-lockup { height: 18px; width: auto; opacity: .8; }
+.lab-demo.demo-admita .admita-checklist-painel:not([hidden]),
+.lab-demo.demo-admita .admita-auditoria:not([hidden]) { display: flex; }
+
+.lab-demo.demo-admita .admita-painel-cabecalho { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.lab-demo.demo-admita .admita-painel-cabecalho h2 {
+  margin: 0;
+  font-family: var(--marca-fonte-display);
+  font-size: 1.05rem;
+}
+.lab-demo.demo-admita .admita-painel-cabecalho p { margin: 3px 0 0; font-size: .78rem; color: var(--marca-texto-suave); }
+.lab-demo.demo-admita .admita-fechar {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--marca-superficie-realce);
+  color: var(--marca-texto-suave);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.lab-demo.demo-admita .admita-fechar:hover { background: var(--marca-borda); color: var(--marca-texto); }
+.lab-demo.demo-admita .admita-fechar .icone { width: .85em; height: .85em; }
+
+.lab-demo.demo-admita .admita-checklist-lista,
+.lab-demo.demo-admita .admita-auditoria-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: block;
+  min-height: 0;
+  overflow: hidden;
+}
+.lab-demo.demo-admita .admita-auditoria-mais {
+  margin: 0;
+  text-align: center;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .66rem;
+  color: rgba(255, 255, 255, .45);
+  flex-shrink: 0;
+}
+.lab-demo.demo-admita .admita-auditoria-vazia {
+  padding: 16px 12px;
+  text-align: center;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .74rem;
+  color: rgba(255, 255, 255, .55);
+}
+.lab-demo.demo-admita .admita-checklist-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--marca-borda);
+  background: var(--marca-fundo);
+  border-radius: var(--raio-sm);
+  padding: 9px 11px;
+  cursor: pointer;
+  text-align: left;
+}
+.lab-demo.demo-admita .admita-checklist-item:hover { background: var(--marca-superficie-realce); }
+.lab-demo.demo-admita .admita-checklist-item .icone-caixa { width: 32px; height: 32px; }
+.lab-demo.demo-admita .admita-checklist-item.conferido .icone-caixa {
+  background: var(--marca-positivo-fundo); color: var(--marca-positivo);
+}
+.lab-demo.demo-admita .admita-checklist-item.pendente .icone-caixa {
+  background: var(--marca-alerta-fundo); color: var(--marca-alerta);
+}
+.lab-demo.demo-admita .admita-checklist-tipo { flex: 1; min-width: 0; font-size: .82rem; font-weight: 600; }
+.lab-demo.demo-admita .admita-checklist-aviso {
+  margin: 0;
+  font-size: .76rem;
+  color: var(--marca-primaria);
+  background: var(--marca-negativo-fundo);
+  border-radius: var(--raio-sm);
+  padding: 10px 12px;
+}
+
+.lab-demo.demo-admita .admita-auditoria-lista li { display: flex; align-items: flex-start; gap: 10px; }
+.lab-demo.demo-admita .admita-auditoria-texto { min-width: 0; }
+.lab-demo.demo-admita .admita-auditoria-acao { margin: 0; font-size: .78rem; line-height: 1.4; }
+.lab-demo.demo-admita .admita-auditoria-meta { margin: 2px 0 0; font-size: .68rem; color: var(--marca-texto-suave); }
+/* (regra antiga do estado vazio removida: a nova vive no bloco escuro acima) */
+/* (regra antiga do rodapé da trilha removida: a nova vive no bloco escuro acima) */
+
+/* ---------------------------------------------------------------- modal --
+   Nova candidatura: cantos arredondados, sombra suave, foco preso dentro
+   (JS), fecha no ESC/clique fora (JS). Todos os botões com ícone. */
+.lab-demo.demo-admita .admita-modal-fundo {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 16, 12, .55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 500;
+}
+.lab-demo.demo-admita .admita-modal-fundo[hidden] { display: none; }
+.lab-demo.demo-admita .admita-modal {
+  width: min(420px, 100%);
+  background: var(--marca-superficie);
+  border-radius: var(--raio-lg);
+  box-shadow: var(--sombra-flutuante);
+  padding: 26px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.lab-demo.demo-admita .admita-modal h2 { margin: 0; font-family: var(--marca-fonte-display); }
+.lab-demo.demo-admita .admita-modal-sub { margin: 0; font-size: .85rem; color: var(--marca-texto-suave); }
+.lab-demo.demo-admita .admita-campo { display: flex; flex-direction: column; gap: 6px; font-size: .82rem; font-weight: 700; }
+.lab-demo.demo-admita .admita-campo input,
+.lab-demo.demo-admita .admita-campo select {
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: var(--raio-sm);
+  border: 1.5px solid var(--marca-borda);
+  background: var(--marca-fundo);
+  color: var(--marca-texto);
+}
+.lab-demo.demo-admita .admita-campo input:focus,
+.lab-demo.demo-admita .admita-campo select:focus {
+  outline: 3px solid var(--marca-secundaria);
+  outline-offset: 1px;
+  border-color: var(--marca-secundaria);
+}
+.lab-demo.demo-admita .admita-modal-erro {
+  margin: 0;
+  font-size: .8rem;
+  color: var(--marca-primaria);
+  background: var(--marca-negativo-fundo);
+  border-radius: var(--raio-sm);
+  padding: 10px 12px;
+}
+.lab-demo.demo-admita .admita-modal-acoes { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+
+/* ---------------------------------------------------------------- toast --
+   Feedback otimista revertido: aviso elegante, nunca um alert() cru. */
+.lab-demo.demo-admita .admita-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 22px;
+  transform: translate(-50%, 10px);
+  background: var(--marca-texto);
+  color: #FAFAFA;
+  padding: 11px 20px;
+  border-radius: 999px;
+  font-size: .82rem;
+  font-weight: 700;
+  box-shadow: var(--sombra-flutuante);
+  opacity: 0;
+  transition: opacity .2s ease, transform .2s ease;
+  z-index: 600;
+  max-width: 88vw;
+  text-align: center;
+}
+.lab-demo.demo-admita .admita-toast[hidden] { display: none; }
+.lab-demo.demo-admita .admita-toast.visivel { opacity: 1; transform: translate(-50%, 0); }
+
+/* -------------------------------------------------------------- mobile --
+   Recomposição (§13b): 5 colunas não cabem legíveis em 390px — uma etapa
+   por vez, com navegação de setas no topo. Sidebar continua só ícones
+   (56px), expande por toque (o navegador foca o botão tocado, o mesmo
+   :focus-within do desktop cobre isso sem JS extra). */
+/* ============================================================
+   MODO APLICATIVO (até 860px). Não é o desktop encolhido: é outra UI.
+   Barra de abas no rodapé, fichas de etapa em fila, cartões de toque, botão
+   flutuante e painéis que sobem como folha. O menu lateral, o quadro de
+   cinco colunas e a paginação medida ficam para o desktop.
+
+   Sobre rolagem: a PÁGINA continua sem rolar, e nenhuma barra aparece. A
+   lista de cartões rola no dedo dentro da própria área, com a barra
+   escondida, que é exatamente como um aplicativo se comporta. Paginar uma
+   lista no celular seria a única coisa aqui que não pareceria app.
+   ============================================================ */
+@media (max-width: 860px) {
+  /* no app não existe sangria: a tela inteira é do sistema, e o respiro
+     lateral vem do padding do próprio miolo. */
+  .lab-demo.demo-admita .admita-app {
+    --sangria-esq: 0px;
+    width: 100%;
+    margin-left: 0;
+  }
+  .lab-demo.demo-admita .admita-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  /* menu lateral, assinatura e o CTA do miolo saem de cena: no celular a
+     tela é do sistema, e a conversa de contratação vive na vitrine. */
+  .lab-demo.demo-admita .admita-sidebar,
+  .lab-demo.demo-admita .admita-assinatura { display: none; }
+  .lab-demo.demo-admita .admita-main { gap: 8px; padding: 0 clamp(12px, 4vw, 20px); }
+
+  /* barra do app: saudação curta em cima, ação principal virou botão
+     flutuante, então a barra de ações some. */
+  .lab-demo.demo-admita .admita-toolbar { display: block; padding-top: 2px; }
+  .lab-demo.demo-admita .admita-toolbar-acoes { display: none; }
+  .lab-demo.demo-admita .admita-toolbar-titulo h1 { font-size: 1.05rem; gap: 0 6px; }
+  .lab-demo.demo-admita .admita-titulo-barra { display: none; }
+  .lab-demo.demo-admita .admita-saudacao { display: block; width: 100%; font-size: .82rem; color: var(--marca-texto-suave); font-weight: 600; }
+  .lab-demo.demo-admita .admita-toolbar-titulo p { font-size: .72rem; }
+
+  /* fichas de etapa: fila que rola no dedo, sem barra visível */
+  .lab-demo.demo-admita .admita-etapas-mobile {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 2px 0 4px;
+    scroll-snap-type: x proximity;
+  }
+  .lab-demo.demo-admita .admita-etapas-mobile::-webkit-scrollbar { display: none; }
+  .lab-demo.demo-admita .admita-etapa-mobile-nome {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
+  }
+  .lab-demo.demo-admita .admita-ficha-etapa {
+    display: inline-flex; align-items: center; gap: 6px;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    min-height: 38px;
+    padding: 0 14px;
+    border: 1px solid var(--marca-borda);
+    border-radius: 999px;
+    background: var(--marca-superficie);
+    color: var(--marca-texto-suave);
+    font: inherit; font-size: .78rem; font-weight: 700;
+    cursor: pointer;
+  }
+  .lab-demo.demo-admita .admita-ficha-etapa .icone { width: 14px; height: 14px; }
+  .lab-demo.demo-admita .admita-ficha-etapa i {
+    font-style: normal; font-size: .68rem; font-weight: 800;
+    min-width: 18px; padding: 1px 5px;
+    border-radius: 999px;
+    background: var(--marca-superficie-realce);
+    color: var(--marca-secundaria);
+  }
+  .lab-demo.demo-admita .admita-ficha-etapa.ativa {
+    background: var(--marca-secundaria);
+    border-color: var(--marca-secundaria);
+    color: #fff;
+  }
+  .lab-demo.demo-admita .admita-ficha-etapa.ativa i { background: rgba(255,255,255,.22); color: #fff; }
+
+  /* uma etapa por vez, em lista de cartões que rola no dedo */
+  .lab-demo.demo-admita .admita-board { display: block; min-height: 0; }
+  .lab-demo.demo-admita .admita-coluna { display: none; height: 100%; background: transparent; border: 0; padding: 0; }
+  .lab-demo.demo-admita .admita-coluna.admita-coluna-ativa-mobile { display: flex; }
+  .lab-demo.demo-admita .admita-coluna-cabecalho { display: none; }
+  .lab-demo.demo-admita .admita-coluna-corpo {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    gap: 10px;
+    padding-bottom: 96px;   /* espaço do botão flutuante e da barra de abas */
+  }
+  .lab-demo.demo-admita .admita-coluna-corpo::-webkit-scrollbar { display: none; }
+  .lab-demo.demo-admita .admita-mostrar-mais { display: none; }
+
+  /* cartão de toque: mais alto, alvos maiores, sombra de app */
+  .lab-demo.demo-admita .admita-card {
+    padding: 14px 12px;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(20, 16, 40, .06);
+  }
+  .lab-demo.demo-admita .admita-card-celula .celula-nome { font-size: .92rem; }
+  .lab-demo.demo-admita .admita-card-celula .celula-meta { font-size: .76rem; }
+  .lab-demo.demo-admita .admita-card-celula .avatar { width: 38px; height: 38px; font-size: .76rem; }
+  .lab-demo.demo-admita .admita-card-seta { width: 38px; height: 38px; }
+  .lab-demo.demo-admita .admita-card-botao { min-height: 38px; padding: 0 13px; font-size: .76rem; }
+
+  /* botão flutuante: a ação principal ao alcance do polegar */
+  .lab-demo.demo-admita .admita-fab {
+    display: inline-flex;
+    position: absolute;
+    right: clamp(12px, 4vw, 20px);
+    bottom: 74px;
+    z-index: 40;
+    align-items: center; justify-content: center;
+    width: 56px; height: 56px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: var(--marca-primaria);
+    color: var(--marca-primaria-contraste);
+    font: inherit; font-size: .82rem; font-weight: 700;
+    box-shadow: 0 8px 20px rgba(207, 66, 39, .34);
+    cursor: pointer;
+    animation: admita-chamada 2.6s ease-in-out infinite;
+  }
+  .lab-demo.demo-admita .admita-fab .icone { width: 22px; height: 22px; }
+  .lab-demo.demo-admita .admita-fab span {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
+  }
+
+  /* barra de abas: a peça que mais diz "aplicativo" */
+  .lab-demo.demo-admita .admita-tabbar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    z-index: 45;
+    background: var(--marca-superficie);
+    border-top: 1px solid var(--marca-borda);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+  .lab-demo.demo-admita .admita-tab {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    min-height: 50px;
+    border: 0; background: transparent;
+    color: var(--marca-texto-suave);
+    font: inherit; font-size: .64rem; font-weight: 700;
+    cursor: pointer;
+    border-radius: 12px;
+  }
+  .lab-demo.demo-admita .admita-tab .icone { width: 19px; height: 19px; }
+  .lab-demo.demo-admita .admita-tab.ativa { color: var(--marca-secundaria); }
+  .lab-demo.demo-admita .admita-tab.ativa .icone { transform: translateY(-1px); }
+  .lab-demo.demo-admita .admita-tab-selo {
+    position: absolute; top: 4px; right: 50%; margin-right: -20px;
+    font-style: normal; font-size: .58rem; font-weight: 800;
+    min-width: 15px; padding: 1px 4px;
+    border-radius: 999px;
+    background: var(--marca-primaria);
+    color: #fff;
+  }
+
+  /* painéis sobem como folha, ancorados no rodapé */
+  .lab-demo.demo-admita .admita-agenda,
+  .lab-demo.demo-admita .admita-config {
+    width: 100%;
+    max-height: 88vh;
+    border-radius: 20px 20px 0 0;
+    align-self: flex-end;
+  }
+  .lab-demo.demo-admita .admita-modal-fundo { align-items: flex-end; }
+  .lab-demo.demo-admita .admita-agenda-corpo { grid-template-columns: 1fr; }
+  .lab-demo.demo-admita .admita-agenda-lista { border-right: 0; border-bottom: 1px solid var(--marca-borda); }
+  .lab-demo.demo-admita .admita-checklist-painel,
+  .lab-demo.demo-admita .admita-auditoria { left: 8px; right: 8px; width: auto; bottom: 74px; }
+}
+
+/* ============================================================
+   Divisores do menu + painel de agenda de entrevistas + painel fictício
+   de configurações (rodada de pedidos do dono).
+   ============================================================ */
+
+.lab-demo.demo-admita .admita-sidebar-divisor {
+  display: block;
+  height: 1px;
+  margin: var(--admita-vao, 7px) 6px;
+  background: var(--marca-borda);
+  flex-shrink: 0;
+}
+
+/* ------------------------------------------------------------- agenda -- */
+.lab-demo.demo-admita .admita-agenda {
+  width: min(880px, 94vw);
+  max-height: min(560px, 86vh);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.lab-demo.demo-admita .admita-agenda-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid var(--marca-borda);
+}
+.lab-demo.demo-admita .admita-agenda-topo h2 { margin: 0; font-size: 1.15rem; }
+.lab-demo.demo-admita .admita-agenda-x {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--marca-borda);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--marca-texto-suave);
+  cursor: pointer;
+}
+.lab-demo.demo-admita .admita-agenda-x:hover { background: var(--marca-superficie-realce); }
+.lab-demo.demo-admita .admita-agenda-x .icone { width: 14px; height: 14px; }
+
+.lab-demo.demo-admita .admita-agenda-corpo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;   /* as duas metades pedidas pelo dono */
+  min-height: 0;
+  flex: 1;
+}
+.lab-demo.demo-admita .admita-agenda-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  min-height: 0;
+  /* ZERO rolagem, nem da página nem interna (regra do dono): o que não
+     couber vira paginação medida em admita.js, igual às colunas. */
+  overflow: hidden;
+  border-right: 1px solid var(--marca-borda);
+}
+.lab-demo.demo-admita .admita-agenda-pessoa {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+  border: 1px solid transparent;
+  border-radius: var(--raio-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background .16s ease, border-color .16s ease;
+}
+.lab-demo.demo-admita .admita-agenda-pessoa:hover { background: var(--marca-superficie-realce); }
+.lab-demo.demo-admita .admita-agenda-pessoa.selecionado {
+  border-color: var(--marca-secundaria);
+  background: var(--marca-superficie-realce);
+}
+.lab-demo.demo-admita .admita-agenda-pessoa .avatar { width: 30px; height: 30px; font-size: .64rem; flex-shrink: 0; }
+.lab-demo.demo-admita .admita-agenda-pessoa-txt {
+  flex: 1; min-width: 0; display: grid; gap: 1px;
+}
+.lab-demo.demo-admita .admita-agenda-pessoa-txt strong { font-size: .8rem; line-height: 1.25; }
+.lab-demo.demo-admita .admita-agenda-pessoa-txt em {
+  font-style: normal; font-size: .68rem; color: var(--marca-texto-suave);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lab-demo.demo-admita .admita-agenda-quando {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: .68rem; font-weight: 700;
+  color: var(--marca-texto-suave);
+}
+.lab-demo.demo-admita .admita-agenda-pessoa.tem-data .admita-agenda-quando { color: var(--marca-secundaria); }
+.lab-demo.demo-admita .admita-agenda-quando .icone { width: 12px; height: 12px; }
+
+.lab-demo.demo-admita .admita-agenda-calendario {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.lab-demo.demo-admita .admita-agenda-mes {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; margin-bottom: 10px;
+}
+.lab-demo.demo-admita .admita-agenda-mes strong { font-size: .85rem; }
+.lab-demo.demo-admita .admita-agenda-nav {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--marca-borda);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--marca-texto-suave);
+  cursor: pointer;
+}
+.lab-demo.demo-admita .admita-agenda-nav:hover { background: var(--marca-superficie-realce); }
+.lab-demo.demo-admita .admita-agenda-nav .icone { width: 12px; height: 12px; }
+
+.lab-demo.demo-admita .admita-agenda-semana,
+.lab-demo.demo-admita .admita-agenda-grade {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.lab-demo.demo-admita .admita-agenda-semana span {
+  text-align: center;
+  font-size: .62rem; font-weight: 700; letter-spacing: .04em;
+  color: var(--marca-texto-suave);
+  padding-bottom: 4px;
+}
+.lab-demo.demo-admita .admita-dia {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--raio-sm);
+  background: transparent;
+  font-size: .74rem;
+  color: var(--marca-texto);
+  cursor: pointer;
+  transition: background .14s ease, border-color .14s ease;
+}
+.lab-demo.demo-admita .admita-dia.vazio { pointer-events: none; }
+.lab-demo.demo-admita .admita-dia:hover:not(.vazio) { background: var(--marca-superficie-realce); }
+.lab-demo.demo-admita .admita-dia.hoje { border-color: var(--marca-borda); font-weight: 700; }
+.lab-demo.demo-admita .admita-dia.passado { opacity: .35; cursor: not-allowed; }
+.lab-demo.demo-admita .admita-dia.meu {
+  background: var(--marca-secundaria);
+  border-color: var(--marca-secundaria);
+  color: #fff;
+  font-weight: 700;
+}
+.lab-demo.demo-admita .admita-dia-ponto {
+  position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
+  width: 4px; height: 4px; border-radius: 999px;
+  background: var(--marca-secundaria);
+}
+.lab-demo.demo-admita .admita-dia.meu .admita-dia-ponto { background: #fff; }
+.lab-demo.demo-admita .admita-agenda-grade.sem-candidato .admita-dia { opacity: .45; }
+.lab-demo.demo-admita .admita-agenda-dica {
+  margin: 10px 0 0;
+  font-size: .68rem;
+  color: var(--marca-texto-suave);
+}
+
+/* ------------------------------------------------------- configurações -- */
+.lab-demo.demo-admita .admita-config {
+  width: min(560px, 94vw);
+  max-height: min(560px, 86vh);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.lab-demo.demo-admita .admita-config-corpo {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 8px 10px;
+  min-height: 0;
+  overflow: hidden;
+}
+.lab-demo.demo-admita .admita-config-linha {
+  display: flex; align-items: center; gap: 12px;
+  /* a folga vertical da linha é apertada por admita.js só se a aba não
+     couber: o painel não rola, então quem cede é o respiro, nunca o
+     conteúdo (nenhum item pode aparecer cortado). */
+  padding: var(--admita-conf-pad, 11px) 12px;
+  border-radius: var(--raio-sm);
+  cursor: pointer;
+}
+.lab-demo.demo-admita .admita-config-linha:hover { background: var(--marca-superficie-realce); }
+.lab-demo.demo-admita .admita-config-ic {
+  width: 30px; height: 30px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 999px;
+  background: var(--marca-superficie-realce);
+  color: var(--marca-secundaria);
+}
+.lab-demo.demo-admita .admita-config-ic .icone { width: 15px; height: 15px; }
+.lab-demo.demo-admita .admita-config-txt { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.lab-demo.demo-admita .admita-config-txt strong { font-size: .82rem; }
+.lab-demo.demo-admita .admita-config-txt em {
+  font-style: normal; font-size: .68rem; color: var(--marca-texto-suave);
+}
+.lab-demo.demo-admita .admita-config-campo {
+  flex-shrink: 0;
+  font: inherit; font-size: .74rem;
+  padding: 6px 10px;
+  border: 1px solid var(--marca-borda);
+  border-radius: 999px;
+  background: var(--marca-superficie);
+  color: var(--marca-texto);
+}
+.lab-demo.demo-admita .admita-chave {
+  flex-shrink: 0;
+  width: 40px; height: 23px;
+  border-radius: 999px;
+  background: var(--marca-borda);
+  position: relative;
+  cursor: pointer;
+  transition: background .18s ease;
+}
+.lab-demo.demo-admita .admita-chave::after {
+  content: "";
+  position: absolute; top: 3px; left: 3px;
+  width: 17px; height: 17px; border-radius: 999px;
+  background: #fff;
+  transition: transform .18s ease;
+}
+.lab-demo.demo-admita .admita-chave[data-chave="on"] { background: var(--marca-secundaria); }
+.lab-demo.demo-admita .admita-chave[data-chave="on"]::after { transform: translateX(17px); }
+.lab-demo.demo-admita .admita-config-aviso {
+  margin: 0;
+  padding: 12px 22px 18px;
+  border-top: 1px solid var(--marca-borda);
+  font-size: .68rem;
+  color: var(--marca-texto-suave);
+}
+
+@media (max-width: 720px) {
+  .lab-demo.demo-admita .admita-agenda-corpo { grid-template-columns: 1fr; }
+  .lab-demo.demo-admita .admita-agenda-lista {
+    border-right: 0;
+    border-bottom: 1px solid var(--marca-borda);
+    max-height: 34vh;
+  }
+}
+
+/* ============================================================
+   Título da tela, saudação e chamadas de atenção (pedidos do dono).
+   ============================================================ */
+
+/* A fonte do título puxa para o desenho da MARCA (geométrica de caixa
+   baixa) em vez da serifa do resto da identidade: o dono pediu o título
+   "parecido com a marca". Nunito Sans é a geométrica que o Lab já carrega
+   local, então isto não acrescenta host externo nem arquivo novo. */
+.lab-demo.demo-admita .admita-toolbar-titulo h1 {
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-weight: 700;
+  letter-spacing: -.01em;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 8px;
+}
+.lab-demo.demo-admita .admita-saudacao { font-weight: 700; }
+.lab-demo.demo-admita .admita-titulo-barra {
+  color: var(--marca-borda);
+  font-weight: 400;
+}
+.lab-demo.demo-admita .admita-titulo-tela { color: var(--marca-primaria); }
+.lab-demo.demo-admita .admita-toolbar-titulo p {
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+}
+.lab-demo.demo-admita .admita-nota { opacity: .7; }
+.lab-demo.demo-admita .admita-numero {
+  color: var(--marca-secundaria);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  margin-left: 3px;
+}
+
+/* três pontinhos que continuam pulsando: a esteira está viva, e a frase
+   termina em movimento em vez de em ponto final. */
+.lab-demo.demo-admita .admita-reticencias {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 4px;
+}
+.lab-demo.demo-admita .admita-reticencias i {
+  width: 3px; height: 3px;
+  border-radius: 999px;
+  background: var(--marca-texto-suave);
+  opacity: .25;
+  animation: admita-pontinho 1.4s ease-in-out infinite;
+}
+.lab-demo.demo-admita .admita-reticencias i:nth-child(2) { animation-delay: .18s; }
+.lab-demo.demo-admita .admita-reticencias i:nth-child(3) { animation-delay: .36s; }
+@keyframes admita-pontinho {
+  0%, 60%, 100% { opacity: .25; transform: translateY(0); }
+  30%           { opacity: 1;   transform: translateY(-2px); }
+}
+
+/* "Nova candidatura" pulsa o tempo todo para puxar o primeiro clique de
+   quem chega. Respiração lenta e halo curto: chama atenção sem virar
+   pisca-pisca de anúncio. */
+.lab-demo.demo-admita .admita-toolbar-acoes .botao-primario {
+  animation: admita-chamada 2.6s ease-in-out infinite;
+}
+.lab-demo.demo-admita .admita-toolbar-acoes .botao-primario:hover {
+  animation-play-state: paused;
+}
+@keyframes admita-chamada {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: inset 0 0 0 0 rgba(255, 255, 255, 0);
+    filter: none;
+  }
+  50% {
+    transform: scale(.968);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .38);
+    filter: brightness(1.07);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-demo.demo-admita .admita-reticencias i,
+  .lab-demo.demo-admita .admita-toolbar-acoes .botao-primario { animation: none; }
+}
+
+/* Configurações é ferramenta, não estado da esteira: sai do índigo das
+   outras linhas e assume o grafite da própria engrenagem. */
+.lab-demo.demo-admita .admita-sidebar-item-config .admita-sidebar-ic-wrap {
+  background: #EEEDF2;
+  color: #56526B;
+}
+.lab-demo.demo-admita .admita-sidebar-item-config:hover .admita-sidebar-ic-wrap {
+  background: #E2E0E8;
+  color: #35314A;
+}
+
+/* ============================================================
+   Configurações em abas (pedido do dono): seis grupos, o último com cor
+   própria por ser gestão de gente e não de regra.
+   ============================================================ */
+
+.lab-demo.demo-admita .admita-config { width: min(760px, 95vw); max-height: min(760px, 92vh); }
+
+/* o título do painel usa a MESMA geométrica do título da tela, não a
+   serifa da identidade: pedido do dono nesta rodada. */
+.lab-demo.demo-admita .admita-config h2,
+.lab-demo.demo-admita .admita-agenda h2 {
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-weight: 800;
+  letter-spacing: -.01em;
+}
+.lab-demo.demo-admita .admita-config .admita-modal-sub,
+.lab-demo.demo-admita .admita-agenda .admita-modal-sub {
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+}
+
+.lab-demo.demo-admita .admita-abas {
+  display: flex;
+  gap: 4px;
+  padding: 10px 14px 0;
+  border-bottom: 1px solid var(--marca-borda);
+  flex-wrap: wrap;
+  overflow: visible;
+}
+.lab-demo.demo-admita .admita-aba {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 8px 12px 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--marca-texto-suave);
+  font: inherit;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color .16s ease, border-color .16s ease;
+}
+.lab-demo.demo-admita .admita-aba .icone { width: 14px; height: 14px; }
+.lab-demo.demo-admita .admita-aba:hover { color: var(--marca-texto); }
+.lab-demo.demo-admita .admita-aba.ativa {
+  color: var(--marca-secundaria);
+  border-bottom-color: var(--marca-secundaria);
+}
+/* a aba de acessos é a única que fala de gente: cor própria, para ler como
+   um lugar diferente mesmo antes de abrir. */
+.lab-demo.demo-admita .admita-aba-acessos { margin-left: auto; color: #0E7C66; }
+.lab-demo.demo-admita .admita-aba-acessos:hover { color: #0A5F4E; }
+.lab-demo.demo-admita .admita-aba-acessos.ativa {
+  color: #0E7C66;
+  border-bottom-color: #0E7C66;
+}
+
+.lab-demo.demo-admita .admita-painel {
+  display: flex; flex-direction: column; gap: 2px;
+  min-width: 0;
+}
+.lab-demo.demo-admita .admita-painel > * { min-width: 0; max-width: 100%; }
+.lab-demo.demo-admita .admita-painel[hidden] { display: none; }
+.lab-demo.demo-admita .admita-config-linha-larga { align-items: flex-start; }
+.lab-demo.demo-admita .admita-config-linha-larga .admita-config-ic { margin-top: 2px; }
+
+.lab-demo.demo-admita .admita-fichas {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px;
+}
+.lab-demo.demo-admita .admita-ficha {
+  font-size: .66rem; font-weight: 700;
+  padding: 4px 9px;
+  border: 1px solid var(--marca-borda);
+  border-radius: 999px;
+  color: var(--marca-texto-suave);
+  white-space: nowrap;
+}
+.lab-demo.demo-admita .admita-botao-mini {
+  display: inline-flex; align-items: center; gap: 5px;
+  flex-shrink: 0;
+  font-family: inherit; font-size: .7rem; font-weight: 700;
+  padding: 6px 11px;
+  border: 1px solid var(--marca-borda);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--marca-texto);
+  cursor: pointer;
+}
+.lab-demo.demo-admita .admita-botao-mini:hover { background: var(--marca-superficie-realce); }
+.lab-demo.demo-admita .admita-botao-mini .icone { width: 12px; height: 12px; }
+.lab-demo.demo-admita .admita-botao-mini-perigo { color: var(--marca-primaria); }
+.lab-demo.demo-admita .admita-botao-mini-perigo:hover { background: #FCE9E4; }
+
+/* ------------------------------------------------------------- acessos -- */
+.lab-demo.demo-admita .admita-painel-acessos { gap: 10px; padding-top: 6px; }
+.lab-demo.demo-admita .admita-acesso-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr) minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: end;
+  padding: 4px 12px 2px;
+  min-width: 0;
+}
+.lab-demo.demo-admita .admita-acesso-form > * { min-width: 0; }
+.lab-demo.demo-admita .admita-acesso-form input,
+.lab-demo.demo-admita .admita-acesso-form select { width: 100%; min-width: 0; }
+.lab-demo.demo-admita .admita-acesso-form .admita-campo { margin: 0; }
+.lab-demo.demo-admita .admita-acesso-add {
+  background: #0E7C66;
+  border-color: #0E7C66;
+  color: #fff;
+  white-space: nowrap;
+}
+.lab-demo.demo-admita .admita-acesso-add:hover { background: #0A5F4E; border-color: #0A5F4E; }
+.lab-demo.demo-admita .admita-acesso-erro {
+  margin: 0 12px;
+  font-size: .72rem;
+  color: var(--marca-primaria);
+}
+.lab-demo.demo-admita .admita-acesso-lista {
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 0 12px 4px;
+}
+.lab-demo.demo-admita .admita-acesso-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 11px;
+  border: 1px solid var(--marca-borda);
+  border-radius: var(--raio-sm);
+  transition: border-color .2s ease, background .2s ease;
+}
+.lab-demo.demo-admita .admita-acesso-item.alterado {
+  border-color: #0E7C66;
+  background: #EAF6F2;
+}
+.lab-demo.demo-admita .admita-acesso-item .avatar { width: 30px; height: 30px; font-size: .64rem; flex-shrink: 0; }
+.lab-demo.demo-admita .admita-acesso-txt { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.lab-demo.demo-admita .admita-acesso-txt strong { font-size: .8rem; }
+.lab-demo.demo-admita .admita-acesso-txt em {
+  font-style: normal; font-size: .68rem; color: var(--marca-texto-suave);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lab-demo.demo-admita .admita-ficha-perfil { flex-shrink: 0; }
+.lab-demo.demo-admita .admita-acesso-acoes { display: flex; gap: 5px; flex-shrink: 0; }
+
+@media (max-width: 720px) {
+  .lab-demo.demo-admita .admita-acesso-form { grid-template-columns: 1fr; }
+  .lab-demo.demo-admita .admita-aba-acessos { margin-left: 0; }
+}
+
+/* paginação da lista de agenda: mesma solução das colunas do quadro, o que
+   não cabe troca de página em vez de virar barra de rolagem. */
+.lab-demo.demo-admita .admita-agenda-mais {
+  flex-shrink: 0;
+  margin-top: 2px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px dashed var(--marca-borda);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--marca-texto-suave);
+  font: inherit; font-size: .7rem; font-weight: 700;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.lab-demo.demo-admita .admita-agenda-mais:hover { background: var(--marca-superficie-realce); }
+.lab-demo.demo-admita .admita-agenda-mais[hidden] { display: none; }
+
+/* ficha do usuário com a sessão aberta, ao lado do nome da tela */
+.lab-demo.demo-admita .admita-usuario {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--marca-secundaria);
+  background: var(--marca-superficie-realce);
+  border: 1px solid var(--marca-borda);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  align-self: center;
+}
+.lab-demo.demo-admita .admita-usuario .icone { width: 12px; height: 12px; }
+.lab-demo.demo-admita .admita-usuario-sair {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 3px;
+  padding-left: 7px;
+  border-left: 1px solid var(--marca-borda);
+  color: var(--marca-texto-suave);
+  opacity: .8;
+  transition: color .18s ease, opacity .18s ease;
+}
+.lab-demo.demo-admita .admita-usuario-sair:hover { color: var(--marca-primaria); opacity: 1; }
+.lab-demo.demo-admita .admita-usuario-sair .icone { width: 13px; height: 13px; }
+
+/* sair do sistema: fica ao lado do X porque é a mesma família de gesto
+   (deixar a tela), mas diz o que faz num sistema de verdade. Leva para a
+   vitrine, que é para onde quem fecha a demonstração quer ir. */
+.lab-demo.demo-admita .admita-sair {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 0 13px;
+  height: 32px;
+  border: 1px solid var(--marca-borda);
+  border-radius: 999px;
+  color: var(--marca-primaria);
+  background: transparent;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .72rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.lab-demo.demo-admita .admita-sair:hover { background: #FCE9E4; border-color: var(--marca-primaria); }
+.lab-demo.demo-admita .admita-sair .icone { width: 14px; height: 14px; }
+.lab-demo.demo-admita .admita-agenda-topo { gap: 10px; }
+.lab-demo.demo-admita .admita-agenda-topo > div { flex: 1; min-width: 0; }
+
+@media (max-width: 460px) {
+  .lab-demo.demo-admita .admita-sair { font-size: 0; gap: 0; padding: 0 9px; }
+  .lab-demo.demo-admita .admita-sair .icone { width: 15px; height: 15px; }
+  .lab-demo.demo-admita .admita-usuario { font-size: .62rem; padding: 2px 8px; }
+}
+
+/* relógio do sistema, ao lado do slogan na assinatura */
+.lab-demo.demo-admita .admita-relogio {
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .74rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--marca-texto-suave);
+}
+
+/* Hover das colunas: quase nada, de propósito. Um fio de borda na cor da
+   marca e um respiro de sombra, sem mover nada de lugar. A leitura do
+   quadro não pode piscar quando o mouse atravessa a tela. */
+.lab-demo.demo-admita .admita-coluna {
+  transition: border-color .22s ease, box-shadow .22s ease, background .22s ease;
+}
+.lab-demo.demo-admita .admita-coluna:hover {
+  border-color: color-mix(in srgb, var(--marca-secundaria) 26%, var(--marca-borda));
+  box-shadow: 0 2px 12px rgba(20, 16, 40, .05);
+}
+.lab-demo.demo-admita .admita-coluna:hover .admita-coluna-cabecalho { color: var(--marca-secundaria); }
+.lab-demo.demo-admita .admita-coluna-cabecalho { transition: color .22s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-demo.demo-admita .admita-coluna { transition: none; }
+}
+
+/* ============================================================
+   ENTRADA: splash + tela de acesso + o usuário fictício entrando.
+   Camada fixa por cima de tudo, que some sozinha ao terminar. Nada aqui
+   pode gerar rolagem, então a camada é `position: fixed` com o conteúdo
+   centrado e `overflow: hidden`.
+   ============================================================ */
+.lab-demo.demo-admita .admita-entrada {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #10102A;
+  opacity: 1;
+  transition: opacity .5s ease;
+  /* Rede de segurança: se o JavaScript não rodar (erro, bloqueio, rede
+     lenta), a camada sai sozinha depois de sete segundos em vez de deixar
+     a demonstração trancada atrás de uma tela de login que não avança. */
+  animation: admita-entrada-desiste 1s 7s forwards;
+}
+@keyframes admita-entrada-desiste {
+  to { opacity: 0; visibility: hidden; pointer-events: none; }
+}
+.lab-demo.demo-admita .admita-entrada[hidden] { display: none; }
+.lab-demo.demo-admita .admita-entrada.saindo { opacity: 0; pointer-events: none; }
+
+/* dois halos lentos no fundo: dá profundidade sem pesar nem distrair */
+.lab-demo.demo-admita .admita-entrada-fundo { position: absolute; inset: 0; }
+.lab-demo.demo-admita .admita-entrada-brilho {
+  position: absolute;
+  width: 46vmax; height: 46vmax;
+  border-radius: 999px;
+  filter: blur(70px);
+  opacity: .5;
+  background: radial-gradient(circle, #604BE2 0%, transparent 68%);
+  top: -12vmax; left: -10vmax;
+  animation: admita-halo 9s ease-in-out infinite alternate;
+}
+.lab-demo.demo-admita .admita-entrada-brilho-2 {
+  background: radial-gradient(circle, #CF4227 0%, transparent 68%);
+  top: auto; left: auto; bottom: -14vmax; right: -12vmax;
+  opacity: .38;
+  animation-delay: -4s;
+}
+@keyframes admita-halo {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(3vmax, 2vmax, 0) scale(1.12); }
+}
+
+/* --------------------------------------------------------------- splash */
+.lab-demo.demo-admita .admita-entrada-splash {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  opacity: 0;
+  animation: admita-splash-entra .55s cubic-bezier(.2,.7,.3,1) forwards;
+}
+.lab-demo.demo-admita .admita-entrada.passo-login .admita-entrada-splash {
+  animation: admita-splash-sai .45s cubic-bezier(.4,0,.2,1) forwards;
+}
+.lab-demo.demo-admita .admita-entrada-simbolo {
+  width: 76px; height: auto;
+  filter: drop-shadow(0 10px 30px rgba(96, 75, 226, .55));
+}
+.lab-demo.demo-admita .admita-entrada-linha {
+  display: block;
+  width: 0; height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #604BE2, #CF4227);
+  animation: admita-linha-cresce .9s .25s cubic-bezier(.2,.7,.3,1) forwards;
+}
+@keyframes admita-splash-entra {
+  from { opacity: 0; transform: translateY(14px) scale(.86); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes admita-splash-sai {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.16); }
+}
+@keyframes admita-linha-cresce { to { width: 104px; } }
+.lab-demo.demo-admita .admita-entrada-status {
+  margin: 0;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: rgba(255, 255, 255, .74);
+  min-height: 1em;
+}
+/* Saída: só a marca, a linha e o aviso de logout. O cartão de acesso nunca
+   entra em cena, porque sair é um gesto curto. */
+.lab-demo.demo-admita .admita-entrada.saindo-do-sistema .admita-entrada-cartao,
+.lab-demo.demo-admita .admita-entrada.saindo-do-sistema .admita-entrada-pular { display: none; }
+.lab-demo.demo-admita .admita-entrada.saindo-do-sistema .admita-entrada-splash {
+  animation: admita-splash-entra .4s cubic-bezier(.2,.7,.3,1) forwards;
+}
+
+/* ------------------------------------------------------------- cartão */
+.lab-demo.demo-admita .admita-entrada-cartao {
+  position: relative;
+  width: min(360px, 88vw);
+  padding: 26px 26px 20px;
+  border-radius: 22px;
+  background: #FFFFFF;
+  box-shadow: 0 30px 70px rgba(8, 6, 30, .5);
+  opacity: 0;
+  transform: translateY(26px) scale(.96);
+  pointer-events: none;
+}
+.lab-demo.demo-admita .admita-entrada.passo-login .admita-entrada-cartao {
+  animation: admita-cartao-entra .55s cubic-bezier(.2,.75,.3,1) forwards;
+}
+.lab-demo.demo-admita .admita-entrada.passo-dentro .admita-entrada-cartao {
+  animation: admita-cartao-sai .5s cubic-bezier(.4,0,.2,1) forwards;
+}
+@keyframes admita-cartao-entra {
+  from { opacity: 0; transform: translateY(26px) scale(.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes admita-cartao-sai {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-16px) scale(1.03); }
+}
+
+.lab-demo.demo-admita .admita-entrada-marca { display: flex; justify-content: center; }
+.lab-demo.demo-admita .admita-entrada-lockup { height: 26px; width: auto; }
+.lab-demo.demo-admita .admita-entrada-titulo {
+  margin: 18px 0 2px;
+  text-align: center;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: 1rem;
+  font-weight: 800;
+  color: #152036;
+}
+.lab-demo.demo-admita .admita-entrada-sub {
+  margin: 0 0 18px;
+  text-align: center;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .72rem;
+  color: #6E6A75;
+}
+.lab-demo.demo-admita .admita-entrada-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 11px;
+}
+.lab-demo.demo-admita .admita-entrada-rotulo {
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .64rem;
+  font-weight: 700;
+  color: #6E6A75;
+}
+.lab-demo.demo-admita .admita-entrada-valor {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 13px;
+  border: 1px solid #E4E2EA;
+  border-radius: 12px;
+  background: #FAFAFC;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .82rem;
+  color: #152036;
+  transition: border-color .25s ease, background .25s ease;
+}
+.lab-demo.demo-admita .admita-entrada-valor.ativo {
+  border-color: #604BE2;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(96, 75, 226, .12);
+}
+.lab-demo.demo-admita .admita-entrada-cursor {
+  display: inline-block;
+  width: 1.5px; height: 15px;
+  margin-left: 1px;
+  background: #604BE2;
+  animation: admita-cursor 1s steps(1) infinite;
+}
+@keyframes admita-cursor { 50% { opacity: 0; } }
+.lab-demo.demo-admita .admita-entrada-pontos { letter-spacing: 4px; font-size: 1.05rem; }
+
+.lab-demo.demo-admita .admita-entrada-botao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  margin-top: 6px;
+  border-radius: 12px;
+  background: #604BE2;
+  color: #fff;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .84rem;
+  font-weight: 800;
+  transition: transform .18s ease, background .25s ease;
+}
+.lab-demo.demo-admita .admita-entrada-botao.pressionado { transform: scale(.97); background: #4F3CC9; }
+.lab-demo.demo-admita .admita-entrada-botao.ok { background: #0E7C66; }
+.lab-demo.demo-admita .admita-entrada-giro {
+  display: none;
+  width: 15px; height: 15px;
+  border: 2px solid rgba(255,255,255,.35);
+  border-top-color: #fff;
+  border-radius: 999px;
+  animation: admita-giro .7s linear infinite;
+}
+.lab-demo.demo-admita .admita-entrada-botao.carregando .admita-entrada-giro { display: block; }
+@keyframes admita-giro { to { transform: rotate(360deg); } }
+
+.lab-demo.demo-admita .admita-entrada-nota {
+  margin: 14px 0 0;
+  text-align: center;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .62rem;
+  color: #8E8A98;
+}
+.lab-demo.demo-admita .admita-entrada-pular {
+  position: absolute;
+  bottom: clamp(18px, 4vh, 34px);
+  margin: 0;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .64rem;
+  letter-spacing: .08em;
+  color: rgba(255,255,255,.5);
+  opacity: 0;
+  animation: admita-pular-aparece .4s 1.2s forwards;
+}
+@keyframes admita-pular-aparece { to { opacity: 1; } }
+
+/* a tela do sistema aparece escalonada quando a entrada termina */
+.lab-demo.demo-admita .admita-app.revelando .admita-toolbar,
+.lab-demo.demo-admita .admita-app.revelando .admita-sidebar,
+.lab-demo.demo-admita .admita-app.revelando .admita-coluna,
+.lab-demo.demo-admita .admita-app.revelando .admita-assinatura {
+  animation: admita-revela .5s cubic-bezier(.2,.75,.3,1) backwards;
+}
+.lab-demo.demo-admita .admita-app.revelando .admita-sidebar { animation-delay: .04s; }
+.lab-demo.demo-admita .admita-app.revelando .admita-toolbar { animation-delay: .08s; }
+.lab-demo.demo-admita .admita-app.revelando .admita-coluna:nth-child(1) { animation-delay: .14s; }
+.lab-demo.demo-admita .admita-app.revelando .admita-coluna:nth-child(2) { animation-delay: .20s; }
+.lab-demo.demo-admita .admita-app.revelando .admita-coluna:nth-child(3) { animation-delay: .26s; }
+.lab-demo.demo-admita .admita-app.revelando .admita-coluna:nth-child(4) { animation-delay: .32s; }
+.lab-demo.demo-admita .admita-app.revelando .admita-coluna:nth-child(5) { animation-delay: .38s; }
+.lab-demo.demo-admita .admita-app.revelando .admita-assinatura { animation-delay: .44s; }
+@keyframes admita-revela {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 860px) {
+  .lab-demo.demo-admita .admita-entrada-cartao { width: min(340px, 90vw); padding: 22px 20px 16px; }
+  .lab-demo.demo-admita .admita-entrada-simbolo { width: 64px; }
+}
+
+/* Quem pediu menos movimento não vê a entrada: cai direto no sistema. */
+@media (prefers-reduced-motion: reduce) {
+  .lab-demo.demo-admita .admita-entrada { display: none !important; }
+  .lab-demo.demo-admita .admita-app.revelando * { animation: none !important; }
+}
+
+/* avatar da lista de acessos: círculo com o ícone de usuário, não iniciais
+   soltas num quadrado (o `.avatar` do kit só tinha forma dentro de
+   `.celula`, então aqui ele nascia sem borda arredondada nenhuma). */
+.lab-demo.demo-admita .admita-acesso-avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--marca-superficie-realce);
+  color: var(--marca-secundaria);
+}
+.lab-demo.demo-admita .admita-acesso-avatar.avatar-1 { background: #FCE9E4; color: var(--marca-primaria); }
+.lab-demo.demo-admita .admita-acesso-avatar.avatar-2 { background: #E7E4FB; color: var(--marca-secundaria); }
+.lab-demo.demo-admita .admita-acesso-avatar .icone { width: 16px; height: 16px; }
+
+/* ============================================================
+   Cabeçalho do modal de nova candidatura: manchete com faixa própria.
+   ============================================================ */
+.lab-demo.demo-admita .admita-modal-topo {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin: -24px -24px 20px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--marca-borda);
+  border-radius: var(--raio-lg) var(--raio-lg) 0 0;
+  background:
+    radial-gradient(120% 160% at 0% 0%, rgba(96, 75, 226, .14) 0%, transparent 62%),
+    var(--marca-superficie-realce);
+}
+.lab-demo.demo-admita .admita-modal-ic {
+  width: 42px; height: 42px; flex-shrink: 0;
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--marca-secundaria);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(67, 56, 202, .3);
+}
+.lab-demo.demo-admita .admita-modal-ic .icone { width: 20px; height: 20px; }
+.lab-demo.demo-admita .admita-modal-topo h2 {
+  margin: 0;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: -.01em;
+}
+.lab-demo.demo-admita .admita-modal-topo .admita-modal-sub {
+  margin: 3px 0 0;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .74rem;
+  line-height: 1.4;
+}
+
+/* cabeçalho da trilha: ícone e título no eixo do painel, com um fio
+   separando o cabeçalho das ações e outro separando as ações da lista. */
+.lab-demo.demo-admita .admita-trilha-topo {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, .12);
+  flex-shrink: 0;
+}
+.lab-demo.demo-admita .admita-trilha-topo .admita-fechar {
+  position: absolute;
+  top: -2px;
+  right: 0;
+}
+.lab-demo.demo-admita .admita-trilha-ic {
+  width: 38px; height: 38px;
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, .1);
+  color: #C7BEFF;
+}
+.lab-demo.demo-admita .admita-trilha-ic .icone { width: 18px; height: 18px; }
+.lab-demo.demo-admita .admita-trilha-topo h2 { margin: 0; text-align: center; }
+.lab-demo.demo-admita .admita-trilha-topo p { margin: 0; text-align: center; font-size: .7rem; }
+
+.lab-demo.demo-admita .admita-auditoria-acoes {
+  justify-content: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, .12);
+}
+
+/* lista de cargos nas configurações */
+.lab-demo.demo-admita .admita-cargo-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: end;
+  padding: 4px 12px 2px;
+}
+.lab-demo.demo-admita .admita-cargo-form > * { min-width: 0; }
+.lab-demo.demo-admita .admita-cargo-form input { width: 100%; }
+.lab-demo.demo-admita .admita-cargo-add { white-space: nowrap; }
+.lab-demo.demo-admita .admita-cargo-lista {
+  display: flex; flex-direction: column; gap: 5px;
+  padding: 6px 12px 4px;
+}
+.lab-demo.demo-admita .admita-cargo-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 11px;
+  border: 1px solid var(--marca-borda);
+  border-radius: var(--raio-sm);
+}
+.lab-demo.demo-admita .admita-cargo-ic {
+  width: 28px; height: 28px; flex-shrink: 0;
+  border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--marca-superficie-realce);
+  color: var(--marca-secundaria);
+}
+.lab-demo.demo-admita .admita-cargo-ic .icone { width: 14px; height: 14px; }
+.lab-demo.demo-admita .admita-cargo-nome {
+  flex: 1; min-width: 0;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .8rem;
+  font-weight: 700;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ============================================================
+   O que abre no selo "v. beta": quem fez, o que dá para fazer com o
+   sistema e como falar comigo. Símbolo em movimento contínuo.
+   ============================================================ */
+.lab-demo.demo-admita .admita-selo-beta { cursor: pointer; }
+.lab-demo.demo-admita .admita-assinatura { pointer-events: none; }
+.lab-demo.demo-admita .admita-assinatura .admita-selo-beta { pointer-events: auto; }
+
+.lab-demo.demo-admita .admita-beta {
+  position: relative;
+  width: min(480px, 92vw);
+  max-height: min(760px, 92vh);
+  padding: 26px 30px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(130% 80% at 50% 0%, rgba(96, 75, 226, .13) 0%, transparent 60%),
+    var(--marca-superficie);
+}
+.lab-demo.demo-admita .admita-beta-x { position: absolute; top: 16px; right: 16px; }
+
+/* palco do símbolo: anel girando devagar, halo pulsando e a marca boiando */
+.lab-demo.demo-admita .admita-beta-palco {
+  position: relative;
+  width: clamp(88px, 12vh, 116px);
+  height: clamp(88px, 12vh, 116px);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.lab-demo.demo-admita .admita-beta-anel {
+  position: absolute; inset: 0;
+  border-radius: 999px;
+  background: conic-gradient(from 0deg, #604BE2, #CF4227, #604BE2);
+  mask: radial-gradient(circle, transparent 60%, #000 61%);
+  -webkit-mask: radial-gradient(circle, transparent 60%, #000 61%);
+  opacity: .5;
+  animation: admita-beta-gira 7s linear infinite;
+}
+.lab-demo.demo-admita .admita-beta-pulso {
+  position: absolute;
+  width: 74px; height: 74px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(96, 75, 226, .42) 0%, transparent 70%);
+  animation: admita-beta-pulsa 2.8s ease-in-out infinite;
+}
+.lab-demo.demo-admita .admita-beta-simbolo {
+  position: relative;
+  width: 52px; height: auto;
+  animation: admita-beta-boia 3.4s ease-in-out infinite;
+}
+@keyframes admita-beta-gira { to { transform: rotate(360deg); } }
+@keyframes admita-beta-pulsa {
+  0%, 100% { transform: scale(.86); opacity: .55; }
+  50%      { transform: scale(1.14); opacity: 1; }
+}
+@keyframes admita-beta-boia {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-7px) rotate(-3deg); }
+}
+
+.lab-demo.demo-admita .admita-beta-selo {
+  margin: 16px 0 0;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--marca-secundaria);
+}
+.lab-demo.demo-admita .admita-beta h2 {
+  margin: 6px 0 clamp(10px, 1.6vh, 16px);
+  text-align: center;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-weight: 800;
+  font-size: clamp(1.02rem, 1.5vh, 1.22rem);
+  letter-spacing: -.015em;
+  line-height: 1.25;
+}
+.lab-demo.demo-admita .admita-beta-texto {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(7px, 1.1vh, 11px);
+  padding-top: clamp(11px, 1.8vh, 16px);
+  border-top: 1px solid var(--marca-borda);
+  min-height: 0;
+}
+.lab-demo.demo-admita .admita-beta-texto p {
+  margin: 0;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .82rem;
+  line-height: 1.55;
+  color: var(--marca-texto);
+}
+.lab-demo.demo-admita .admita-beta-texto strong { font-weight: 800; color: var(--marca-secundaria); }
+.lab-demo.demo-admita .admita-beta-convite { font-weight: 700; }
+.lab-demo.demo-admita .admita-beta-cta {
+  margin: clamp(12px, 2vh, 18px) 0 0;
+  width: 100%;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--marca-primaria);
+  border-color: var(--marca-primaria);
+  color: var(--marca-primaria-contraste);
+}
+.lab-demo.demo-admita .admita-beta-cta:hover { filter: brightness(1.08); }
+.lab-demo.demo-admita .admita-beta-legal {
+  margin: clamp(9px, 1.4vh, 14px) 0 0;
+  text-align: center;
+  font-family: "Nunito Sans", var(--marca-fonte-ui);
+  font-size: .62rem;
+  flex-shrink: 0;
+  line-height: 1.5;
+  color: var(--marca-texto-suave);
+}
+
+@media (max-width: 860px) {
+  .lab-demo.demo-admita .admita-beta { padding: 24px 20px 20px; }
+  .lab-demo.demo-admita .admita-beta h2 { font-size: 1.08rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lab-demo.demo-admita .admita-beta-anel,
+  .lab-demo.demo-admita .admita-beta-pulso,
+  .lab-demo.demo-admita .admita-beta-simbolo { animation: none; }
+}
+
+/* ============================================================
+   MODAIS NO CELULAR: folha que sobe, com dedo em conta.
+   No telefone eles estavam cortando conteúdo e empurrando controle para
+   fora da tela. Aqui viram folha ancorada no rodapé, com rolagem interna
+   só onde o conteúdo é uma LISTA (que é o que um app faz), formulários em
+   coluna e alvos de toque de tamanho real.
+   ============================================================ */
+@media (max-width: 720px) {
+  .lab-demo.demo-admita .admita-modal-fundo {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .lab-demo.demo-admita .admita-modal {
+    width: 100%;
+    max-width: none;
+    max-height: 92dvh;
+    border-radius: 22px 22px 0 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  /* alça de folha, como em qualquer app: diz "isto arrasta e fecha" */
+  .lab-demo.demo-admita .admita-modal::before {
+    content: "";
+    width: 38px; height: 4px;
+    margin: 9px auto 2px;
+    border-radius: 999px;
+    background: var(--marca-borda);
+    flex-shrink: 0;
+  }
+
+  /* cabeçalho e rodapé fixos; o miolo é quem rola */
+  .lab-demo.demo-admita .admita-agenda-topo,
+  .lab-demo.demo-admita .admita-modal-topo,
+  .lab-demo.demo-admita .admita-abas,
+  .lab-demo.demo-admita .admita-config-aviso { flex-shrink: 0; }
+  .lab-demo.demo-admita .admita-config-corpo,
+  .lab-demo.demo-admita .admita-agenda-corpo {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+  .lab-demo.demo-admita .admita-config-corpo::-webkit-scrollbar,
+  .lab-demo.demo-admita .admita-agenda-corpo::-webkit-scrollbar { display: none; }
+
+  /* abas: fila que rola no dedo em vez de quebrar em duas linhas */
+  .lab-demo.demo-admita .admita-abas {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 8px 12px 0;
+    gap: 2px;
+  }
+  .lab-demo.demo-admita .admita-abas::-webkit-scrollbar { display: none; }
+  .lab-demo.demo-admita .admita-aba { padding: 9px 11px 11px; font-size: .74rem; }
+  .lab-demo.demo-admita .admita-aba-acessos { margin-left: 0; }
+
+  /* linhas de configuração: o controle desce para a sua própria linha em
+     vez de espremer o texto contra a borda */
+  .lab-demo.demo-admita .admita-config-linha {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding: 12px;
+  }
+  .lab-demo.demo-admita .admita-config-txt { flex: 1 1 calc(100% - 44px); }
+  .lab-demo.demo-admita .admita-config-campo {
+    flex: 1 1 100%;
+    min-height: 42px;
+    font-size: .82rem;
+  }
+  .lab-demo.demo-admita .admita-chave { margin-left: auto; }
+
+  /* formulários em coluna, com alvos de toque de verdade */
+  .lab-demo.demo-admita .admita-acesso-form,
+  .lab-demo.demo-admita .admita-cargo-form {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 10px 12px 4px;
+  }
+  .lab-demo.demo-admita .admita-acesso-form input,
+  .lab-demo.demo-admita .admita-acesso-form select,
+  .lab-demo.demo-admita .admita-cargo-form input {
+    min-height: 44px;
+    font-size: 16px;   /* 16px evita o zoom automático do iOS ao focar */
+  }
+  .lab-demo.demo-admita .admita-acesso-add,
+  .lab-demo.demo-admita .admita-cargo-add { width: 100%; justify-content: center; min-height: 46px; }
+
+  /* linha de acesso e de cargo: nome em cima, ações embaixo, nada cortado */
+  .lab-demo.demo-admita .admita-acesso-item,
+  .lab-demo.demo-admita .admita-cargo-item {
+    flex-wrap: wrap;
+    row-gap: 9px;
+    padding: 11px;
+  }
+  .lab-demo.demo-admita .admita-acesso-txt { flex: 1 1 calc(100% - 42px); }
+  .lab-demo.demo-admita .admita-acesso-txt strong { font-size: .84rem; line-height: 1.3; }
+  .lab-demo.demo-admita .admita-ficha-perfil { order: 3; }
+  .lab-demo.demo-admita .admita-acesso-acoes { order: 4; margin-left: auto; }
+  .lab-demo.demo-admita .admita-botao-mini { min-height: 36px; padding: 0 12px; }
+  .lab-demo.demo-admita .admita-cargo-nome { flex: 1 1 calc(100% - 40px); white-space: normal; }
+
+  /* agenda: lista em cima com rolagem própria, calendário embaixo inteiro */
+  .lab-demo.demo-admita .admita-agenda-corpo { display: block; }
+  .lab-demo.demo-admita .admita-agenda-lista {
+    max-height: 34dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    border-right: 0;
+    border-bottom: 1px solid var(--marca-borda);
+  }
+  .lab-demo.demo-admita .admita-agenda-lista::-webkit-scrollbar { display: none; }
+  .lab-demo.demo-admita .admita-agenda-mais { display: none; }
+  .lab-demo.demo-admita .admita-dia { font-size: .82rem; }
+
+  /* o painel do selo beta também é folha */
+  .lab-demo.demo-admita .admita-beta { max-height: 92dvh; }
+  .lab-demo.demo-admita .admita-beta-texto { overflow-y: auto; min-height: 0; }
+  .lab-demo.demo-admita .admita-beta-x { top: 12px; right: 12px; }
+
+  /* trilha de auditoria ocupa a tela toda, como uma central de avisos */
+  .lab-demo.demo-admita .admita-auditoria {
+    left: 8px; right: 8px; top: auto; bottom: 8px;
+    max-height: 82dvh;
+  }
+}

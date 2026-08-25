@@ -1,0 +1,79 @@
+{% extends "admin/base.html" %}
+{% block title %}Entrar{% endblock %}
+{% block content %}
+<div class="lg-tela">
+  <div class="lg-textura" aria-hidden="true"></div>
+
+  <div class="lg-card">
+    <span class="lg-markwrap">
+      <svg class="lg-frame" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <rect x="0.5" y="0.5" width="99" height="99" pathLength="1"/>
+      </svg>
+      <svg viewBox="0 0 100 100" class="lg-mark" role="img" aria-label="Leandro Furtado">
+        <polygon class="lg-poly" pathLength="1" points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+        <polygon class="lg-poly" pathLength="1" points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+        <polygon class="lg-poly" pathLength="1" points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+      </svg>
+    </span>
+
+    <span class="lg-eyebrow">Área restrita</span>
+    <h1>Painel do portfólio</h1>
+    <p class="lg-sub">Entre para gerenciar cases, contatos e a central de e-mail.</p>
+
+    {% if error %}<div class="lg-erro">{{ error }}</div>{% endif %}
+
+    <form method="post" action="/admin/login" class="lg-form">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="next" value="{{ request.query_params.get('next', '') }}">
+
+      <label class="lg-campo">
+        <span>Usuário</span>
+        <input type="text" name="username" required autocomplete="username"
+               autocapitalize="off" spellcheck="false">
+      </label>
+
+      <label class="lg-campo">
+        <span>Senha</span>
+        <span class="lg-senha">
+          <input type="password" name="password" id="lgSenha" required
+                 autocomplete="current-password">
+          <button type="button" class="lg-olho" id="lgOlho" aria-label="Mostrar senha">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+              <path d="M1.8 12S5.5 5.2 12 5.2 22.2 12 22.2 12 18.5 18.8 12 18.8 1.8 12 1.8 12z"/>
+              <circle cx="12" cy="12" r="3.1"/>
+            </svg>
+          </button>
+        </span>
+      </label>
+
+      <button class="lg-entrar" type="submit">
+        <span>Entrar</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M5 12h13M13 6l6 6-6 6"/>
+        </svg>
+      </button>
+    </form>
+
+    <div class="lg-pe">
+      <a href="/" target="_blank" rel="noopener">Ver o site ↗︎</a>
+      <span class="lg-sep">·︎</span>
+      <span>Curitiba/PR</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var campo = document.getElementById("lgSenha");
+  var olho = document.getElementById("lgOlho");
+  if (!campo || !olho) return;
+  olho.addEventListener("click", function () {
+    var mostrando = campo.type === "text";
+    campo.type = mostrando ? "password" : "text";
+    olho.classList.toggle("on", !mostrando);
+    olho.setAttribute("aria-label", mostrando ? "Mostrar senha" : "Ocultar senha");
+    campo.focus();
+  });
+})();
+</script>
+{% endblock %}

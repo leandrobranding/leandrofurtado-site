@@ -1,0 +1,72 @@
+/* ============================================================
+   Caderneta — Escola, diário e boletim. Lora (display + documento) +
+   Nunito Sans (UI), esmeralda #0B7A55 + amarelo-sol #F5A623, ícones
+   Phosphor Bold. Hex e pesos EXATOS das Global Constraints do Plano 2 e
+   da prancha aprovada (.b-caderneta). Só tokens — layout/utilitários vêm
+   de lab-base.css.
+   ============================================================ */
+
+.lab-demo.demo-caderneta {
+  /* --------------------------------------------------------- tipografia --
+     Lora 500/600 + itálico 400 nos títulos, boletim e parecer da IA
+     (o "gesto formal que o setor respeita" — prancha .b-caderneta);
+     Nunito Sans 400/700/800 na UI (grade, botões, chips). */
+  --marca-fonte-display: "Lora", Georgia, "Times New Roman", serif;
+  --marca-fonte-ui: "Nunito Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  /* Boletim/parecer pedagógico: mesma serifa do título, sempre em itálico
+     (ver .lab-demo.demo-caderneta .documento abaixo) — é a "voz formal"
+     que distingue o boletim do resto da UI arredondada. */
+  --marca-fonte-documento: var(--marca-fonte-display);
+
+  /* -------------------------------------------------------------- cores --
+     Esmeralda (#0B7A55, AA 5.3) foge do roxo/azul do setor; amarelo-sol
+     (#F5A623, AA 7.8) é o "marca-texto" da wordmark — a ferramenta de
+     quem corrige. Fundo levemente amarelado ("papel"), não branco puro. */
+  --marca-fundo: #FFFDF9;
+  --marca-superficie: #FFFFFF;
+  --marca-superficie-realce: #F6F2E9;
+  --marca-texto: #241E3D;
+  --marca-texto-suave: #6B6580;
+  --marca-borda: #F0EBDF;
+
+  --marca-primaria: #0B7A55;
+  --marca-primaria-contraste: #FFFFFF;
+  --marca-secundaria: #F5A623;
+  --marca-secundaria-contraste: #241E3D;
+
+  --marca-positivo: #0B7A55;
+  --marca-positivo-fundo: #E3F2EB;
+  --marca-alerta: #8A6414;
+  --marca-alerta-fundo: #FDF3DC;
+  --marca-negativo: #B3261E;
+  --marca-negativo-fundo: #FBE9E4;
+
+  --marca-superficie-ia: #E3F2EB;
+  --marca-borda-ia: #CDE8DB;
+
+  --marca-barra-fundo: #F6F2E9;
+  --marca-faixa-fundo: #241E3D;
+  --marca-faixa-texto: #FFFDF9;
+  --marca-faixa-cta: #F5A623;
+  --marca-faixa-cta-contraste: #241E3D;
+}
+
+/* Situação do aluno (§6.3): 3 chips fixos, mesmas cores em toda a demo —
+   nunca cor aleatória por linha (kit item 8). */
+.lab-demo.demo-caderneta .pill.pill-situacao-aprovado { background: #E3F2EB; color: #0B7A55; }
+.lab-demo.demo-caderneta .pill.pill-situacao-recuperacao { background: #FDF3DC; color: #8A6414; }
+.lab-demo.demo-caderneta .pill.pill-situacao-reprovado { background: #FBE9E4; color: #B3261E; }
+
+/* Boletim e parecer pedagógico: serifa em itálico, o "documento formal"
+   dentro de uma UI que no resto é toda arredondada e sem-serifa. */
+.lab-demo.demo-caderneta .documento {
+  font-family: var(--marca-fonte-documento);
+  font-style: italic;
+  color: #3A3355;
+  line-height: 1.65;
+}
+
+.lab-demo.demo-caderneta .lab-faixa-tagline {
+  font-style: normal;
+  color: #FFFDF9;
+}

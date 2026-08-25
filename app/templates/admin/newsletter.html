@@ -1,0 +1,89 @@
+{% extends "admin/base.html" %}
+{% block title %}Newsletter{% endblock %}
+{% block content %}
+<header class="panel-head">
+  <h1>Newsletter <small>{{ camps | length }} campanha{{ 's' if camps | length != 1 }} ·︎ {{ counts['todos'] }} contato{{ 's' if counts['todos'] != 1 }}</small></h1>
+  <a class="btn primary" href="/admin/newsletter/nova">+ Nova campanha</a>
+</header>
+
+{% if not smtp_ok %}
+<div class="flash err">
+  SMTP não configurado: dá para escrever e salvar campanhas, mas nada sai daqui.
+  <a class="linklike" href="/admin/settings">Configurar agora</a>.
+</div>
+{% endif %}
+
+<div class="nl-audience">
+  {% for key, label in audiences.items() %}
+  <div class="nl-aud">
+    <strong>{{ counts[key] }}</strong>
+    <span>{{ label }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<section class="nl-block">
+  <h2 class="nl-h">Campanhas</h2>
+  {% if camps %}
+  <ul class="camp-list">
+    {% for c in camps %}
+    <li class="camp-card">
+      <a class="camp-main" href="/admin/newsletter/{{ c.id }}">
+        <strong>{{ c.subject or 'Sem assunto' }}</strong>
+        <span>{{ c.preheader or (c.body | truncate(110)) }}</span>
+      </a>
+      <div class="badges">
+        {% if c.status == 'enviado' %}<span class="badge pub">enviado</span>
+        {% else %}<span class="badge draft">rascunho</span>{% endif %}
+        <span class="badge">{{ audiences[c.audience] }}</span>
+        {% if c.sent_count %}<span class="badge ig-ok">{{ c.sent_count }} ✓︎</span>{% endif %}
+        {% if c.fail_count %}<span class="badge danger-badge">{{ c.fail_count }} ✕︎</span>{% endif %}
+      </div>
+      <time class="lead-time">
+        {% if c.sent_at %}{{ c.sent_at | local | strftime_('%d/%m/%Y %H:%M') }}
+        {% else %}{{ c.created_at | local | strftime_('%d/%m/%Y') }}{% endif %}
+      </time>
+      <form method="post" action="/admin/newsletter/{{ c.id }}/excluir" onsubmit="return confirm('Excluir esta campanha?')">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn danger" type="submit">✕︎</button>
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="empty">
+    <p>Nenhuma campanha ainda. Escreva a primeira e mande para a sua base.</p>
+    <a class="btn primary" href="/admin/newsletter/nova">Criar campanha</a>
+  </div>
+  {% endif %}
+</section>
+
+<section class="nl-block">
+  <h2 class="nl-h">Assinantes <small class="dim">{{ subs | length }}</small></h2>
+  {% if subs %}
+  <button class="btn ghost" onclick="copyEmails()">Copiar e-mails</button>
+  <ul class="msg-list" id="subList">
+    {% for sub in subs %}
+    <li class="msg">
+      <div class="msg-head">
+        <a class="mail" href="mailto:{{ sub.email }}">{{ sub.email }}</a>
+        <time>{{ sub.created_at | local | strftime_('%d/%m/%Y %H:%M') }}</time>
+        <form method="post" action="/admin/newsletter/{{ sub.id }}/delete" onsubmit="return confirm('Remover inscrito?')">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button class="btn danger" type="submit">✕︎</button>
+        </form>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  <script>
+  function copyEmails() {
+    const emails = [...document.querySelectorAll('#subList a.mail')].map(a => a.textContent.trim()).join(', ');
+    navigator.clipboard.writeText(emails).then(() => alert('E-mails copiados!'));
+  }
+  </script>
+  {% else %}
+  <div class="empty"><p>Nenhum inscrito ainda. O formulário fica no rodapé do site.</p></div>
+  {% endif %}
+</section>
+{% endblock %}

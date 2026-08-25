@@ -1,0 +1,69 @@
+{% extends "admin/base.html" %}
+{% block title %}Comentários{% endblock %}
+{% block content %}
+{% import "admin/_ico.html" as ico %}
+<header class="panel-head">
+  <h1>Comentários</h1>
+</header>
+
+{% include "admin/_cases_nav.html" %}
+
+<div class="cs-abas" role="tablist">
+  {% for chave, nome in [('pendente','A moderar'), ('aprovado','Publicados'), ('spam','Spam'), ('todos','Todos')] %}
+  <a role="tab" aria-selected="{{ 'true' if status == chave else 'false' }}"
+     href="/admin/cases/comentarios?status={{ chave }}">
+    {{ nome }}{% if contagens.get(chave) %} <b>{{ contagens.get(chave) }}</b>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+{% if comentarios %}
+<ul class="cm-lista">
+  {% for c in comentarios %}
+  <li class="cm-item cm-{{ c.status }}">
+    <div class="cm-topo">
+      <strong>{{ c.name }}</strong>
+      {% if c.email %}<span class="dim mono-label" title="Não aparece no site">{{ c.email }}</span>{% endif %}
+      <time class="dim mono-label">{{ c.created_at | local | strftime_('%d/%m/%Y %H:%M') }}</time>
+      {% if c.case %}
+      <a class="cm-case mono-label" href="/admin/cases/{{ c.case_id }}">{{ c.case.title_pt }}</a>
+      {% endif %}
+    </div>
+
+    <p class="cm-corpo">{{ c.body }}</p>
+
+    <div class="cm-acoes">
+      {% if c.status != 'aprovado' %}
+      <form method="post" action="/admin/cases/comentarios/{{ c.id }}/aprovado">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn sm" type="submit">{{ ico.i('checar') }} Aprovar</button>
+      </form>
+      {% endif %}
+      {% if c.status != 'pendente' %}
+      <form method="post" action="/admin/cases/comentarios/{{ c.id }}/pendente">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn ghost sm" type="submit">{{ ico.i('desarquivar') }} Voltar a pendente</button>
+      </form>
+      {% endif %}
+      {% if c.status != 'spam' %}
+      <form method="post" action="/admin/cases/comentarios/{{ c.id }}/spam">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn ghost sm" type="submit">{{ ico.i('alerta') }} Marcar spam</button>
+      </form>
+      {% endif %}
+      <form method="post" action="/admin/cases/comentarios/{{ c.id }}/excluir"
+            onsubmit="return confirm('Excluir este comentário? Não dá para desfazer.')">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn ghost sm danger" type="submit">{{ ico.i('lixeira') }} Excluir</button>
+      </form>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="hint cs-vazio">
+  {% if status == 'pendente' %}Nada esperando moderação. {% else %}Nenhum comentário aqui. {% endif %}
+  Todo comentário nasce pendente e só aparece no site depois de aprovado.
+</p>
+{% endif %}
+{% endblock %}

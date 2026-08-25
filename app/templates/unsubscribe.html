@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="{{ 'pt-BR' if lang == 'pt' else 'en' }}" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{# `viewport-fit=cover` SAIU daqui (21/08). Era ele que mandava o Safari do
+   iPhone estender a página para debaixo da barra de status e da pílula de
+   endereço, criando a faixa onde o conteúdo aparecia por trás da barra fixa
+   de acessibilidade. Sem ele o Safari entrega a viewport já recortada e a
+   faixa deixa de existir. Os `env(safe-area-inset-*)` do CSS passam a valer
+   0 e continuam inofensivos. Só volte a usar `cover` se algum dia houver um
+   elemento que PRECISE pintar até a borda física da tela. #}
+<title>{{ t('unsub_titulo') if unsub_ok else t('unsub_erro_titulo') }} — {{ site_name }}</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+<link rel="preload" href="/static/fonts/SpaceGrotesk.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/Montserrat.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/css/main.css?v={{ asset_v }}">
+<style>
+/* Página autônoma de propósito. Ela precisa funcionar mesmo com o site em modo
+   construção, porque o link vem de dentro de um e-mail já entregue. Se herdasse o
+   layout do site, mostraria menu e rodapé de um site que ainda não está no ar. */
+.un { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center;
+      padding: clamp(28px, 6vw, 60px) clamp(20px, 5vw, 48px); }
+.un-card { width: 100%; max-width: 460px; text-align: center;
+           display: flex; flex-direction: column; align-items: center;
+           background: var(--bg-2); border: 1px solid var(--line);
+           border-radius: var(--radius); padding: clamp(32px, 6vw, 52px) clamp(24px, 5vw, 44px); }
+
+/* marca com a carinha triste no canto, mesmo padrão do selo de check do cadastro */
+.un-markwrap { position: relative; display: inline-grid; place-items: center; margin-bottom: 22px; }
+.un-mark { width: 44px; height: 44px; color: var(--ink); }
+.un-mark polygon { fill: currentColor; }
+.un-face { position: absolute; right: -13px; bottom: -7px;
+           width: 24px; height: 24px; border-radius: 50%;
+           background: var(--ink); color: var(--bg);
+           display: grid; place-items: center;
+           animation: un-entra .5s var(--ease) .15s backwards; }
+.un-face svg { width: 15px; height: 15px; }
+@keyframes un-entra {
+  0%   { opacity: 0; transform: scale(.4); }
+  60%  { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.un-card h1 { font-family: var(--display); font-weight: 600; text-transform: uppercase;
+              letter-spacing: -.02em; line-height: 1.05;
+              font-size: clamp(22px, 4.4vw, 32px); margin-bottom: 16px; }
+.un-card p { color: var(--muted); font-size: clamp(13.5px, 1.4vw, 15px);
+             line-height: 1.75; max-width: 34ch; }
+.un-card p + p { margin-top: 10px; }
+.un-mail { color: var(--ink); font-weight: 500; word-break: break-word; }
+
+.un-assina { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line);
+             width: 100%; display: flex; flex-direction: column; gap: 4px; }
+.un-assina .abraco { color: var(--muted); font-size: 13.5px; }
+.un-assina .nome { color: var(--ink); font-weight: 600; font-size: 14.5px; }
+.un-assina a { color: var(--muted); font-size: 12px; letter-spacing: .06em;
+               transition: color .25s; }
+.un-assina a:hover { color: var(--ink); }
+
+.un-voltar { margin-top: 24px; display: inline-flex; align-items: center; gap: 9px;
+             border: 1px solid var(--line); border-radius: 999px; padding: 13px 24px;
+             color: var(--ink); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+             transition: background .3s, color .3s, border-color .3s; }
+.un-voltar:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+@media (prefers-reduced-motion: reduce) { .un-face { animation: none; } }
+</style>
+</head>
+<body>
+<main class="un">
+  <div class="un-card">
+
+    <span class="un-markwrap">
+      <svg viewBox="0 0 100 100" class="un-mark" aria-label="Leandro Furtado" role="img">
+        <polygon points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+        <polygon points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+        <polygon points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+      </svg>
+      {% if unsub_ok %}
+      <i class="un-face" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round">
+          <circle cx="12" cy="12" r="9.2"/>
+          <path d="M8.2 15.4a5 5 0 0 1 7.6 0"/>
+          <path d="M9 9.4v.02M15 9.4v.02"/>
+        </svg>
+      </i>
+      {% endif %}
+    </span>
+
+    {% if unsub_ok %}
+    <h1>{{ t('unsub_titulo') }}</h1>
+    <p>{{ t('unsub_texto') }}</p>
+    {% if unsub_email %}
+    <p><span class="un-mail">{{ unsub_email }}</span></p>
+    {% endif %}
+    <p>{{ t('unsub_porta') }}</p>
+
+    <div class="un-assina">
+      <span class="abraco">{{ t('unsub_abraco') }}</span>
+      <span class="nome">Leandro Furtado</span>
+      <a href="{{ lp('/') }}">www.leandrofurtado.com.br</a>
+    </div>
+    {% else %}
+    <h1>{{ t('unsub_erro_titulo') }}</h1>
+    <p>{{ t('unsub_erro_texto') }}</p>
+    <a class="un-voltar" href="{{ lp('/') }}">
+      <i>✳︎</i> {{ 'Voltar ao site' if lang == 'pt' else 'Back to site' }}
+    </a>
+    {% endif %}
+
+  </div>
+</main>
+<script src="/static/js/assinatura.js?v={{ asset_v }}" defer></script>
+</body>
+</html>

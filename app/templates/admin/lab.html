@@ -1,0 +1,106 @@
+{% extends "admin/base.html" %}
+{% block title %}Lab de Demos{% endblock %}
+{% block content %}
+<header class="panel-head"><h1>Lab de Demos</h1></header>
+
+<p class="hint">
+  Fundação do Lab de Demos (Plano 1): gasto de IA, sandboxes ativos e leads captados nas
+  três demos. As telas públicas ainda são do Plano 2 (aguardam o veredito visual do
+  Leandro) — até lá os números abaixo ficam em zero em produção.
+</p>
+
+<div class="stat-grid">
+  <div class="stat-card">
+    <span class="stat-n">{{ gasto.dia_centavos | reais }}</span>
+    <span class="stat-l">Gasto de IA hoje</span>
+    <span class="stat-sub">{{ gasto.dia_tokens }} tokens ·︎ teto do dia {{ teto_dia_centavos | reais }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-n">{{ gasto.mes_centavos | reais }}</span>
+    <span class="stat-l">Gasto de IA no mês</span>
+    <span class="stat-sub">{{ gasto.mes_tokens }} tokens</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-n">{{ sandboxes_ativos }}</span>
+    <span class="stat-l">Sandboxes ativos</span>
+    <span class="stat-sub">teto de 200 (§8 da spec)</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-n">{% if sandboxes_com_ia %}{{ ((sandboxes_no_teto / sandboxes_com_ia) * 100) | round | int }}%{% else %}—{% endif %}</span>
+    <span class="stat-l">Pressão de fallback <small>(aprox.)</small></span>
+    <span class="stat-sub">{{ sandboxes_no_teto }} de {{ sandboxes_com_ia }} sandbox(es) já no teto de {{ max_ia_por_sandbox }} chamadas reais de IA</span>
+  </div>
+</div>
+
+<p class="hint">
+  <small>
+    O guardião de IA (<code>app/lab/ia.py</code>) não grava o motivo de cada fallback
+    individualmente — só o gasto agregado do dia em <code>lab_ia_gasto</code>. O número acima
+    é a melhor aproximação possível com o que já está no banco hoje: proporção de sandboxes
+    que esgotaram as chamadas reais de IA entre os que chegaram a usar IA ao menos uma vez.
+    Uma taxa exata por chamada exigiria um contador novo em <code>ia.py</code>/<code>models.py</code>,
+    fora do escopo desta tarefa.
+  </small>
+</p>
+
+<h2>Leads captados nas demos</h2>
+{% if leads %}
+<ul class="ct-list">
+  {% for lead in leads %}
+  <li class="ct-row ct-row-4">
+    <div class="ct-col ct-quem">
+      <strong>{{ lead.nome }}</strong>
+      <a href="mailto:{{ lead.email }}">{{ lead.email }}</a>
+    </div>
+    <div class="ct-col">
+      <span class="ct-rot">Demo</span>
+      <span>{{ lead.demo }}</span>
+    </div>
+    <div class="ct-col">
+      <span class="ct-rot">Momento</span>
+      <span>{{ lead.momento }}</span>
+    </div>
+    <div class="ct-col">
+      <span class="ct-rot">Captado em</span>
+      <time>{{ lead.criado_em | local | strftime_('%d/%m/%Y %H:%M') if lead.criado_em else '—' }}</time>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="hint">Nenhum lead do Lab ainda.</p>
+{% endif %}
+
+<h2>Configurações do guardião de IA</h2>
+<p class="hint">
+  Chave, modelo e teto usados por toda chamada de IA das três demos (§7 da spec). Sem a
+  chave configurada, o guardião sempre cai no fallback pré-computado — comportamento
+  correto e seguro, só não é IA de verdade.
+</p>
+<form class="form" method="post" action="/admin/lab">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+
+  <div class="grid-2">
+    <label>Modelo (Anthropic)
+      <input name="lab_ia_modelo" value="{{ lab_ia_modelo }}" placeholder="claude-haiku-4-5">
+    </label>
+    <label>Teto de gasto por dia (R$)
+      <input name="lab_ia_teto_dia_reais" type="number" step="0.01" min="0" value="{{ '%.2f'|format(teto_dia_reais) }}">
+    </label>
+  </div>
+
+  <label>Chave da API Anthropic
+    <small>
+      {% if api_key_configurada %}chave configurada ✓︎ (termina em ...{{ api_key_final4 }}) — preencha só para trocar
+      {% else %}nenhuma chave configurada ainda{% endif %}
+    </small>
+    <input name="anthropic_api_key" type="password" autocomplete="off" placeholder="sk-ant-...">
+  </label>
+  <label class="check">
+    <input type="checkbox" name="anthropic_api_key_remover">
+    Remover a chave guardada <small>(o guardião passa a usar sempre o fallback pré-computado até uma nova ser colada)</small>
+  </label>
+
+  <button class="btn primary" type="submit">Salvar</button>
+</form>
+{% endblock %}

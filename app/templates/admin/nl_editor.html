@@ -1,0 +1,158 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ 'Editar newsletter' if camp else 'Nova newsletter' }}{% endblock %}
+{% block content %}
+{% set q = request.query_params %}
+<header class="panel-head">
+  <h1>{{ 'Editar newsletter' if camp else 'Nova newsletter' }}
+    {% if camp and camp.status == 'enviado' %}<small>enviada em {{ camp.sent_at | local | strftime_('%d/%m/%Y %H:%M') if camp.sent_at }}</small>{% endif %}
+  </h1>
+  <div class="head-actions">
+    {% if camp %}<a class="btn ghost" href="/admin/newsletter/preview/{{ camp.id }}" target="_blank" rel="noopener">Abrir em aba ↗︎</a>{% endif %}
+    <button class="btn primary" type="submit" form="formNL">Salvar</button>
+  </div>
+</header>
+
+{% include "admin/_nl_nav.html" %}
+
+{% if q.get('salva') %}<div class="flash ok">Newsletter salva.</div>{% endif %}
+{% if q.get('teste') %}<div class="flash ok">E-mail de teste enviado. Confira a caixa de entrada.</div>{% endif %}
+{% if q.get('erro') %}<div class="flash err">{{ q.get('erro') }}</div>{% endif %}
+
+<form id="formNL" method="post" action="/admin/newsletter/salvar" enctype="multipart/form-data">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  {% if camp %}<input type="hidden" name="id" value="{{ camp.id }}">{% endif %}
+  <input type="hidden" name="blocks" id="blocosJSON" value="{{ blocos_json }}">
+
+  <div class="ed-grid">
+
+    <!-- coluna 1: a paleta de blocos -->
+    <aside class="ed-paleta">
+      <span class="box-h">Blocos</span>
+      <p class="hint">Clique para acrescentar no fim, ou arraste para a posição que quiser.</p>
+      <div class="ed-chips">
+        {% for chave, nome in blocos.items() %}
+        <button type="button" class="ed-chip" data-add="{{ chave }}" draggable="true">
+          <i data-ic="{{ chave }}"></i>{{ nome }}
+        </button>
+        {% endfor %}
+      </div>
+
+      <span class="box-h" style="margin-top:22px">Tema</span>
+      <select name="theme_id" id="temaSel">
+        <option value="">Padrão da casa</option>
+        {% for t in temas %}
+        <option value="{{ t.id }}" {% if camp and camp.theme_id == t.id %}selected{% endif %}>{{ t.name }}</option>
+        {% endfor %}
+      </select>
+      <p class="hint">Muda as cores do e-mail inteiro. <a class="linklike" href="/admin/newsletter/temas">Gerenciar temas</a>.</p>
+    </aside>
+
+    <!-- coluna 2: o e-mail, montado como ele vai sair -->
+    <section class="ed-palco">
+      <div class="ed-palco-topo">
+        <span class="box-h">O e-mail</span>
+        <span class="ed-dica">O que você vê aqui é o que chega na caixa de entrada</span>
+      </div>
+
+      <div class="ed-mail">
+        <div class="ed-mail-head">
+          <img src="/static/img/mail/lf.png" width="34" height="34" alt="">
+          <span class="ed-mail-meta">Newsletter<br><b id="edData"></b></span>
+        </div>
+
+        <div class="ed-mail-corpo">
+          <p class="ed-saud">Olá jovem!</p>
+          <label class="ed-inline-h1">
+            <input type="text" name="subject" id="edSubject" required maxlength="200"
+                   value="{{ camp.subject if camp else '' }}" placeholder="ASSUNTO DO E-MAIL">
+          </label>
+
+          <div id="edBlocos" class="ed-blocos"></div>
+
+          <button type="button" class="ed-add-fim" id="edAddFim">+ acrescentar bloco</button>
+        </div>
+
+        <div class="ed-mail-pe">
+          <span class="ed-rule"></span>
+          <p><b>Leandro Furtado</b> // Engenheiro de IA e Diretor de Arte</p>
+          <div class="ed-soc">
+            <img src="/static/img/mail/linkedin.png" width="18" height="18" alt="">
+            <img src="/static/img/mail/instagram.png" width="18" height="18" alt="">
+            <img src="/static/img/mail/whatsapp.png" width="18" height="18" alt="">
+          </div>
+          <small>Esse é um e-mail automático, não precisa responder.</small>
+        </div>
+      </div>
+    </section>
+
+    <!-- coluna 3: os ajustes -->
+    <aside class="ed-lado">
+      <div class="camp-box">
+        <span class="box-h">Prévia na caixa de entrada</span>
+        <input type="text" name="preheader" maxlength="200"
+               value="{{ camp.preheader if camp else '' }}"
+               placeholder="A linha cinza ao lado do assunto">
+      </div>
+
+      <div class="camp-box">
+        <span class="box-h">Público</span>
+        {% for chave, nome in audiences.items() %}
+        <label class="radio-line">
+          <input type="radio" name="audience" value="{{ chave }}"
+                 {% if (camp and camp.audience == chave) or (not camp and chave == 'todos') %}checked{% endif %}>
+          <span>{{ nome }}</span><b>{{ counts[chave] }}</b>
+        </label>
+        {% endfor %}
+        <p class="hint">Lead só entra com o aceite registrado, como a LGPD exige.</p>
+      </div>
+
+      <div class="camp-box">
+        <span class="box-h">Imagem do topo</span>
+        {% if camp and camp.image %}
+        <img class="camp-thumb" src="/media/{{ camp.image }}" alt="">
+        <label class="check-line"><input type="checkbox" name="remove_image" value="1"> Remover</label>
+        {% endif %}
+        <input type="file" name="image" accept="image/*">
+        <p class="hint">Entra acima do título, na largura toda. Ideal 1200 x 630.</p>
+      </div>
+
+      <div class="camp-box">
+        <span class="box-h">Boas-vindas</span>
+        <label class="check-line">
+          <input type="checkbox" name="is_welcome" {% if camp and camp.is_welcome %}checked{% endif %}>
+          Enviar automaticamente no cadastro
+        </label>
+        <p class="hint">Só uma campanha ocupa esse lugar. O cabeçalho sai como <em>Newsletter / Boas-vindas</em>.</p>
+      </div>
+
+      {% if camp %}
+      <div class="camp-box">
+        <span class="box-h">Teste antes de disparar</span>
+        <p class="hint">Salve primeiro: o teste usa a última versão salva.</p>
+      </div>
+
+      <div class="camp-box danger-box">
+        <span class="box-h">Disparar para {{ counts[camp.audience] }} contato(s)</span>
+        <p class="hint">O envio fica na aba Campanhas, junto com as estatísticas.</p>
+        <a class="btn ghost wide" href="/admin/newsletter/campanhas?ver={{ camp.id }}">Ir para o disparo</a>
+      </div>
+      {% endif %}
+    </aside>
+
+  </div>
+</form>
+
+{% if camp %}
+<form method="post" action="/admin/newsletter/{{ camp.id }}/enviar" class="ed-teste">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label class="box-h" for="testeEmail">Enviar teste para</label>
+  <div class="send-row">
+    <input type="email" id="testeEmail" name="test_email" required placeholder="seu@email.com">
+    <button class="btn ghost" type="submit">Enviar teste</button>
+  </div>
+</form>
+{% endif %}
+
+<script id="blocosIniciais" type="application/json">{{ blocos_iniciais | tojson }}</script>
+<script src="/static/js/nl_editor.js?v={{ asset_v }}" defer></script>
+{% endblock %}

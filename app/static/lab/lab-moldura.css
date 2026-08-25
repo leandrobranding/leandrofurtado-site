@@ -1,0 +1,205 @@
+/* ============================================================
+   Moldura compartilhada do Lab — peças da logo do Lab no cabeçalho +
+   porte do cabeçalho/copyright do site para as 3 demos.
+
+   Reforço do dono, 20/08, verbatim: "Isso serve para o cabeçalho também,
+   só mudando a marca do lab: Minha marca | LAB" / "o mesmo rodapé
+   copyright que tem no site inteiro". O cabeçalho e a faixa de copyright
+   NÃO são recriações: são os MESMOS parciais do site inteiro
+   (app/templates/_cabecalho.html, _copyright.html), usando as MESMAS
+   classes (`.site-header`/`.brand`/`.brand-mark`/`.brand-name`/
+   `.site-nav`/`.nav-link`/`.footer-bottom`/`.mono-label`).
+
+   A vitrine (/lab) já carrega app/static/css/main.css normalmente (herda
+   base.html) — lá essas classes vêm de main.css, este arquivo não as
+   redeclara para a vitrine. As 3 demos (lab/_base_demo.html) NÃO carregam
+   main.css ("Princípio do enxuto" da spec, §3: nada de peso institucional
+   do site dentro das demos) — por isso, e só para elas, este arquivo
+   PORTA os mesmos valores de main.css (nunca reescritos, só copiados) em
+   versão self-contida, fixa na identidade escura do site (sem alternador
+   de tema, que as demos não têm). Os únicos seletores genuinamente NOVOS
+   (sem equivalente no site) são `.brand-lab-badge`/`.brand-lab-ic`/
+   `.brand-lab-word`/`.brand-sep`/`.lab-nav-voltar` — esses sim carregados
+   pelas DUAS telas, para nunca divergir por CSS duplicado em dois lugares.
+   ============================================================ */
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/static/fonts/SpaceGrotesk.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------- logo do Lab (nova, carregada pelas duas telas) ----------
+   Mesmas medidas do badge do Nodal no rodapé do site (main.css,
+   `.foot-nodal-mark`/`.foot-nodal b`/`.foot-nodal { gap: 8px }`): glifo
+   15x15px, wordmark 14px/600, gap 8px — conferido e citado no relatório
+   da rodada de 20/08. */
+.brand-sep { opacity: .35; margin: 0 1px; font-weight: 400; }
+.brand-lab-badge { display: inline-flex; align-items: center; gap: 8px; opacity: .85; }
+.brand-lab-ic { width: 15px; height: 15px; flex-shrink: 0; color: currentColor; }
+.brand-lab-word { font-weight: 600; font-size: 14px; letter-spacing: .02em; }
+/* A saída usa o MESMO pill do cabeçalho do site (`.cta-pill.cta-forte`),
+   com as cores do fundo escuro da moldura: o dono pediu que o botão do
+   cabeçalho seguisse o padrão do site, e não um link solto. */
+.lab-demo .lab-nav-voltar {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin-left: 4px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid #3a3a37;
+  background: transparent;
+  color: #cfcdc8;
+  font-family: "Montserrat", "Helvetica Neue", sans-serif;
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background .25s ease, color .25s ease, border-color .25s ease;
+}
+.lab-demo .lab-nav-voltar:hover {
+  background: #f4f2ed;
+  border-color: #f4f2ed;
+  color: #0d0d0d;
+}
+.lab-nav-x { width: 11px; height: 11px; flex-shrink: 0; }
+.lab-nav-voltar:hover, .lab-nav-voltar.active { opacity: 1; }
+
+/* ============================================================
+   PORTE do cabeçalho/copyright do site — só para as 3 demos, que não
+   carregam main.css. Valores idênticos aos de app/static/css/main.css no
+   tema escuro padrão (--bg:#0d0d0d/--ink:#f4f2ed/--muted:#8d8b86/
+   --line:#242422/--mono:"Montserrat","Helvetica Neue",sans-serif/
+   --pad:clamp(20px,3.4vw,56px)/--ease:cubic-bezier(.62,.05,.01,.99)) —
+   fixos, sem alternador de tema (as demos não têm). `top: 0` no lugar de
+   `top: var(--a11y-h)`: as demos não carregam a barra de acessibilidade
+   (Conserto 2 da spec), então não existe faixa acima para ceder espaço.
+   ============================================================ */
+.lab-demo .site-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9000;
+  display: flex; align-items: center; flex-wrap: wrap; row-gap: 6px;
+  gap: clamp(10px, 1.3vw, 18px);
+  padding: 16px clamp(20px, 3.4vw, 56px);
+  background: #0d0d0d;
+  border-bottom: 1px solid #242422;
+}
+.lab-demo .brand {
+  display: flex; align-items: center; gap: 10px;
+  margin-right: auto;
+  text-decoration: none; color: #f4f2ed;
+  font-family: "Montserrat", "Helvetica Neue", sans-serif;
+}
+.lab-demo .brand-mark { width: 34px; height: 34px; flex-shrink: 0; color: #f4f2ed; }
+.lab-demo .brand-name { font-weight: 560; font-size: 14.5px; }
+.lab-demo .site-nav { display: flex; align-items: center; flex-wrap: wrap; gap: clamp(14px, 2vw, 28px); row-gap: 6px; }
+.lab-demo .nav-link {
+  /* mesma pilha do `--sans`/`--mono` do site (main.css): o cabeçalho da
+     demo tem que ser indistinguível do cabeçalho do site. */
+  font-family: "Montserrat", "Helvetica Neue", sans-serif;
+  font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+  color: #a8a5a0; text-decoration: none; transition: color .25s;
+}
+.lab-demo .nav-link:hover, .lab-demo .nav-link.active { color: #f4f2ed; }
+.lab-demo .nav-link.active::after { content: "•︎"; margin-left: 6px; }
+
+.lab-demo .footer-bottom {
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  padding: 18px clamp(20px, 3.4vw, 56px) 22px;
+  background: #0d0d0d;
+  color: #8d8b86;
+  border-top: 1px solid #242422;
+}
+.lab-demo .mono-label {
+  font-family: "Montserrat", "Helvetica Neue", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #8d8b86;
+}
+
+/* ============================================================
+   MODO APLICATIVO da moldura (até 860px). Regra do dono, e vale para as
+   três demos: no celular a tela tem que parecer um aplicativo, não um site
+   encolhido. Cabeçalho vira barra fina, a faixa de CTA sai do caminho e a
+   conversão passa a viver num botão preso no topo do miolo.
+   ============================================================ */
+.lab-contato-app { display: none; }
+
+@media (max-width: 860px) {
+  /* barra fina de app: uma linha só, sem quebra, com a marca encolhendo
+     antes de qualquer coisa vazar. */
+  .lab-demo .site-header {
+    padding: 9px clamp(12px, 4vw, 24px);
+    gap: 10px;
+    flex-wrap: nowrap;
+    row-gap: 0;
+  }
+  .lab-demo .brand { min-width: 0; flex-shrink: 0; }
+  .lab-demo .brand-name { white-space: nowrap; }
+  .lab-demo .site-nav { flex-wrap: nowrap; min-width: 0; }
+  .lab-demo .brand-mark { width: 26px; height: 26px; }
+  .lab-demo .brand-name { font-size: 13px; }
+  /* as outras demos continuam a um toque pela vitrine: no celular só a
+     saída fica no cabeçalho, para a barra caber em uma linha. */
+  .lab-demo .site-nav .nav-link:not(.lab-nav-voltar) { display: none; }
+  .lab-demo .lab-nav-voltar { margin-left: 0; padding-left: 12px; font-size: 10px; }
+  .lab-demo .lab-conteudo { padding-top: calc(45px + 1vh); }
+  .lab-demo .lab-conteudo-corpo { padding: 8px 0 0; }
+  .lab-demo .lab-faixa { display: none; }
+
+  .lab-demo .lab-contato-app {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: absolute;
+    top: calc(45px + 1vh + 6px);
+    right: clamp(12px, 4vw, 24px);
+    z-index: 30;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--marca-borda, #eceae6);
+    background: var(--marca-superficie, #fff);
+    color: var(--marca-texto, #1a1a1a);
+    font-size: .68rem;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(20, 16, 40, .07);
+  }
+  .lab-demo .lab-contato-app svg { width: 13px; height: 13px; }
+
+  .lab-demo .footer-bottom { padding: 10px 12px 12px; }
+  .lab-demo .footer-bottom .mono-label { font-size: 8.5px; line-height: 1.5; }
+}
+
+/* Telefone estreito: os dois botões de texto do topo viram só ícone, para
+   a barra continuar em uma linha e o nome do dono nunca aparecer cortado.
+   O texto continua no HTML, então o leitor de tela segue anunciando. */
+@media (max-width: 460px) {
+  .lab-demo .lab-nav-voltar {
+    font-size: 0;
+    gap: 0;
+    padding-left: 11px;
+  }
+  .lab-demo .lab-nav-x { width: 13px; height: 13px; }
+  .lab-demo .lab-contato-app {
+    font-size: 0;
+    gap: 0;
+    padding: 10px;
+  }
+  .lab-demo .lab-contato-app svg { width: 15px; height: 15px; }
+  .lab-demo .footer-bottom { padding: 8px 10px 10px; }
+  .lab-demo .footer-bottom .mono-label { font-size: 7.5px; letter-spacing: .06em; }
+}
+
+/* demo que ainda não abriu: o cabeçalho mostra o nome, não um caminho */
+.lab-demo .nav-link-breve { opacity: .38; cursor: default; display: inline-flex; align-items: center; gap: 6px; }
+.lab-demo .nav-link-breve i {
+  font-style: normal;
+  font-size: 8.5px;
+  letter-spacing: .08em;
+  padding: 2px 6px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+}

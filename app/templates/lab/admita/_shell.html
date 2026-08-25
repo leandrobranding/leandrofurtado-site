@@ -1,0 +1,244 @@
+{# ============================================================
+   Fragmento trocado por TODA rota de mutação do Admita (mover, aprovar
+   RH/gestor, alternar documento, nova candidatura) — devolvido cru por
+   essas rotas (`app/lab/rotas.py::_renderizar_shell_admita`) e também
+   incluído aqui dentro da tela cheia no primeiro carregamento (mesmo
+   contexto dos dois lados, ver `app/lab/admita.py::montar_contexto`).
+
+   ZERO ROLAGEM (§13b): sidebar recolhida (~60px, expande em overlay no
+   hover/foco, nunca empurra o quadro), quadro kanban com no máximo 3
+   cards visíveis por coluna (paginação client-side em admita.js, nunca
+   `.rola-interno` — proibida nas demos por decisão do dono desta rodada),
+   trilha de auditoria como painel-overlay (nunca 3ª coluna fixa disputando
+   espaço), no mobile uma etapa por vez (`data-etapa-ativa`).
+   ============================================================ #}
+<div class="admita-shell" id="admita-shell">
+  <aside class="admita-sidebar" id="admita-sidebar" aria-label="Estado da esteira em tempo real">
+    <nav class="admita-sidebar-nav">
+    {# Marca do sistema no topo da coluna, como em qualquer SaaS: recolhida
+       mostra só o símbolo, expandida revela a palavra com a MESMA transição
+       dos rótulos, então o logotipo se completa junto com a barra. #}
+    <div class="admita-sidebar-marca">
+      {% with id='sb', simbolo=True, classe='admita-marca-simbolo' %}
+        {% include 'lab/admita/_marca.html' %}
+      {% endwith %}
+      {% with id='sbp', palavra=True, tom='escuro', classe='admita-marca-palavra' %}
+        {% include 'lab/admita/_marca.html' %}
+      {% endwith %}
+      <span class="admita-selo-beta admita-selo-menu">v. beta</span>
+    </div>
+      <button type="button" class="admita-sidebar-item admita-sidebar-item-alerta" data-abrir-auditoria>
+        <span class="admita-sidebar-ic-wrap">
+          <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-alerta"/></svg>
+          {% if sidebar.prazos_estourando > 0 %}<span class="admita-badge admita-badge-coral">{{ sidebar.prazos_estourando }}</span>{% endif %}
+        </span>
+        <span class="admita-sidebar-rotulo">
+          <strong>Prazos estourando</strong>
+          <em>{{ sidebar.prazos_estourando }} candidato{{ 's' if sidebar.prazos_estourando != 1 else '' }} atrasado{{ 's' if sidebar.prazos_estourando != 1 else '' }}</em>
+        </span>
+      </button>
+      <div class="admita-sidebar-item admita-sidebar-item-estatico">
+        <span class="admita-sidebar-ic-wrap">
+          <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-documentos"/></svg>
+          {% if sidebar.documentos_pendentes > 0 %}<span class="admita-badge">{{ sidebar.documentos_pendentes }}</span>{% endif %}
+        </span>
+        <span class="admita-sidebar-rotulo">
+          <strong>Documentos pendentes</strong>
+          <em>{{ sidebar.documentos_pendentes }} it{{ 'em' if sidebar.documentos_pendentes == 1 else 'ens' }} para conferir</em>
+        </span>
+      </div>
+      <div class="admita-sidebar-item admita-sidebar-item-estatico">
+        <span class="admita-sidebar-ic-wrap">
+          <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-aprovados"/></svg>
+          {% if sidebar.prontos_folha > 0 %}<span class="admita-badge">{{ sidebar.prontos_folha }}</span>{% endif %}
+        </span>
+        <span class="admita-sidebar-rotulo">
+          <strong>Prontos para folha</strong>
+          <em>{{ sidebar.prontos_folha }} sem pendência</em>
+        </span>
+      </div>
+      <span class="admita-sidebar-divisor" aria-hidden="true"></span>
+      {# Ferramentas do sistema, separadas do estado da esteira: a agenda é
+         de verdade (marca e desmarca no banco); as configurações são uma
+         tela fictícia de demonstração, e a própria tela diz isso. #}
+      <button type="button" class="admita-sidebar-item" data-abrir-agenda>
+        <span class="admita-sidebar-ic-wrap">
+          <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-calendario"/></svg>
+          {% if entrevistas_marcadas > 0 %}<span class="admita-badge">{{ entrevistas_marcadas }}</span>{% endif %}
+        </span>
+        <span class="admita-sidebar-rotulo">
+          <strong>Agenda de entrevistas</strong>
+          <em>{{ entrevistas_marcadas }} marcada{{ 's' if entrevistas_marcadas != 1 else '' }}</em>
+        </span>
+      </button>
+      <button type="button" class="admita-sidebar-item admita-sidebar-item-config" data-abrir-config>
+        <span class="admita-sidebar-ic-wrap">
+          <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-config"/></svg>
+        </span>
+        <span class="admita-sidebar-rotulo">
+          <strong>Configurações</strong>
+          <em>prazos, documentos e alertas</em>
+        </span>
+      </button>
+    </nav>
+  </aside>
+
+  <div class="admita-main">
+    <header class="admita-toolbar">
+      <div class="admita-toolbar-titulo">
+        {# A saudação é corrigida pelo relógio de QUEM ABRE (admita.js): o
+           servidor roda em UTC e cumprimentaria a pessoa errada. O texto
+           daqui é o fallback para quem estiver sem JavaScript. #}
+        <h1>
+          <span class="admita-saudacao"><span data-saudacao>Bom dia</span>, time de RH.</span>
+          <span class="admita-titulo-barra" aria-hidden="true">|</span>
+          <span class="admita-titulo-tela">Esteira de admissão</span>
+          {# quem está com a sessão aberta nesta demonstração #}
+          <span class="admita-usuario" title="{{ usuario_rh_perfil }}">
+            <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-usuario"/></svg>
+            {{ usuario_rh }}
+            {# mesmo gesto do botão Sair das configurações, aqui como ícone:
+               sair fica ao lado de quem está logado, que é onde a pessoa
+               procura por ele em qualquer sistema. #}
+            <a class="admita-usuario-sair" href="/lab" aria-label="Sair do Admita">
+              <svg class="icone" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M6.5 2.5h-3v11h3M10 11l3-3-3-3M13 8H6.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </a>
+          </span>
+        </h1>
+        <p>
+          {{ empresa_rh }} <span class="admita-nota">{{ empresa_rh_nota }}</span>
+          <b class="admita-numero">{{ total_ativos }}</b>
+          candidato{{ 's' if total_ativos != 1 else '' }} em andamento<span
+            class="admita-reticencias" aria-hidden="true"><i></i><i></i><i></i></span>
+        </p>
+      </div>
+      <div class="admita-toolbar-acoes">
+        <button type="button" class="botao botao-secundario" data-abrir-auditoria>
+          <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-auditoria"/></svg>
+          Trilha de auditoria
+        </button>
+        <button type="button" class="botao botao-primario" data-abrir-modal-novo
+                {{ 'disabled' if registros_usados >= max_registros else '' }}>
+          <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-vaga"/></svg>
+          Nova candidatura
+        </button>
+      </div>
+    </header>
+
+    {# Navegação de etapas do modo aplicativo: fichas em fila, uma por etapa,
+       com a contagem junto. Rola no dedo sem barra visível, como a barra de
+       abas de qualquer app. O nome escondido continua existindo para leitor
+       de tela saber em que etapa a lista está. #}
+    <nav class="admita-etapas-mobile" aria-label="Etapas da esteira">
+      <span class="admita-etapa-mobile-nome" id="admita-etapa-mobile-nome">{{ etapa_label[etapas[0]] }}</span>
+      {% for etapa in etapas %}
+      <button type="button" class="admita-ficha-etapa" data-etapa-mobile-alvo="{{ etapa }}">
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#{{ etapa_icone[etapa] }}"/></svg>
+        <span>{{ etapa_label[etapa] }}</span>
+        {% if contagens[etapa] > 0 %}<i>{{ contagens[etapa] }}</i>{% endif %}
+      </button>
+      {% endfor %}
+    </nav>
+
+    <div class="admita-board" id="admita-board" data-etapa-ativa="{{ etapas[0] }}">
+      {% for etapa in etapas %}
+      <section class="admita-coluna" data-etapa="{{ etapa }}" aria-label="{{ etapa_label[etapa] }}">
+        <header class="admita-coluna-cabecalho">
+          <span class="icone-caixa pequena">
+            <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#{{ etapa_icone[etapa] }}"/></svg>
+          </span>
+          <h2>{{ etapa_label[etapa] }}</h2>
+          <span class="pill pill-neutra admita-coluna-contador">{{ contagens[etapa] }}</span>
+        </header>
+        <div class="admita-coluna-corpo" data-pagina="1">
+          {% for candidato in candidatos[etapa] %}
+            {% include "lab/admita/_card_candidato.html" %}
+          {% else %}
+          <p class="admita-coluna-vazia">Nenhum candidato aqui.</p>
+          {% endfor %}
+        </div>
+        {% if contagens[etapa] > 3 %}
+        <button type="button" class="admita-mostrar-mais" data-mostrar-mais type="button">
+          <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-seta-baixo"/></svg>
+          <span data-mostrar-mais-texto>mais {{ contagens[etapa] - 3 }} nesta etapa</span>
+        </button>
+        {% endif %}
+      </section>
+      {% endfor %}
+    </div>
+  </div>
+
+  <aside class="admita-auditoria" id="admita-auditoria" aria-label="Trilha de auditoria" hidden>
+    {% include "lab/admita/_auditoria.html" %}
+  </aside>
+
+  <div class="admita-checklists" id="admita-checklists">
+    {% for etapa in etapas %}
+      {% for candidato in candidatos[etapa] %}
+        {% if candidato.checklist_total > 0 %}
+          {% include "lab/admita/_checklist.html" %}
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+  </div>
+
+  {# ---------------------------------------------------------- modo app --
+     Barra de abas no rodapé e botão flutuante: as duas peças que fazem uma
+     tela parecer aplicativo de verdade no celular. No desktop somem, e a
+     mesma função continua no menu lateral e na barra de ações. #}
+  <button type="button" class="admita-fab" data-novo-candidato aria-label="Nova candidatura">
+    <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-usuario"/></svg>
+    <span>Nova candidatura</span>
+  </button>
+
+  <nav class="admita-tabbar" aria-label="Seções do Admita">
+    <button type="button" class="admita-tab ativa" data-tab="esteira">
+      <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-kanban"/></svg>
+      <span>Esteira</span>
+    </button>
+    <button type="button" class="admita-tab" data-tab="agenda">
+      <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-calendario"/></svg>
+      <span>Agenda</span>
+      {% if entrevistas_marcadas > 0 %}<i class="admita-tab-selo">{{ entrevistas_marcadas }}</i>{% endif %}
+    </button>
+    <button type="button" class="admita-tab" data-tab="trilha">
+      <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-auditoria"/></svg>
+      <span>Trilha</span>
+    </button>
+    <button type="button" class="admita-tab" data-tab="ajustes">
+      <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-config"/></svg>
+      <span>Ajustes</span>
+    </button>
+  </nav>
+
+  {# Fonte única dos cargos: o servidor manda a lista atual dentro do
+     fragmento, e admita.js reconstrói com ela o dropdown do modal e a
+     lista das configurações. Assim não existem duas cópias da verdade. #}
+  <div class="admita-cargos-fonte" hidden aria-hidden="true">
+    {% for cargo in cargos %}
+    <span data-cargo-id="{{ cargo.id }}" data-cargo-origem="{{ cargo.origem }}">{{ cargo.nome }}</span>
+    {% endfor %}
+  </div>
+
+  {% include "lab/admita/_agenda.html" %}
+
+  {# Assinatura da marca no canto inferior esquerdo da tela do sistema:
+     caixa transparente, discreta, sem disputar atenção com o quadro.
+     `aria-hidden` porque a marca já é anunciada no topo da sidebar, e
+     repetir o nome do sistema no leitor de tela só atrapalha. #}
+  <div class="admita-assinatura" aria-hidden="true">
+    {% with id='as', tom='escuro', classe='admita-assinatura-marca' %}
+      {% include 'lab/admita/_marca.html' %}
+    {% endwith %}
+    <span class="admita-assinatura-barra"></span>
+    <span class="admita-selo-beta">v. beta</span>
+    <span class="admita-assinatura-barra"></span>
+    <span class="admita-assinatura-slogan">do currículo ao crachá</span>
+    <span class="admita-assinatura-barra"></span>
+    {# relógio do sistema DE QUEM ABRE: o servidor roda em UTC e mostraria a
+       hora de outro fuso. Preenchido e mantido por admita.js. #}
+    <span class="admita-relogio" data-relogio>&#xA0;</span>
+  </div>
+</div>

@@ -1,0 +1,140 @@
+{% extends "admin/base.html" %}
+{% block title %}Segurança{% endblock %}
+{% block content %}
+{% set q = request.query_params %}
+<header class="panel-head">
+  <h1>Segurança <small>verificação em duas etapas</small></h1>
+</header>
+
+{% if q.get('ativado') %}<div class="flash ok">Verificação em duas etapas ativada.</div>
+{% elif q.get('codigos') %}<div class="flash ok">Códigos de recuperação renovados. Os antigos não valem mais.</div>
+{% elif q.get('desligado') %}<div class="flash ok">Verificação em duas etapas desligada.</div>{% endif %}
+{% if q.get('erro') == 'codigo' %}<div class="flash err">Código incorreto. Confira o aplicativo e tente de novo.</div>
+{% elif q.get('erro') == 'senha' %}<div class="flash err">Senha incorreta.</div>{% endif %}
+
+<div class="seg-estado {{ 'ok' if u.totp_ativo else 'aviso' }}">
+  <span class="nl-dot"></span>
+  <div>
+    {% if u.totp_ativo %}
+    <strong>Ativa.</strong>
+    <span>
+      Entrar no painel exige a senha e um código do aplicativo. Mesmo que alguém
+      descubra sua senha, não entra sem o seu celular.
+      {% if u.totp_desde %} Ligada em {{ u.totp_desde | local | strftime_('%d/%m/%Y') }}.{% endif %}
+    </span>
+    {% else %}
+    <strong>Desligada.</strong>
+    <span>
+      Hoje sua senha é a única coisa entre um desconhecido e o painel. Com a verificação
+      ligada, saber a senha deixa de ser suficiente.
+    </span>
+    {% endif %}
+  </div>
+</div>
+
+{% if novos_codigos %}
+<section class="form seg-codigos">
+  <h2>Guarde estes códigos agora</h2>
+  <p class="hint">
+    Eles servem para entrar se você perder o celular. <strong>Esta é a única vez que
+    aparecem</strong>: no banco só ficam os hashes, então nem eu consigo recuperá-los
+    depois. Cada um funciona uma vez só. Imprima ou guarde no gerenciador de senhas.
+  </p>
+  <ul class="seg-lista">
+    {% for c in novos_codigos %}<li>{{ c }}</li>{% endfor %}
+  </ul>
+  <div class="form-actions">
+    <button class="btn ghost" type="button" onclick="copiarCodigos(this)">Copiar todos</button>
+  </div>
+</section>
+{% endif %}
+
+{% if not u.totp_ativo %}
+<section class="form" id="configurar">
+  <h2>Ativar em três passos</h2>
+
+  {% if not u.totp_secret %}
+  <p class="hint">
+    Você vai precisar de um aplicativo autenticador no celular. O Google Authenticator
+    serve, e o Authy e o 1Password também: todos falam o mesmo padrão.
+  </p>
+  <form method="post" action="/admin/seguranca/preparar">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="form-actions"><button class="btn primary" type="submit">Começar</button></div>
+  </form>
+
+  {% else %}
+  <ol class="seg-passos">
+    <li>
+      <strong>Abra o aplicativo</strong> e escolha adicionar uma conta por QR Code.
+    </li>
+    <li>
+      <strong>Aponte para este código:</strong>
+      <div class="seg-qr">
+        <img src="/admin/seguranca/qr.png" width="230" height="230"
+             alt="QR Code da verificação em duas etapas">
+      </div>
+      <details class="seg-manual">
+        <summary>Não consegue escanear?</summary>
+        <p class="hint">Digite esta chave no aplicativo, escolhendo a entrada manual:</p>
+        <code class="seg-chave">{{ u.totp_secret }}</code>
+      </details>
+    </li>
+    <li>
+      <strong>Digite o código que apareceu</strong>, para eu confirmar que deu certo.
+      Só depois disso a verificação passa a valer, senão você se trancaria do lado de fora
+      com um QR que nunca foi lido.
+      <form method="post" action="/admin/seguranca/ativar" class="send-row seg-confirma">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="text" name="codigo" required inputmode="numeric" maxlength="6"
+               placeholder="000000" autocomplete="one-time-code" class="lg-otp">
+        <button class="btn primary" type="submit">Ativar</button>
+      </form>
+    </li>
+  </ol>
+  {% endif %}
+</section>
+
+{% else %}
+<section class="form">
+  <h2>Códigos de recuperação</h2>
+  <p class="hint">
+    Restam <strong>{{ restantes }}</strong> código(s) sem uso. Se estiver acabando, ou se
+    você desconfia que alguém viu a sua lista, gere outra: a lista antiga deixa de valer
+    na hora.
+  </p>
+  <form method="post" action="/admin/seguranca/novos-codigos" class="send-row">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="password" name="senha" required placeholder="Confirme sua senha"
+           autocomplete="current-password">
+    <button class="btn ghost" type="submit">Gerar novos códigos</button>
+  </form>
+</section>
+
+<section class="form danger-box">
+  <h2>Desligar a verificação</h2>
+  <p class="hint">
+    Voltar a depender só da senha. Exige a senha aqui de propósito: se alguém pegar sua
+    sessão aberta, não consegue desarmar a proteção sem ela.
+  </p>
+  <form method="post" action="/admin/seguranca/desligar" class="send-row"
+        onsubmit="return confirm('Desligar a verificação em duas etapas?')">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="password" name="senha" required placeholder="Confirme sua senha"
+           autocomplete="current-password">
+    <button class="btn danger" type="submit">Desligar</button>
+  </form>
+</section>
+{% endif %}
+
+<script>
+function copiarCodigos(botao) {
+  var itens = [].map.call(document.querySelectorAll(".seg-lista li"),
+                          function (li) { return li.textContent.trim(); });
+  navigator.clipboard.writeText(itens.join("\n")).then(function () {
+    botao.textContent = "Copiado!";
+    setTimeout(function () { botao.textContent = "Copiar todos"; }, 2000);
+  });
+}
+</script>
+{% endblock %}

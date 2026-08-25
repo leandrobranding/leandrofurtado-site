@@ -1,0 +1,131 @@
+{% extends "admin/base.html" %}
+{% block title %}Campanhas{% endblock %}
+{% block content %}
+{% set q = request.query_params %}
+<header class="panel-head">
+  <h1>Campanhas <small>{{ camps | length }} no total</small></h1>
+  <a class="btn primary" href="/admin/newsletter/nova">+ Nova newsletter</a>
+</header>
+
+{% include "admin/_nl_nav.html" %}
+
+{% if q.get('enviado') %}<div class="flash ok">Disparada para {{ q.get('enviado') }} contato(s).</div>{% endif %}
+
+{% if not camps %}
+<div class="empty">
+  <p>Nenhuma campanha ainda.</p>
+  <a class="btn primary" href="/admin/newsletter/nova">Criar a primeira</a>
+</div>
+{% else %}
+
+<form class="camp-sel" method="get" action="/admin/newsletter/campanhas">
+  <label class="fld">
+    <span>Campanha em análise</span>
+    <select name="ver" onchange="this.form.submit()">
+      {% for c in camps %}
+      <option value="{{ c.id }}" {% if atual and atual.id == c.id %}selected{% endif %}>
+        {{ c.subject or 'Sem assunto' }}
+        ·︎ {% if c.sent_at %}enviada {{ c.sent_at.strftime('%d/%m/%Y') }}{% elif c.is_welcome %}ativa{% else %}rascunho{% endif %}
+        {% if c.is_welcome %} ·︎ boas-vindas{% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  </label>
+</form>
+
+{% if atual %}
+<div class="camp-topo">
+  <div>
+    <h2 class="nl-h">{{ atual.subject or 'Sem assunto' }}</h2>
+    <p class="hint">
+      {% if atual.status == 'enviado' %}Enviada em {{ atual.sent_at | local | strftime_('%d/%m/%Y às %H:%M') if atual.sent_at }}
+      {% elif atual.is_welcome %}Ativa — dispara sozinha a cada nova assinatura, nunca passou pelo "Enviar agora"
+      {% else %}Ainda é rascunho{% endif %}
+      ·︎ público: {{ audiences[atual.audience] }}
+      {% if atual.is_welcome %} ·︎ <strong>boas-vindas automáticas</strong>{% endif %}
+    </p>
+  </div>
+  <div class="head-actions">
+    <a class="btn ghost" href="/admin/newsletter/editar/{{ atual.id }}">Editar</a>
+    <a class="btn ghost" href="/admin/newsletter/preview/{{ atual.id }}" target="_blank" rel="noopener">Ver e-mail ↗︎</a>
+    <form method="post" action="/admin/newsletter/{{ atual.id }}/duplicar">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn ghost" type="submit">Duplicar</button>
+    </form>
+  </div>
+</div>
+
+<div class="stat-grid nl-stats">
+  <div class="stat-card"><span class="stat-n">{{ d.stats.enviados }}</span><span class="stat-l">Entregues</span></div>
+  <div class="stat-card"><span class="stat-n">{{ d.stats.pct_abriu }}%</span><span class="stat-l">Taxa de abertura</span><span class="stat-sub">{{ d.stats.abriu }} pessoa(s)</span></div>
+  <div class="stat-card"><span class="stat-n">{{ d.stats.pct_clicou }}%</span><span class="stat-l">Taxa de clique</span><span class="stat-sub">{{ d.stats.clicou }} pessoa(s)</span></div>
+  <div class="stat-card"><span class="stat-n">{{ d.stats.falhou }}</span><span class="stat-l">Falhas</span>{% if d.stats.falhou %}<span class="stat-sub hot">{{ d.stats.pct_falhou }}%</span>{% endif %}</div>
+</div>
+
+<p class="hint nl-aviso">
+  <strong>Como ler estes números.</strong> A abertura é medida por uma imagem invisível no fim do
+  e-mail. Gmail guarda essa imagem em cache e o Apple Mail carrega sozinho, sem a pessoa abrir,
+  então a taxa serve para comparar campanhas entre si, não como contagem exata de leitores.
+  O clique é confiável: o link passa por um redirecionamento antes de chegar ao destino.
+</p>
+
+{% if d.cliques %}
+<section class="nl-block">
+  <h2 class="nl-h">Links mais clicados</h2>
+  <ul class="camp-list">
+    {% for url, n in d.cliques %}
+    <li class="camp-card">
+      <span class="camp-main"><span>{{ url }}</span></span>
+      <span class="badge">{{ n }} clique{{ 's' if n != 1 }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if d.linha_do_tempo %}
+<section class="nl-block">
+  <h2 class="nl-h">Últimos acontecimentos</h2>
+  <ul class="ev-list">
+    {% for e in d.linha_do_tempo %}
+    <li class="ev">
+      <span class="ev-kind ev-{{ e.kind }}">{{ e.kind }}</span>
+      <span class="ev-mail">{{ e.email }}</span>
+      <time>{{ e.at | local | strftime_('%d/%m %H:%M') }}</time>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section class="camp-send">
+  <div class="camp-box">
+    <span class="box-h">Teste</span>
+    <form method="post" action="/admin/newsletter/{{ atual.id }}/enviar" class="send-row">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="email" name="test_email" required placeholder="seu@email.com">
+      <button class="btn ghost" type="submit">Enviar teste</button>
+    </form>
+  </div>
+  <div class="camp-box danger-box">
+    <span class="box-h">Disparo real</span>
+    <p class="hint">Vai para todo mundo do público escolhido. Não dá para desfazer.</p>
+    <form method="post" action="/admin/newsletter/{{ atual.id }}/enviar"
+          onsubmit="return confirm('Disparar esta campanha agora? Não dá para desfazer.')">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn primary wide" type="submit">Enviar agora</button>
+    </form>
+    {% if atual.error %}<p class="hint err-text">{{ atual.error }}</p>{% endif %}
+  </div>
+</section>
+
+<div class="camp-danger">
+  <form method="post" action="/admin/newsletter/{{ atual.id }}/excluir"
+        onsubmit="return confirm('Excluir esta campanha e as estatísticas dela?')">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button class="btn danger" type="submit">Excluir campanha</button>
+  </form>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

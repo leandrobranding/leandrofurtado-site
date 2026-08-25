@@ -1,0 +1,296 @@
+{# ============================================================
+   Painel de configurações do Admita. Tela FICTÍCIA de demonstração: os
+   controles reagem para a tela parecer viva, e o rodapé do painel diz com
+   todas as letras que nada é gravado. Fingir que salvou seria mentir para
+   quem está avaliando o sistema.
+
+   Seis abas, a última (Acessos) com cor própria por ser gestão de gente e
+   não de regra. Vive FORA de `#admita-app` porque é estático e não entra
+   na troca de fragmento; o clique nele é ouvido no documento (admita.js).
+   ============================================================ #}
+<div class="admita-modal-fundo" id="admita-modal-config" hidden>
+  <section class="admita-modal admita-config" aria-labelledby="admita-config-titulo">
+    <header class="admita-agenda-topo">
+      <div>
+        <h2 id="admita-config-titulo">Configurações do Admita</h2>
+        <p class="admita-modal-sub">
+          Seis grupos de regras. Escolha a aba do que você quer ajustar.
+        </p>
+      </div>
+      <a class="admita-sair" href="/lab" aria-label="Sair do Admita">
+        <svg class="icone" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M6.5 2.5h-3v11h3M10 11l3-3-3-3M13 8H6.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Sair
+      </a>
+      <button type="button" class="admita-agenda-x" data-fechar-config aria-label="Fechar as configurações">
+        <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5 12.5 12.5M12.5 3.5 3.5 12.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+
+    <div class="admita-abas" role="tablist" aria-label="Grupos de configuração">
+      <button type="button" class="admita-aba ativa" role="tab" aria-selected="true" data-aba="prazos">
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-prazo"/></svg>Prazos
+      </button>
+      <button type="button" class="admita-aba" role="tab" aria-selected="false" data-aba="documentos">
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-documentos"/></svg>Documentos
+      </button>
+      <button type="button" class="admita-aba" role="tab" aria-selected="false" data-aba="aprovacoes">
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-aprovacao"/></svg>Aprovações
+      </button>
+      <button type="button" class="admita-aba" role="tab" aria-selected="false" data-aba="avisos">
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-email"/></svg>Avisos
+      </button>
+      <button type="button" class="admita-aba" role="tab" aria-selected="false" data-aba="auditoria">
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-auditoria"/></svg>Auditoria
+      </button>
+      <button type="button" class="admita-aba" role="tab" aria-selected="false" data-aba="cargos">
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-vaga"/></svg>Cargos
+      </button>
+      <button type="button" class="admita-aba admita-aba-acessos" role="tab" aria-selected="false" data-aba="acessos">
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-usuarios"/></svg>Acessos
+      </button>
+    </div>
+
+    <div class="admita-config-corpo">
+      {# ---------------------------------------------------------- prazos #}
+      <div class="admita-painel ativo" data-painel="prazos" role="tabpanel">
+        {% set prazos = [
+          ('i-prazo', 'Prazo padrão por etapa', 'Quanto tempo cada etapa tem antes de virar atraso.', ['24 horas', '48 horas', '120 horas'], 1),
+          ('i-documento', 'Prazo da etapa Documentos', 'A etapa que mais trava, então costuma ter folga própria.', ['48 horas', '72 horas', '120 horas'], 2),
+          ('i-aprovacao', 'Prazo da aprovação do gestor', 'Depois do aval do RH, quanto o gestor tem para responder.', ['12 horas', '24 horas', '48 horas'], 1),
+          ('i-calendario', 'Avisar quando faltar', 'Antecedência do aviso de prazo perto de vencer.', ['2 horas', '6 horas', '1 dia'], 2),
+        ] %}
+        {% for ic, titulo, sub, opcoes, marcada in prazos %}
+        <div class="admita-config-linha">
+          <span class="admita-config-ic"><svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#{{ ic }}"/></svg></span>
+          <span class="admita-config-txt"><strong>{{ titulo }}</strong><em>{{ sub }}</em></span>
+          <select class="admita-config-campo">
+            {% for opcao in opcoes %}<option{{ ' selected' if loop.index0 == marcada else '' }}>{{ opcao }}</option>{% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+        {% for ic, titulo, sub, ligada in [
+          ('i-calendario', 'Contar prazo em dias úteis', 'Fim de semana e feriado não consomem prazo.', True),
+          ('i-relogio', 'Congelar prazo aguardando o candidato', 'O relógio para enquanto a bola está com ele.', False),
+        ] %}
+        <label class="admita-config-linha">
+          <span class="admita-config-ic"><svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#{{ ic }}"/></svg></span>
+          <span class="admita-config-txt"><strong>{{ titulo }}</strong><em>{{ sub }}</em></span>
+          <span class="admita-chave" data-chave="{{ 'on' if ligada else 'off' }}" role="switch" aria-checked="{{ 'true' if ligada else 'false' }}" tabindex="0"></span>
+        </label>
+        {% endfor %}
+      </div>
+
+      {# ------------------------------------------------------ documentos #}
+      <div class="admita-painel" data-painel="documentos" role="tabpanel" hidden>
+        <label class="admita-config-linha">
+          <span class="admita-config-ic"><svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-documentos"/></svg></span>
+          <span class="admita-config-txt"><strong>Documentos obrigatórios</strong><em>Bloqueia o avanço enquanto faltar item conferido.</em></span>
+          <span class="admita-chave" data-chave="on" role="switch" aria-checked="true" tabindex="0"></span>
+        </label>
+        <div class="admita-config-linha admita-config-linha-larga">
+          <span class="admita-config-ic"><svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-contrato"/></svg></span>
+          <span class="admita-config-txt">
+            <strong>Documentos exigidos na admissão</strong>
+            <em>O checklist que aparece no card de cada candidato.</em>
+            <span class="admita-fichas">
+              {% for doc in ['RG ou CNH', 'Comprovante de residência', 'Certificado de escolaridade', 'Carteira de trabalho digital', 'Dados bancários'] %}
+              <span class="admita-ficha">{{ doc }}</span>
+              {% endfor %}
+            </span>
+          </span>
+        </div>
+        {% for ic, titulo, sub, opcoes, marcada in [
+          ('i-calendario', 'Validade do comprovante de residência', 'Comprovante mais antigo que isso volta para o candidato.', ['60 dias', '90 dias', '180 dias'], 1),
+          ('i-checagem', 'Conferência dos documentos', 'Quem precisa dar o aval em cada item do checklist.', ['Uma pessoa do RH', 'Duas pessoas do RH', 'RH e gestor da vaga'], 0),
+        ] %}
+        <div class="admita-config-linha">
+          <span class="admita-config-ic"><svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#{{ ic }}"/></svg></span>
+          <span class="admita-config-txt"><strong>{{ titulo }}</strong><em>{{ sub }}</em></span>
+          <select class="admita-config-campo">
+            {% for opcao in opcoes %}<option{{ ' selected' if loop.index0 == marcada else '' }}>{{ opcao }}</option>{% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+        {% for titulo, sub, ligada in [
+          ('Aceitar foto do documento', 'Foto legível vale, sem exigir digitalização.', True),
+          ('Avisar o candidato do que falta', 'Mensagem automática listando as pendências dele.', True),
+        ] %}
+        <label class="admita-config-linha">
+          <span class="admita-config-ic"><svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-documento"/></svg></span>
+          <span class="admita-config-txt"><strong>{{ titulo }}</strong><em>{{ sub }}</em></span>
+          <span class="admita-chave" data-chave="{{ 'on' if ligada else 'off' }}" role="switch" aria-checked="{{ 'true' if ligada else 'false' }}" tabindex="0"></span>
+        </label>
+        {% endfor %}
+      </div>
+
+      {# ------------------------------------------------------ aprovações #}
+      <div class="admita-painel" data-painel="aprovacoes" role="tabpanel" hidden>
+        {% for titulo, sub, ligada in [
+          ('Aprovação do gestor exige a do RH', 'Mantém a ordem das aprovações na esteira.', True),
+          ('Permitir aprovar com documento pendente', 'Deixa passar antes do checklist fechar.', False),
+          ('Exigir justificativa na recusa', 'Recusar sem motivo escrito não é permitido.', True),
+          ('Avisar o gestor no dia da entrevista', 'Lembrete na manhã da entrevista marcada.', True),
+        ] %}
+        <label class="admita-config-linha">
+          <span class="admita-config-ic"><svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-aprovacao"/></svg></span>
+          <span class="admita-config-txt"><strong>{{ titulo }}</strong><em>{{ sub }}</em></span>
+          <span class="admita-chave" data-chave="{{ 'on' if ligada else 'off' }}" role="switch" aria-checked="{{ 'true' if ligada else 'false' }}" tabindex="0"></span>
+        </label>
+        {% endfor %}
+        {% for ic, titulo, sub, opcoes, marcada in [
+          ('i-usuarios', 'Quem pode aprovar pelo RH', 'Perfis com poder de dar o primeiro aval.', ['Só o coordenador', 'Analistas e coordenador', 'Todo o time de RH'], 1),
+          ('i-selo', 'Segundo nível de aprovação', 'Acima de qual faixa a diretoria entra na conta.', ['Nunca', 'Acima de dez mil', 'Acima de vinte mil'], 0),
+        ] %}
+        <div class="admita-config-linha">
+          <span class="admita-config-ic"><svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#{{ ic }}"/></svg></span>
+          <span class="admita-config-txt"><strong>{{ titulo }}</strong><em>{{ sub }}</em></span>
+          <select class="admita-config-campo">
+            {% for opcao in opcoes %}<option{{ ' selected' if loop.index0 == marcada else '' }}>{{ opcao }}</option>{% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+
+      {# ---------------------------------------------------------- avisos #}
+      <div class="admita-painel" data-painel="avisos" role="tabpanel" hidden>
+        {% for titulo, sub, ligada in [
+          ('Resumo diário por e-mail', 'Um apanhado dos prazos que vencem amanhã.', False),
+          ('Avisar prazo estourado na hora', 'Notificação assim que a etapa passa do limite.', True),
+          ('Avisar quando alguém for admitido', 'Fecha o ciclo para quem acompanha a vaga.', True),
+          ('Avisar documento recusado', 'Quando o RH devolve um item do checklist.', True),
+        ] %}
+        <label class="admita-config-linha">
+          <span class="admita-config-ic"><svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-email"/></svg></span>
+          <span class="admita-config-txt"><strong>{{ titulo }}</strong><em>{{ sub }}</em></span>
+          <span class="admita-chave" data-chave="{{ 'on' if ligada else 'off' }}" role="switch" aria-checked="{{ 'true' if ligada else 'false' }}" tabindex="0"></span>
+        </label>
+        {% endfor %}
+        {% for ic, titulo, sub, opcoes, marcada in [
+          ('i-telefone', 'Por onde avisar', 'Canal usado para todos os avisos acima.', ['E-mail', 'E-mail e WhatsApp', 'E-mail e Slack'], 0),
+          ('i-relogio', 'Horário do resumo', 'Quando o apanhado do dia sai.', ['8h', '9h', '18h'], 1),
+        ] %}
+        <div class="admita-config-linha">
+          <span class="admita-config-ic"><svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#{{ ic }}"/></svg></span>
+          <span class="admita-config-txt"><strong>{{ titulo }}</strong><em>{{ sub }}</em></span>
+          <select class="admita-config-campo">
+            {% for opcao in opcoes %}<option{{ ' selected' if loop.index0 == marcada else '' }}>{{ opcao }}</option>{% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+
+      {# ------------------------------------------------------- auditoria #}
+      <div class="admita-painel" data-painel="auditoria" role="tabpanel" hidden>
+        {% for titulo, sub, ligada in [
+          ('Trilha de auditoria', 'Registra quem moveu, aprovou e conferiu cada candidato.', True),
+          ('Exigir motivo em mudança manual de etapa', 'Puxar um card para trás pede uma linha de explicação.', True),
+          ('Registrar leitura de currículo', 'Guarda quem abriu o currículo de quem.', False),
+          ('Bloquear edição de registro antigo', 'Depois de fechado, o histórico não se altera.', True),
+        ] %}
+        <label class="admita-config-linha">
+          <span class="admita-config-ic"><svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-auditoria"/></svg></span>
+          <span class="admita-config-txt"><strong>{{ titulo }}</strong><em>{{ sub }}</em></span>
+          <span class="admita-chave" data-chave="{{ 'on' if ligada else 'off' }}" role="switch" aria-checked="{{ 'true' if ligada else 'false' }}" tabindex="0"></span>
+        </label>
+        {% endfor %}
+        <div class="admita-config-linha">
+          <span class="admita-config-ic"><svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-cadeado"/></svg></span>
+          <span class="admita-config-txt"><strong>Guardar a trilha por</strong><em>Prazo de retenção do histórico completo.</em></span>
+          <select class="admita-config-campo">
+            <option>6 meses</option><option selected>1 ano</option><option>5 anos</option>
+          </select>
+        </div>
+        <div class="admita-config-linha">
+          <span class="admita-config-ic"><svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-grafico"/></svg></span>
+          <span class="admita-config-txt"><strong>Exportar a trilha</strong><em>Baixa o histórico em planilha para auditoria externa.</em></span>
+          <button type="button" class="admita-botao-mini">
+            <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-documento"/></svg>Exportar
+          </button>
+        </div>
+      </div>
+
+      {# ---------------------------------------------------------- cargos #}
+      {# A lista é montada por admita.js a partir da fonte única que vem no
+         fragmento, então criar, renomear e excluir aparecem na hora aqui E
+         no dropdown de nova candidatura, sem recarregar a página. #}
+      <div class="admita-painel admita-painel-cargos" data-painel="cargos" role="tabpanel" hidden>
+        <form class="admita-cargo-form" id="admita-cargo-form" novalidate>
+          <label class="admita-campo">
+            <span>Novo cargo</span>
+            <input type="text" name="nome" maxlength="80" autocomplete="off"
+                   placeholder="Ex.: Analista de Remuneração Pleno">
+          </label>
+          <button type="submit" class="botao botao-primario admita-cargo-add">
+            <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-check"/></svg>
+            Incluir
+          </button>
+        </form>
+        <p class="admita-acesso-erro" id="admita-cargo-erro" role="alert" hidden></p>
+        <div class="admita-cargo-lista" id="admita-cargo-lista"></div>
+      </div>
+
+      {# --------------------------------------------------------- acessos #}
+      <div class="admita-painel admita-painel-acessos" data-painel="acessos" role="tabpanel" hidden>
+        <form class="admita-acesso-form" id="admita-acesso-form" novalidate>
+          <label class="admita-campo">
+            <span>Nome</span>
+            <input type="text" name="nome" maxlength="80" autocomplete="off" placeholder="Ex.: Marina Alves">
+          </label>
+          <label class="admita-campo">
+            <span>E-mail</span>
+            <input type="email" name="email" maxlength="120" autocomplete="off" placeholder="marina@exemplo.com.br">
+          </label>
+          <label class="admita-campo">
+            <span>Perfil</span>
+            <select name="perfil">
+              <option>Recrutador</option>
+              <option>Coordenador de RH</option>
+              <option>Gestor da vaga</option>
+              <option>Somente leitura</option>
+            </select>
+          </label>
+          <button type="submit" class="botao botao-primario admita-acesso-add">
+            <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-check"/></svg>
+            Cadastrar
+          </button>
+        </form>
+        <p class="admita-acesso-erro" id="admita-acesso-erro" role="alert" hidden></p>
+
+        <div class="admita-acesso-lista" id="admita-acesso-lista">
+          {% for nome, email, perfil in [
+            ('Usuário Teste', 'teste@leandrofurtado.com.br', 'Coordenador de RH'),
+            ('Rafael Prado Lima', 'rafael@exemplo.com.br', 'Recrutador'),
+            ('Juliana Serra', 'juliana@exemplo.com.br', 'Gestor da vaga'),
+            ('Contabilidade Vetor', 'contabil@exemplo.com.br', 'Somente leitura'),
+          ] %}
+          <div class="admita-acesso-item">
+            <span class="admita-acesso-avatar {{ 'avatar-1' if loop.index0 % 2 == 0 else 'avatar-2' }}">
+              <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-usuario"/></svg>
+            </span>
+            <span class="admita-acesso-txt">
+              <strong>{{ nome }}</strong>
+              <em>{{ email }}</em>
+            </span>
+            <span class="admita-ficha admita-ficha-perfil">{{ perfil }}</span>
+            <span class="admita-acesso-acoes">
+              <button type="button" class="admita-botao-mini" data-acesso-editar aria-label="Alterar o perfil de {{ nome }}">
+                <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-assinatura"/></svg>Alterar
+              </button>
+              <button type="button" class="admita-botao-mini admita-botao-mini-perigo" data-acesso-excluir aria-label="Excluir o acesso de {{ nome }}">
+                <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-recusa"/></svg>Excluir
+              </button>
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <p class="admita-config-aviso">
+      Painel de demonstração: estes controles não gravam nada. As regras que a
+      esteira aplica de verdade são as que você vê acontecer nos cards.
+    </p>
+  </section>
+</div>

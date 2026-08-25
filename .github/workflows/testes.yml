@@ -1,0 +1,37 @@
+# Roda a suíte a cada envio e a cada pedido de alteração.
+#
+# Por que existe: até 24/08/2026 os 832 testes só rodavam no Mac do autor,
+# quando ele lembrava. Isso deixa passar a classe de defeito mais chata, a
+# que só aparece em outra máquina: versão de Python diferente, dependência
+# instalada localmente e ausente no requirements.txt, arquivo que existe no
+# disco e não no repositório.
+#
+# A instalação aqui é do zero, a partir do requirements.txt, exatamente como
+# faria quem clona o projeto pela primeira vez.
+name: testes
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python 3.13, a mesma versão da imagem de produção
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Instalar
+        run: pip install -r requirements.txt
+
+      - name: Rodar a suíte
+        # DATA_DIR num diretório temporário: o banco e os uploads nascem
+        # sozinhos no boot, e nenhum teste deve tocar dado real.
+        run: DATA_DIR=$(mktemp -d) pytest -q

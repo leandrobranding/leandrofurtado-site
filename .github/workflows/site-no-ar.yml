@@ -1,0 +1,42 @@
+# Confere de quinze em quinze minutos se o site está no ar, e falha se não
+# estiver. Falha de workflow dispara e-mail para o dono do repositório.
+#
+# Por que aqui e não no servidor: cron no próprio VPS não avisa que o VPS
+# caiu. O monitor precisa ser externo, e o GitHub Actions é gratuito e
+# ilimitado em repositório público, então custa zero e não pede conta nova.
+#
+# O que ele NÃO é: monitoramento com histórico, percentil de latência e
+# painel. É o aviso de que o site parou, que é o que faltava.
+name: site no ar
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  responde:
+    runs-on: ubuntu-latest
+    steps:
+      - name: A home responde 200
+        run: |
+          for tentativa in 1 2 3; do
+            codigo=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 20 https://leandrofurtado.com.br/ || echo 000)
+            echo "tentativa $tentativa: $codigo"
+            [ "$codigo" = "200" ] && exit 0
+            sleep 20
+          done
+          echo "::error::a home não respondeu 200 em três tentativas"
+          exit 1
+
+      - name: O certificado ainda tem mais de 10 dias
+        run: |
+          fim=$(echo | openssl s_client -connect leandrofurtado.com.br:443 \
+                  -servername leandrofurtado.com.br 2>/dev/null \
+                | openssl x509 -noout -enddate | cut -d= -f2)
+          faltam=$(( ( $(date -d "$fim" +%s) - $(date +%s) ) / 86400 ))
+          echo "vence em $faltam dias ($fim)"
+          if [ "$faltam" -lt 10 ]; then
+            echo "::error::certificado vence em $faltam dias e a renovação automática não rodou"
+            exit 1
+          fi

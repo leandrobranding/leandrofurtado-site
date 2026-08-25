@@ -1,0 +1,101 @@
+{% extends "admin/base.html" %}
+{% block title %}Temas{% endblock %}
+{% block content %}
+{% set q = request.query_params %}
+<header class="panel-head">
+  <h1>Temas <small>{{ temas | length }} cadastrado{{ 's' if temas | length != 1 }}</small></h1>
+  <button class="btn primary" type="button" onclick="document.getElementById('novoTema').scrollIntoView({behavior:'smooth'})">+ Novo tema</button>
+</header>
+
+{% include "admin/_nl_nav.html" %}
+
+{% if q.get('salvo') %}<div class="flash ok">Tema salvo.</div>{% endif %}
+
+<p class="hint">
+  Tema é o conjunto de cores do e-mail. O layout, a tipografia e a estrutura continuam os
+  mesmos: o que muda é a paleta. Cada campanha escolhe um tema no editor, e o marcado como
+  padrão vale para quem não escolher nada.
+</p>
+
+<div class="tema-grid">
+  {% for t in temas %}
+  <article class="tema-card">
+    <div class="tema-amostra" style="background:{{ t.pagina }}">
+      <div class="tema-box" style="background:{{ t.card }};border-color:{{ t.line }}">
+        <span class="tema-t" style="color:{{ t.ink }}">TÍTULO</span>
+        <span class="tema-b" style="color:{{ t.body }}">Corpo do e-mail</span>
+        <span class="tema-d" style="background:{{ t.destaque }};color:{{ t.muted }}">destaque</span>
+      </div>
+    </div>
+    <div class="tema-info">
+      <strong>{{ t.name }}{% if t.is_default %} <span class="badge pub">padrão</span>{% endif %}</strong>
+      <div class="tema-dots">
+        {% for cor in [t.pagina, t.card, t.ink, t.body, t.muted, t.line, t.destaque] %}
+        <i style="background:{{ cor }}" title="{{ cor }}"></i>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="tema-acoes">
+      <a class="btn ghost" href="/admin/newsletter/temas/{{ t.id }}/preview" target="_blank" rel="noopener">Ver ↗︎</a>
+      <button class="btn ghost" type="button" data-editar='{{ {"id": t.id, "name": t.name, "pagina": t.pagina, "card": t.card, "ink": t.ink, "body": t.body, "muted": t.muted, "line": t.line, "destaque": t.destaque, "is_default": t.is_default} | tojson }}'>Editar</button>
+      <form method="post" action="/admin/newsletter/temas/{{ t.id }}/excluir" onsubmit='return confirm({{ ("Excluir o tema " ~ t.name ~ "?") | tojson }})'>
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn danger" type="submit">✕︎</button>
+      </form>
+    </div>
+  </article>
+  {% else %}
+  <div class="empty"><p>Nenhum tema ainda. O e-mail usa a paleta da casa.</p></div>
+  {% endfor %}
+</div>
+
+<section class="form" id="novoTema">
+  <h2 id="temaTitulo">Novo tema</h2>
+  <form method="post" action="/admin/newsletter/temas/salvar" id="formTema">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="id" id="temaId" value="">
+    <label>Nome do tema<input name="name" id="temaNome" required placeholder="Claro, Noturno, Natal..."></label>
+    <div class="cor-grid">
+      {% for campo, rotulo, padrao in [
+        ('pagina','Fundo da página','#ecebe6'), ('card','Card do e-mail','#0d0d0d'),
+        ('ink','Títulos','#f4f2ed'), ('body','Corpo','#e6e4df'),
+        ('muted','Apoio','#8f8d87'), ('line','Contornos','#252523'),
+        ('destaque','Caixas de destaque','#161615')] %}
+      <label class="cor-campo">
+        <span>{{ rotulo }}</span>
+        <input type="color" name="{{ campo }}" id="cor_{{ campo }}" value="{{ padrao }}">
+      </label>
+      {% endfor %}
+    </div>
+    <label class="check"><input type="checkbox" name="is_default" id="temaPadrao"> Usar como tema padrão</label>
+    <div class="form-actions">
+      <button class="btn primary" type="submit">Salvar tema</button>
+      <button class="btn ghost" type="button" id="temaLimpar">Limpar</button>
+    </div>
+  </form>
+</section>
+
+<script>
+(function () {
+  var form = document.getElementById("formTema");
+  document.querySelectorAll("[data-editar]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var t = JSON.parse(b.dataset.editar);
+      document.getElementById("temaId").value = t.id;
+      document.getElementById("temaNome").value = t.name;
+      document.getElementById("temaPadrao").checked = !!t.is_default;
+      ["pagina","card","ink","body","muted","line","destaque"].forEach(function (c) {
+        document.getElementById("cor_" + c).value = t[c];
+      });
+      document.getElementById("temaTitulo").textContent = "Editando: " + t.name;
+      form.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  });
+  document.getElementById("temaLimpar").addEventListener("click", function () {
+    form.reset();
+    document.getElementById("temaId").value = "";
+    document.getElementById("temaTitulo").textContent = "Novo tema";
+  });
+})();
+</script>
+{% endblock %}

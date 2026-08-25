@@ -1,0 +1,232 @@
+{% extends "admin/base.html" %}
+{% block title %}Perfil & CV{% endblock %}
+{% block content %}
+<header class="panel-head"><h1>Perfil & Currículo</h1></header>
+
+<form class="form" method="post" action="/admin/profile" enctype="multipart/form-data">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+
+  <div class="grid-3">
+    <label>Nome<input name="name" value="{{ p.name }}"></label>
+    <label>E-mail<input name="email" type="email" value="{{ p.email }}"></label>
+    <label>Foto de perfil {% if p.photo %}<img class="mini" src="/media/{{ p.photo }}" alt="">{% endif %}
+      <input type="file" name="photo" accept="image/*"></label>
+    <label>Foto de capa <small>(imagem de compartilhamento da página Sobre/Currículo)</small>
+      {% if p.cover %}<img class="mini" src="/media/{{ p.cover }}" alt="">{% endif %}
+      <input type="file" name="cover" accept="image/*"></label>
+  </div>
+  <div class="grid-2">
+    <label>Imagem 1 do Sobre <small>(ao lado de "Há mais de 10 anos…" — sem envio, usa a imagem padrão do site)</small>
+      <img class="mini" src="{{ ('/media/' ~ p.about_img_1) if p.about_img_1 else '/static/img/about-1.webp' }}" alt="">
+      <input type="file" name="about_img_1" accept="image/*">
+      {% if p.about_img_1 %}<label class="hint"><input type="checkbox" name="about_img_1_limpar" value="1"> excluir e voltar para a imagem padrão</label>{% endif %}
+    </label>
+    <label>Imagem 2 do Sobre <small>(ao lado de "Atuo na direção de arte…" — sem envio, usa a imagem padrão do site)</small>
+      <img class="mini" src="{{ ('/media/' ~ p.about_img_2) if p.about_img_2 else '/static/img/about-2.webp' }}" alt="">
+      <input type="file" name="about_img_2" accept="image/*">
+      {% if p.about_img_2 %}<label class="hint"><input type="checkbox" name="about_img_2_limpar" value="1"> excluir e voltar para a imagem padrão</label>{% endif %}
+    </label>
+  </div>
+  <div class="grid-2">
+    <label>Cargo (PT)<input name="title_pt" value="{{ p.title_pt }}"></label>
+    <label>Title (EN)<input name="title_en" value="{{ p.title_en }}"></label>
+    <label>Localização (PT)<input name="location_pt" value="{{ p.location_pt }}"></label>
+    <label>Location (EN)<input name="location_en" value="{{ p.location_en }}"></label>
+  </div>
+  <div class="grid-2">
+    <label>Resumo (PT)<textarea name="summary_pt" rows="7">{{ p.summary_pt }}</textarea></label>
+    <label>Summary (EN)<textarea name="summary_en" rows="7">{{ p.summary_en }}</textarea></label>
+    <label>Frase-destaque (PT)<textarea name="highlight_pt" rows="2">{{ p.highlight_pt }}</textarea></label>
+    <label>Highlight (EN)<textarea name="highlight_en" rows="2">{{ p.highlight_en }}</textarea></label>
+  </div>
+
+  <h2>Links</h2>
+  <div class="grid-2">
+    <label>LinkedIn<input name="link_linkedin" value="{{ p.links.linkedin if p.links }}" placeholder="https://linkedin.com/in/..."></label>
+    <label>Instagram<input name="link_instagram" value="{{ p.links.instagram if p.links }}"></label>
+    <label>WhatsApp<input name="link_whatsapp" value="{{ p.links.whatsapp if p.links }}" placeholder="https://wa.me/55..."></label>
+  </div>
+
+  <h2>Experiência <button type="button" class="btn ghost add-row" data-tpl="exp">+ adicionar</button></h2>
+  <div id="exp-rows" class="rows">
+    {% for xp in p.experience %}
+    <div class="row-card">
+      <div class="grid-3">
+        <label>Empresa<input name="exp_company" value="{{ xp.company }}"></label>
+        <label>Período<input name="exp_period" value="{{ xp.period }}" placeholder="2020 — 2024"></label>
+        <button type="button" class="btn danger del-row">remover</button>
+      </div>
+      <div class="grid-2">
+        <label>Cargo (PT)<input name="exp_role_pt" value="{{ xp.role_pt }}"></label>
+        <label>Role (EN)<input name="exp_role_en" value="{{ xp.role_en }}"></label>
+        <label>Descrição (PT)<textarea name="exp_desc_pt" rows="2">{{ xp.desc_pt }}</textarea></label>
+        <label>Description (EN)<textarea name="exp_desc_en" rows="2">{{ xp.desc_en }}</textarea></label>
+      </div>
+      <label>Tags <small>(separadas por vírgula — aparecem na timeline de /about)</small>
+        <input name="exp_tags" value="{{ xp.tags | join(', ') if xp.tags }}"></label>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2>Formação acadêmica <button type="button" class="btn ghost add-row" data-tpl="edu">+ adicionar</button></h2>
+  <div id="edu-rows" class="rows">
+    {% for edu in p.education %}
+    <div class="row-card">
+      <div class="grid-3">
+        <label>Instituição (PT)<input name="edu_institution_pt" value="{{ edu.institution_pt }}"></label>
+        <label>Institution (EN)<input name="edu_institution_en" value="{{ edu.institution_en }}"></label>
+        <label>Período<input name="edu_period" value="{{ edu.period }}" placeholder="2020 — 2024"></label>
+      </div>
+      <div class="grid-3">
+        <label>Curso (PT)<input name="edu_course_pt" value="{{ edu.course_pt }}"></label>
+        <label>Course (EN)<input name="edu_course_en" value="{{ edu.course_en }}"></label>
+        <button type="button" class="btn danger del-row">remover</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2>Habilidades <button type="button" class="btn ghost add-row" data-tpl="skill">+ adicionar grupo</button></h2>
+  <div id="skill-rows" class="rows">
+    {% for group in p.skills %}
+    <div class="row-card">
+      <div class="grid-3">
+        <label>Grupo (PT)<input name="skill_group_pt" value="{{ group.group_pt }}"></label>
+        <label>Group (EN)<input name="skill_group_en" value="{{ group.group_en }}"></label>
+        <button type="button" class="btn danger del-row">remover</button>
+      </div>
+      <label>Itens <small>(separados por vírgula)</small><input name="skill_items" value="{{ group['items'] | join(', ') }}"></label>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2>Prêmios <button type="button" class="btn ghost add-row" data-tpl="award">+ adicionar</button></h2>
+  <div id="award-rows" class="rows">
+    {% for award in p.awards %}
+    <div class="row-card">
+      <input type="hidden" name="award_id" value="{{ award.id }}">
+      <div class="grid-3">
+        <label>Título (PT)<input name="award_title_pt" value="{{ award.title_pt }}"></label>
+        <label>Title (EN)<input name="award_title_en" value="{{ award.title_en }}"></label>
+        <label>Ano<input name="award_year" value="{{ award.year }}"></label>
+      </div>
+      <div class="grid-3">
+        <label>Descrição (PT)<input name="award_desc_pt" value="{{ award.desc_pt }}"></label>
+        <label>Description (EN)<input name="award_desc_en" value="{{ award.desc_en }}"></label>
+        <button type="button" class="btn danger del-row">remover</button>
+      </div>
+      <label>Fotos do prêmio <small>(até 6 — grade da página Sobre)</small>
+        {% if award.images %}
+        <div class="award-photos-admin">
+          {% for img in award.images %}
+          <span class="award-photo-admin">
+            <img class="mini" src="/media/{{ img }}" alt="">
+            <label class="hint"><input type="checkbox" name="award_img_del_{{ award.id }}" value="{{ img }}"> excluir</label>
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <input type="file" name="award_images_{{ award.id }}" accept="image/*" multiple>
+      </label>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2>Certificações <button type="button" class="btn ghost add-row" data-tpl="cert">+ adicionar</button></h2>
+  <div id="cert-rows" class="rows">
+    {% for cert in p.certs %}
+    <div class="row-card">
+      <div class="grid-3">
+        <label>Título<input name="cert_title" value="{{ cert.title }}"></label>
+        <label>Instituição<input name="cert_org" value="{{ cert.org }}"></label>
+        <label>Ano<input name="cert_year" value="{{ cert.year }}"></label>
+      </div>
+      <div class="grid-3">
+        <label>Código da credencial<input name="cert_code" value="{{ cert.code or '' }}"></label>
+        <label>Link de validação<input name="cert_url" value="{{ cert.url or '' }}" placeholder="https://..."></label>
+        <button type="button" class="btn danger del-row">remover</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2>Marcas & clientes</h2>
+  <label>Lista <small>(separados por vírgula)</small><input name="clients" value="{{ p.clients | join(', ') if p.clients }}"></label>
+
+  <div class="form-actions"><button class="btn primary" type="submit">Salvar perfil</button></div>
+</form>
+
+<template id="tpl-exp">
+  <div class="row-card">
+    <div class="grid-3">
+      <label>Empresa<input name="exp_company"></label>
+      <label>Período<input name="exp_period" placeholder="2020 — 2024"></label>
+      <button type="button" class="btn danger del-row">remover</button>
+    </div>
+    <div class="grid-2">
+      <label>Cargo (PT)<input name="exp_role_pt"></label>
+      <label>Role (EN)<input name="exp_role_en"></label>
+      <label>Descrição (PT)<textarea name="exp_desc_pt" rows="2"></textarea></label>
+      <label>Description (EN)<textarea name="exp_desc_en" rows="2"></textarea></label>
+    </div>
+    <label>Tags <small>(separadas por vírgula — aparecem na timeline de /about)</small>
+      <input name="exp_tags"></label>
+  </div>
+</template>
+<template id="tpl-edu">
+  <div class="row-card">
+    <div class="grid-3">
+      <label>Instituição (PT)<input name="edu_institution_pt"></label>
+      <label>Institution (EN)<input name="edu_institution_en"></label>
+      <label>Período<input name="edu_period" placeholder="2020 — 2024"></label>
+    </div>
+    <div class="grid-3">
+      <label>Curso (PT)<input name="edu_course_pt"></label>
+      <label>Course (EN)<input name="edu_course_en"></label>
+      <button type="button" class="btn danger del-row">remover</button>
+    </div>
+  </div>
+</template>
+<template id="tpl-skill">
+  <div class="row-card">
+    <div class="grid-3">
+      <label>Grupo (PT)<input name="skill_group_pt"></label>
+      <label>Group (EN)<input name="skill_group_en"></label>
+      <button type="button" class="btn danger del-row">remover</button>
+    </div>
+    <label>Itens <small>(separados por vírgula)</small><input name="skill_items"></label>
+  </div>
+</template>
+<template id="tpl-award">
+  <div class="row-card">
+    <input type="hidden" name="award_id" value="">
+    <div class="grid-3">
+      <label>Título (PT)<input name="award_title_pt"></label>
+      <label>Title (EN)<input name="award_title_en"></label>
+      <label>Ano<input name="award_year"></label>
+    </div>
+    <div class="grid-3">
+      <label>Descrição (PT)<input name="award_desc_pt"></label>
+      <label>Description (EN)<input name="award_desc_en"></label>
+      <button type="button" class="btn danger del-row">remover</button>
+    </div>
+    <label>Fotos do prêmio <small>(até 6 — grade da página Sobre)</small>
+      <input type="file" name="award_images_" accept="image/*" multiple>
+    </label>
+  </div>
+</template>
+<template id="tpl-cert">
+  <div class="row-card">
+    <div class="grid-3">
+      <label>Título<input name="cert_title"></label>
+      <label>Instituição<input name="cert_org"></label>
+      <label>Ano<input name="cert_year"></label>
+    </div>
+    <div class="grid-3">
+      <label>Código da credencial<input name="cert_code"></label>
+      <label>Link de validação<input name="cert_url" placeholder="https://..."></label>
+      <button type="button" class="btn danger del-row">remover</button>
+    </div>
+  </div>
+</template>
+{% endblock %}

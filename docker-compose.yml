@@ -1,0 +1,24 @@
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"   # exposto só para o Nginx local
+    volumes:
+      - ./data:/srv/app/data     # banco + uploads persistem fora do container
+    # Segredos e parâmetros de defesa vêm daqui, não do bloco `environment`
+    # abaixo: este arquivo é versionado e o repositório é público, o .env não é
+    # nem uma coisa nem outra. `required: false` para o projeto continuar
+    # subindo numa máquina que não tem .env nenhum.
+    #
+    # ATENÇÃO: deploy/atualizar.sh precisa excluir .env do rsync. Sem isso o
+    # --delete apaga o arquivo do servidor no deploy seguinte, e os limites
+    # voltam calados para o padrão do repositório.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - BASE_URL=https://leandrofurtado.com.br
+      - DEBUG=false
+      # - ADMIN_USERNAME=leandro
+      # - ADMIN_PASSWORD=defina-uma-senha-forte-aqui   # se vazio, é gerada em data/ADMIN_CREDENTIALS.txt

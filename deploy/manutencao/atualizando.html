@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0d0d0d">
+<!--
+  Piso de segurança: o navegador recarrega sozinho a cada 25s mesmo que o
+  JavaScript quebre, seja bloqueado ou fique estrangulado numa aba em segundo
+  plano. Se o site ainda estiver fora, o visitante recebe esta mesma tela de
+  novo e não percebe; se voltou, ele entra. Nenhuma outra peça deste arquivo
+  precisa funcionar para o retorno acontecer.
+-->
+<meta http-equiv="refresh" content="15">
+<title>O site está sendo atualizado — Leandro Furtado</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23090909'/%3E%3Cg fill='%23fff'%3E%3Cpolygon points='57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8'/%3E%3Cpolygon points='64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5'/%3E%3Cpolygon points='67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+/* ===========================================================================
+   Tela de atualização do leandrofurtado.com.br
+
+   Serve para os poucos segundos em que o container reinicia num deploy. Vive em
+   /var/www/lf-manutencao, servida pelo nginx direto do disco: se dependesse da
+   aplicação, apareceria exatamente nunca, porque só é necessária quando a
+   aplicação está fora.
+
+   Autossuficiente por obrigação. Nada de /static aqui — aquilo passa pelo proxy
+   e o proxy é justamente o que não responde. As duas únicas requisições que ela
+   faz são as fontes da marca, copiadas para o mesmo diretório, e o arquivo de
+   progresso que o deploy vai escrevendo.
+   =========================================================================== */
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/_deploy/SpaceGrotesk.woff2") format("woff2");
+  font-weight: 300 700; font-display: swap;
+}
+@font-face {
+  font-family: "Montserrat";
+  src: url("/_deploy/Montserrat.woff2") format("woff2");
+  font-weight: 100 900; font-display: swap;
+}
+
+:root {
+  --bg: #0d0d0d;
+  --bg-2: #141414;
+  --ink: #f4f2ed;
+  --sub: #a8a5a0;
+  --muted: #6f6c68;
+  --linha: rgba(244, 242, 237, .12);
+  --display: "Space Grotesk", system-ui, sans-serif;
+  --corpo: "Montserrat", system-ui, sans-serif;
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --pad: clamp(20px, 5vw, 64px);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--corpo); -webkit-font-smoothing: antialiased;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--pad); overflow: hidden;
+  position: relative; isolation: isolate;
+}
+
+/* --- atmosfera ---------------------------------------------------------- */
+/* dois focos de luz que respiram fora de fase: o fundo nunca fica parado, e
+   nenhum dos dois chega perto de competir com a marca */
+.brilho {
+  position: fixed; inset: -30%; z-index: -3; pointer-events: none;
+  background:
+    radial-gradient(38% 42% at 30% 32%, rgba(244, 242, 237, .09), rgba(244, 242, 237, 0) 70%),
+    radial-gradient(34% 38% at 72% 68%, rgba(244, 242, 237, .065), rgba(244, 242, 237, 0) 72%);
+  animation: respira 14s var(--ease) infinite alternate;
+}
+@keyframes respira {
+  from { transform: scale(1) translate3d(0, 0, 0); opacity: .75; }
+  to   { transform: scale(1.18) translate3d(2%, -3%, 0); opacity: 1; }
+}
+
+/* malha fina: dá escala e profundidade sem desenhar nada que roube atenção */
+.malha {
+  position: fixed; inset: 0; z-index: -2; pointer-events: none; opacity: .5;
+  background-image:
+    linear-gradient(to right, var(--linha) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--linha) 1px, transparent 1px);
+  background-size: clamp(60px, 7vw, 110px) clamp(60px, 7vw, 110px);
+  mask-image: radial-gradient(closest-side at 50% 50%, #000 20%, transparent 92%);
+  -webkit-mask-image: radial-gradient(closest-side at 50% 50%, #000 20%, transparent 92%);
+}
+
+.grao {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .17;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 140px 140px;
+}
+
+/* --- palco -------------------------------------------------------------- */
+.palco {
+  width: min(100%, 620px); text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+  gap: clamp(22px, 4vh, 40px);
+  animation: entra 1.1s var(--ease) both;
+}
+@keyframes entra { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+/* --- a marca ------------------------------------------------------------
+   Mesmo gesto da abertura do site: a marca é desenhada traço a traço e só
+   depois é preenchida. Nada de círculo aqui — o símbolo é feito de ângulos
+   retos, e um anel girando em volta contava outra história. No lugar dele,
+   quatro cantos que respiram e um risco que cresce, na mesma família de formas.
+   ------------------------------------------------------------------------ */
+.marca {
+  position: relative; width: clamp(104px, 16vw, 148px); aspect-ratio: 1;
+  display: grid; place-items: center;
+}
+/* cantos: quatro esquadros, como marca de corte de prova gráfica */
+.canto {
+  position: absolute; width: 16px; height: 16px; pointer-events: none;
+  border: 1px solid var(--ink); opacity: .3;
+  animation: cantoRespira 4.6s var(--ease) infinite;
+}
+.canto.ca { top: -14%; left: -14%; border-right: 0; border-bottom: 0; }
+.canto.cb { top: -14%; right: -14%; border-left: 0; border-bottom: 0; animation-delay: .12s; }
+.canto.cc { bottom: -14%; right: -14%; border-left: 0; border-top: 0; animation-delay: .24s; }
+.canto.cd { bottom: -14%; left: -14%; border-right: 0; border-top: 0; animation-delay: .36s; }
+@keyframes cantoRespira {
+  0%, 100% { transform: scale(.82); opacity: .16; }
+  22%, 62% { transform: scale(1);   opacity: .42; }
+}
+
+.marca svg { width: 100%; height: 100%; display: block; overflow: visible; }
+/* o traço corre primeiro, o preenchimento vem depois: é a marca sendo
+   construída na frente de quem espera, não um logo piscando */
+.marca polygon {
+  fill: var(--ink); fill-opacity: 0;
+  stroke: var(--ink); stroke-width: 1.6;
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: desenha 4.6s var(--ease) infinite, preenche 4.6s var(--ease) infinite;
+}
+.marca polygon:nth-child(1) { animation-delay: 0s, .5s; }
+.marca polygon:nth-child(2) { animation-delay: .14s, .62s; }
+.marca polygon:nth-child(3) { animation-delay: .28s, .74s; }
+@keyframes desenha {
+  0%       { stroke-dashoffset: 1; }
+  22%, 82% { stroke-dashoffset: 0; }
+  96%, 100%{ stroke-dashoffset: 1; }
+}
+@keyframes preenche {
+  0%, 8%   { fill-opacity: 0; }
+  26%, 78% { fill-opacity: 1; }
+  92%, 100%{ fill-opacity: 0; }
+}
+
+/* risco que cresce sob a marca, como na abertura do site */
+/* mora entre a marca e o endereço, nunca em cima dele: a -26% ele caía
+   exatamente na linha do domínio e riscava o texto ao meio */
+.risco {
+  position: absolute; left: 50%; bottom: -17%; height: 1px; width: 0;
+  background: var(--ink); transform: translateX(-50%); opacity: .45;
+  animation: riscoCresce 4.6s var(--ease) infinite;
+}
+@keyframes riscoCresce {
+  0%, 14%  { width: 0; }
+  38%, 76% { width: 120%; }
+  94%, 100%{ width: 0; }
+}
+
+/* --- textos ------------------------------------------------------------- */
+.rotulo {
+  font-family: var(--display); font-size: 9.5px; letter-spacing: .26em;
+  text-transform: uppercase; color: var(--muted);
+  display: flex; align-items: center; gap: 10px;
+}
+.rotulo { margin-top: 4px; }
+.rotulo i { font-style: normal; animation: pisca 2.4s var(--ease) infinite; }
+@keyframes pisca { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
+
+h1 {
+  font-family: var(--display); font-weight: 600; text-transform: uppercase;
+  font-size: clamp(25px, 5.4vw, 52px); line-height: 1.04; letter-spacing: -.02em;
+  text-wrap: balance;
+}
+/* No desktop a frase vive numa linha só. O tamanho passa a sair da largura da
+   janela para caber sem quebrar em nenhuma tela, e o palco abre junto — ele
+   tinha 620px de teto, estreito demais para a frase inteira. */
+@media (min-width: 760px) {
+  .palco { width: min(100%, 980px); }
+  h1 { white-space: nowrap; font-size: min(4.1vw, 54px); text-wrap: nowrap; }
+}
+/* os três pontos batem um a um, como quem conta o tempo */
+.pontos i {
+  font-style: normal; display: inline-block;
+  animation: pula 1.4s var(--ease) infinite;
+}
+.pontos i:nth-child(2) { animation-delay: .18s; }
+.pontos i:nth-child(3) { animation-delay: .36s; }
+@keyframes pula {
+  0%, 62%, 100% { opacity: .25; transform: translateY(0); }
+  28%           { opacity: 1;   transform: translateY(-.18em); }
+}
+
+/* --- frase rotativa ----------------------------------------------------- */
+.frase {
+  min-height: 3.2em; display: flex; align-items: center; justify-content: center;
+  color: var(--sub); font-size: clamp(13.5px, 1.6vw, 16px); line-height: 1.65;
+  max-width: 42ch;
+}
+/* a animação entra por classe, e não pelo elemento: o texto do mesmo nó é
+   trocado, então é a classe que o JS tira e devolve para reiniciar o efeito */
+.frase span.entra { animation: trocaFrase .7s var(--ease) both; }
+@keyframes trocaFrase { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* --- barra de progresso ------------------------------------------------- */
+.progresso { width: min(100%, 440px); display: flex; flex-direction: column; gap: 12px; }
+.trilho {
+  height: 3px; border-radius: 99px; background: var(--linha);
+  position: relative; overflow: hidden;
+}
+.preenche {
+  position: absolute; inset: 0 auto 0 0; width: 0;
+  background: var(--ink); border-radius: 99px;
+  transition: width 1.1s var(--ease);
+}
+/* brilho correndo na ponta da barra: mostra que ela está viva mesmo parada
+   entre uma etapa e a próxima */
+.preenche::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(13, 13, 13, 0), rgba(13, 13, 13, .5), rgba(13, 13, 13, 0));
+  animation: corre 1.8s linear infinite;
+}
+@keyframes corre { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+/* sem arquivo de progresso (uma queda que não é deploy) a barra vira vaivém:
+   honesta, não finge uma porcentagem que ninguém mediu */
+.trilho.indefinido .preenche { width: 34%; animation: vaivem 1.9s var(--ease) infinite; }
+@keyframes vaivem {
+  0%   { transform: translateX(-110%); }
+  100% { transform: translateX(320%); }
+}
+
+.linha-info {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  font-family: var(--display); font-size: 9.5px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted);
+}
+.linha-info b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+/* placar do deploy: três medidas curtas, separadas por fio */
+.placar { justify-content: flex-start; gap: 0; flex-wrap: wrap; }
+.placar[hidden] { display: none; }
+.placar span { display: inline-flex; align-items: baseline; gap: 5px; padding-right: 14px; }
+.placar span + span { padding-left: 14px; border-left: 1px solid var(--linha); }
+.placar em { font-style: normal; }
+.etapa { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.etapa span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.rodape {
+  position: fixed; left: var(--pad); right: var(--pad); bottom: clamp(16px, 3vh, 30px);
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  font-family: var(--display); font-size: 9px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--muted);
+}
+.rodape a { color: var(--muted); text-decoration: none; transition: color .3s; }
+.rodape a:hover { color: var(--ink); }
+.rp-item { display: inline-flex; align-items: center; gap: 8px; }
+.rp-item svg { width: 13px; height: 13px; flex: none; }
+/* a seta de recarga gira devagar: o rodapé afirma que a página se vira sozinha,
+   e um ícone parado ao lado dessa frase a desmentiria */
+.rp-item:first-child svg { animation: giraLento 5.5s linear infinite; }
+@keyframes giraLento { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .rp-item:first-child svg { animation: none; } }
+
+@media (max-width: 620px) {
+  body { align-items: flex-start; padding-top: 12vh; }
+  .rodape { flex-direction: column; gap: 6px; text-align: center; }
+}
+@media (max-height: 620px) {
+  .palco { gap: 16px; }
+  .rodape { display: none; }
+}
+
+/* quem pediu menos movimento recebe a mesma informação, parada */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  .marca polygon { opacity: 1; }
+  .preenche::after { display: none; }
+}
+
+/* tema claro para quem tem o sistema em claro: a tela aparece de surpresa, o
+   contraste dela não pode brigar com o ambiente de quem está lendo */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f2f0eb; --bg-2: #e7e4dd; --ink: #121212;
+    --sub: #4a4845; --muted: #7c7975; --linha: rgba(18, 18, 18, .14);
+  }
+  .brilho { background:
+    radial-gradient(38% 42% at 30% 32%, rgba(18, 18, 18, .07), rgba(18, 18, 18, 0) 70%),
+    radial-gradient(34% 38% at 72% 68%, rgba(18, 18, 18, .05), rgba(18, 18, 18, 0) 72%); }
+  .preenche::after { background: linear-gradient(90deg, rgba(242, 240, 235, 0), rgba(242, 240, 235, .6), rgba(242, 240, 235, 0)); }
+  .grao { opacity: .1; }
+}
+</style>
+</head>
+<body>
+
+<div class="brilho" aria-hidden="true"></div>
+<div class="malha" aria-hidden="true"></div>
+<div class="grao" aria-hidden="true"></div>
+
+<main class="palco">
+  <div class="marca">
+    <span class="canto ca" aria-hidden="true"></span>
+    <span class="canto cb" aria-hidden="true"></span>
+    <span class="canto cc" aria-hidden="true"></span>
+    <span class="canto cd" aria-hidden="true"></span>
+    <svg viewBox="0 0 100 100" role="img" aria-label="Leandro Furtado">
+      <polygon pathLength="1" points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+      <polygon pathLength="1" points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+      <polygon pathLength="1" points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+    </svg>
+    <span class="risco" aria-hidden="true"></span>
+  </div>
+
+  <p class="rotulo"><i>✳</i> <span data-rotulo>leandrofurtado.com.br</span></p>
+
+  <h1 aria-live="polite">
+    <span data-titulo>O site está sendo atualizado</span><span class="pontos" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span>
+  </h1>
+
+  <p class="frase" aria-live="polite"><span data-frase></span></p>
+
+  <div class="progresso">
+    <div class="trilho indefinido" data-trilho role="progressbar"
+         aria-label="Progresso da atualização" aria-valuemin="0" aria-valuemax="100">
+      <div class="preenche" data-preenche></div>
+    </div>
+    <p class="linha-info">
+      <span class="etapa"><span data-etapa>Preparando</span></span>
+      <b data-relogio>00:00</b>
+    </p>
+    <!-- o que este deploy de fato moveu: contagem e peso, vindos do rsync -->
+
+    <p class="linha-info placar" hidden data-placar>
+      <span><b data-etapas>0/0</b> <em data-rot-etapas>etapas</em></span>
+    </p>
+  </div>
+</main>
+
+<footer class="rodape">
+  <span class="rp-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>
+    </svg>
+    <span data-volta>Esta página se atualiza sozinha assim que finalizar a atualização.</span>
+  </span>
+  <a class="rp-item" href="https://www.instagram.com/leandrobranding" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/>
+      <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/>
+    </svg>
+    <span>@leandrobranding</span>
+  </a>
+</footer>
+
+<script>
+(() => {
+  "use strict";
+
+  const pt = !navigator.language || navigator.language.toLowerCase().startsWith("pt");
+
+  const TEXTO = {
+    titulo:  pt ? "O site está sendo atualizado" : "The site is being updated",
+    volta:   pt ? "Esta página se atualiza sozinha assim que finalizar a atualização."
+                : "This page reloads by itself as soon as the update finishes.",
+    voltou:  pt ? "Pronto. Levando você de volta…" : "Done. Taking you back…",
+    esperando:  pt ? "Preparando" : "Getting ready",
+    conectando: pt ? "Reconectando" : "Reconnecting",
+    etapas:   pt ? "etapas" : "steps",
+  };
+
+  /* Frases do próprio trabalho, não frases de espera genéricas. Quem caiu aqui
+     ganha um minuto de leitura sobre o que o site faz, em vez de uma ampulheta. */
+  const FRASES = pt ? [
+    "Direção de arte é decidir o que fica de fora.",
+    "Toda marca boa cabe num gesto só.",
+    "Detalhe não é enfeite. É o que separa o feito do bem feito.",
+    "A ideia vem primeiro. A ferramenta vem quando faz falta.",
+    "Design que precisa de legenda ainda não terminou.",
+    "Um bom layout se lê antes de ser lido.",
+    "Repertório é o que sobra quando a referência acaba.",
+    "Silêncio também é composição.",
+    "Se dá para tirar e continua funcionando, tira.",
+    "Conceito primeiro, execução impecável depois.",
+    "Marca não é o que você diz que é. É o que lembram.",
+    "O invisível é o que faz o visível funcionar.",
+  ] : [
+    "Art direction is deciding what stays out.",
+    "Every good brand fits in a single gesture.",
+    "Detail isn't decoration. It's what separates done from well done.",
+    "The idea comes first. The tool comes when it's missed.",
+    "Design that needs a caption isn't finished.",
+    "A good layout is read before it's read.",
+    "Repertoire is what's left when references run out.",
+    "Silence is composition too.",
+    "If you can remove it and it still works, remove it.",
+    "Concept first, flawless execution after.",
+    "A brand isn't what you say it is. It's what they remember.",
+    "The invisible is what makes the visible work.",
+  ];
+
+  const $ = s => document.querySelector(s);
+  const elTitulo = $("[data-titulo]");
+  const elEtapa = $("[data-etapa]"), elRelogio = $("[data-relogio]");
+  const elTrilho = $("[data-trilho]"), elPreenche = $("[data-preenche]");
+  const elVolta = $("[data-volta]"), elPlacar = $("[data-placar]");
+  const elEtapas = $("[data-etapas]");
+
+  elTitulo.textContent = TEXTO.titulo;
+  elVolta.textContent = TEXTO.volta;
+  elEtapa.textContent = TEXTO.esperando;
+  $("[data-rot-etapas]").textContent = TEXTO.etapas;
+  document.documentElement.lang = pt ? "pt-BR" : "en";
+
+  /* --- frases: sorteadas sem repetir a anterior -------------------------
+     O elemento é o mesmo sempre. Antes ele era substituído por um novo nó e a
+     referência velha continuava apontando para o nó solto: a frase trocava uma
+     vez e depois nunca mais. Aqui só o texto muda, e a animação é reiniciada
+     tirando e recolocando a classe. */
+  const elFrase = $("[data-frase]");
+  let ultima = -1;
+  const trocarFrase = () => {
+    let i = ultima;
+    while (i === ultima && FRASES.length > 1) i = Math.floor(Math.random() * FRASES.length);
+    ultima = i;
+    elFrase.classList.remove("entra");
+    void elFrase.offsetWidth;              // força o reinício da animação
+    elFrase.textContent = FRASES[i];
+    elFrase.classList.add("entra");
+  };
+  trocarFrase();
+  setInterval(trocarFrase, 5200);
+
+  /* --- relógio: o tempo do deploy, não o tempo da página -----------------
+     O servidor manda `decorrido` (segundos desde o início do deploy) a cada
+     etapa. A tela soma o que passou desde a última leitura e mostra isso. Sem
+     nenhum dado do servidor, cai para o tempo de espera desta página, e o
+     rótulo muda junto para não passar um número por outro. */
+  /* Quando não há deploy rodando não existe tempo de servidor para mostrar, e o
+     relógio conta a espera desta página. Só que a recarga de segurança troca a
+     página a cada 20s, e o número voltava para 00:00 toda vez — parecia uma
+     tela travada fingindo estar viva. O instante em que a espera começou fica
+     guardado na sessão da aba e atravessa as recargas. */
+  const CHAVE = "lf-espera-desde";
+  let desde = Number(sessionStorage.getItem(CHAVE));
+  if (!desde || Date.now() - desde > 6 * 60 * 60 * 1000) {
+    desde = Date.now();
+    try { sessionStorage.setItem(CHAVE, String(desde)); } catch {}
+  }
+  const abriu = performance.now() - (Date.now() - desde);
+  let baseServidor = null;      // { decorrido, lidoEm }
+  const doisDigitos = n => String(n).padStart(2, "0");
+  const relogio = () => {
+    let s;
+    if (baseServidor) {
+      s = baseServidor.decorrido + (performance.now() - baseServidor.lidoEm) / 1000;
+    } else {
+      s = (performance.now() - abriu) / 1000;
+    }
+    s = Math.max(0, Math.floor(s));
+    const h = Math.floor(s / 3600);
+    const txt = `${doisDigitos(Math.floor(s / 60) % 60)}:${doisDigitos(s % 60)}`;
+    elRelogio.textContent = h ? `${h}:${txt}` : txt;
+  };
+  relogio();
+  setInterval(relogio, 250);
+
+  /* --- progresso real do deploy -----------------------------------------
+     O script de deploy escreve uma etapa por vez em /_deploy/estado.json, que o
+     nginx serve do disco. Sem o arquivo — ou com um arquivo velho, de um deploy
+     que já acabou — a barra fica em vaivém: prefiro não mostrar porcentagem a
+     inventar uma. */
+  const VALIDADE = 5 * 60 * 1000;   // um estado mais velho que isto não vale mais
+  let ultimoPercentual = 0;
+  let ultimoCarimbo = null;
+  let terminou = false;
+
+  /* Toda requisição desta tela tem prazo. Sem prazo, uma que não terminasse
+     segurava a trava da sondagem para sempre e o retorno automático morria
+     junto — a tela ficava minutos em "reconectando" com o site já no ar. */
+  const PRAZO = 4000;
+  const buscar = (url, opts = {}) => {
+    const corte = new AbortController();
+    const t = setTimeout(() => corte.abort(), PRAZO);
+    return fetch(url, { ...opts, signal: corte.signal, cache: "no-store" })
+      .finally(() => clearTimeout(t));
+  };
+  /* só estes três vêm do nginx com a aplicação fora. Qualquer outra resposta,
+     inclusive 404, significa que a aplicação respondeu e portanto está viva. */
+  const FORA = new Set([502, 503, 504]);
+
+  const semDados = () => {
+    elTrilho.classList.add("indefinido");
+    elTrilho.removeAttribute("aria-valuenow");
+    elPreenche.style.width = "";
+    elPlacar.hidden = true;
+    baseServidor = null; ultimoCarimbo = null;
+    elEtapa.textContent = TEXTO.conectando;
+  };
+
+  const lerEstado = async () => {
+    if (terminou) return;
+    try {
+      const r = await buscar("/_deploy/estado.json?t=" + Date.now());
+      if (!r.ok) return semDados();
+      const e = await r.json();
+      if (!e || !e.total) return semDados();
+
+      // estado velho de um deploy que já terminou não vale para a queda de agora
+      if (e.fim && Date.now() - e.fim * 1000 > VALIDADE) return semDados();
+      /* Só re-ancora quando o servidor mandou uma medida nova. Reancorar a cada
+         leitura fazia o relógio travar entre uma etapa e a próxima: a tela lia o
+         mesmo `decorrido` uma vez por segundo e voltava sempre para ele, então o
+         número ficava parado justamente nos trechos longos. Com o carimbo, entre
+         etapas a contagem corre local e só se corrige quando há dado novo. */
+      if (typeof e.decorrido === "number" && e.carimbo !== ultimoCarimbo) {
+        ultimoCarimbo = e.carimbo;
+        baseServidor = { decorrido: e.decorrido, lidoEm: performance.now() };
+      }
+
+      const pct = Math.max(ultimoPercentual,
+                           Math.round(Math.min(e.indice / e.total, 1) * 100));
+      ultimoPercentual = pct;
+      elTrilho.classList.remove("indefinido");
+      elPreenche.style.width = pct + "%";
+      elTrilho.setAttribute("aria-valuenow", String(pct));
+
+      const nome = (pt ? e.etapa : (e.etapa_en || e.etapa)) || TEXTO.conectando;
+      elEtapa.textContent = e.detalhe ? `${nome} — ${e.detalhe}` : nome;
+
+      /* O deploy se declarou terminado. Este é um sinal do servidor, e vale por
+         si: não espera a sondagem concordar. A pausa curta existe só para a
+         barra chegar visivelmente aos 100% antes de a página trocar. */
+      if (e.fim && e.indice >= e.total) voltar("concluido");
+
+      elEtapas.textContent = `${Math.min(e.indice, e.total)}/${e.total}`;
+      elPlacar.hidden = false;
+    } catch {
+      semDados();
+    }
+  };
+  lerEstado();
+  setInterval(lerEstado, 1000);
+
+  /* --- volta sozinho ----------------------------------------------------
+     Ninguém deve precisar apertar F5 para o site voltar. O retorno é do
+     sistema, e por isso ele não depende de nenhuma peça isolada:
+
+     1. <meta refresh> no topo do arquivo — não depende de JavaScript nenhum;
+     2. sondagem a cada 1,5s, que devolve a pessoa quase na hora;
+     3. o próprio arquivo de progresso: quando o deploy se marca como concluído,
+        a tela sai dali sem perguntar mais nada a ninguém;
+     4. conferência quando a aba volta a ficar visível, ganha foco ou a rede
+        volta — navegador estrangula temporizador de aba escondida;
+     5. navegação forçada a cada 12s, aconteça o que acontecer com as outras.
+        É inofensiva: com o site ainda fora, o que chega é esta mesma tela.
+
+     O destino é a home, não esta mesma URL. Recarregar o mesmo endereço era o
+     ponto mais frágil de todos: o navegador tratava como reload de um documento
+     de erro e havia caso em que ele não saía do lugar. Navegar para outro
+     endereço é uma navegação de verdade, sem essa ambiguidade — e é onde o
+     visitante queria estar.
+  */
+  const CASA = "/";
+
+  const voltar = motivo => {
+    if (terminou) return;
+    terminou = true;
+    elEtapa.textContent = TEXTO.voltou;
+    elTrilho.classList.remove("indefinido");
+    elPreenche.style.width = "100%";
+    try { sessionStorage.removeItem(CHAVE); } catch {}
+    // o replace não deixa a tela de manutenção no histórico
+    setTimeout(() => location.replace(CASA), motivo === "concluido" ? 900 : 350);
+  };
+
+  let sondando = false;
+  const conferir = async () => {
+    if (terminou || sondando) return;
+    sondando = true;
+    try {
+      const r = await buscar(CASA, { method: "HEAD" });
+      if (!FORA.has(r.status)) voltar("vivo");
+    } catch { /* ainda subindo: a próxima rodada tenta de novo */ }
+    finally { sondando = false; }
+  };
+
+  setInterval(conferir, 1500);
+  addEventListener("visibilitychange", () => { if (!document.hidden) conferir(); });
+  addEventListener("focus", conferir);
+  addEventListener("online", conferir);
+  addEventListener("pageshow", conferir);
+
+  /* rede de segurança, independente de tudo acima */
+  setTimeout(() => { if (!terminou) location.replace(CASA); }, 12000);
+})();
+</script>
+</body>
+</html>

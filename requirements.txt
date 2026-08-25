@@ -1,0 +1,20 @@
+# Versões travadas: é exatamente esta pilha que roda e foi testada.
+# Para atualizar, suba a versão aqui e rode o site local antes de mandar pro servidor.
+
+fastapi==0.141.1
+uvicorn[standard]==0.52.1
+jinja2==3.1.6
+sqlalchemy==2.0.51
+pydantic-settings==2.14.2
+python-multipart==0.0.32
+argon2-cffi==25.1.0
+itsdangerous==2.2.0
+pillow==12.3.0
+httpx==0.28.1
+markdown==3.10.3
+fpdf2==2.8.8
+maxminddb==3.1.1   # le a base de geolocalizacao (DB-IP Lite)
+segno==1.6.6   # QR do 2FA, python puro e sem dependencias
+svgelements==1.9.6   # mede o desenho dentro do SVG para aparar o viewBox das logos
+pytest==8.3.4   # suite de testes do Nodal
+anthropic==0.121.0   # SDK gratuito; a CHAMADA à API é paga — por isso o Lab tem tetos (app/lab/ia.py)

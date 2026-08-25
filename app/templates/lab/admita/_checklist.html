@@ -1,0 +1,42 @@
+{# ============================================================
+   Painel de checklist de documentos SIMULADOS de um candidato (§6.1,
+   §9.1: nunca upload de verdade, só marcar conferido/pendente). Um painel
+   por candidato, todos renderizados e escondidos (`hidden`); admita.js
+   mostra só o do id pedido (overlay, nunca disputa layout com o quadro —
+   Lei da tela cheia).
+   ============================================================ #}
+<div class="admita-checklist-painel" id="admita-checklist-{{ candidato.id }}"
+     data-candidato-id="{{ candidato.id }}" hidden>
+  <div class="admita-painel-cabecalho">
+    <div>
+      <h2>Documentos de {{ candidato.nome }}</h2>
+      <p>{{ candidato.checklist_conferidos }}/{{ candidato.checklist_total }} conferidos</p>
+    </div>
+    <button type="button" class="admita-fechar" data-fechar-checklist aria-label="Fechar documentos">
+      <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-recusa"/></svg>
+    </button>
+  </div>
+  <ul class="admita-checklist-lista">
+    {% for doc in candidato.checklist %}
+    <li>
+      <button type="button" class="admita-checklist-item {{ 'conferido' if doc.conferido else 'pendente' }}"
+              data-alternar-doc data-candidato-id="{{ candidato.id }}" data-doc-id="{{ doc.id }}">
+        <span class="icone-caixa pequena">
+          <svg class="icone" aria-hidden="true">
+            <use href="/static/lab/icones/admita.svg#{{ 'i-check' if doc.conferido else 'i-documento' }}"/>
+          </svg>
+        </span>
+        <span class="admita-checklist-tipo">{{ doc.tipo }}</span>
+        <span class="pill {{ 'pill-positiva' if doc.conferido else 'pill-alerta' }}">
+          {{ 'conferido' if doc.conferido else 'pendente' }}
+        </span>
+      </button>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if candidato.etapa == "documentos" and candidato.checklist_conferidos < candidato.checklist_total %}
+  <p class="admita-checklist-aviso">
+    Confira todos os itens para liberar o avanço para a aprovação do RH.
+  </p>
+  {% endif %}
+</div>

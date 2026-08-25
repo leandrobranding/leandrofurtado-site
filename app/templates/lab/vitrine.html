@@ -1,0 +1,273 @@
+{#
+  Vitrine /lab (Plano 2, Task 3 + rodada de direção de arte de 20/08).
+
+  Herda o base.html DO SITE — GSAP, tema claro/escuro, intro de marca, JS
+  de main.js: a vitrine é uma página do site (§3 da spec). O cabeçalho e a
+  faixa de copyright são os MESMOS parciais do site inteiro
+  (app/templates/_cabecalho.html, _copyright.html — reforço do dono,
+  20/08, verbatim: "Isso serve para o cabeçalho também" / "o mesmo rodapé
+  copyright que tem no site inteiro"), não uma recriação: o bloco
+  `cabecalho` inclui `_cabecalho.html` com `moldura_lab=true` (troca só a
+  marca — "Leandro Furtado | LAB" — e os links, exatamente como o site
+  reusa o cabeçalho do Nodal), e o bloco `rodape` inclui `_copyright.html`
+  sem nenhum parâmetro (texto/marcação/CSS idênticos ao rodapé do site).
+  Só o MIOLO (hero + grid + CTA, dentro de `{% block content %}`) é
+  território próprio da vitrine.
+
+  Rodada de direção de arte (20/08, veredito ao vivo do dono, ver
+  .superpowers/sdd/2026-08-20-lab-demos-plano2/task-3-report.md): hero em 3
+  linhas centralizado, grid de 3 colunas para os cards (capa 16:9 com
+  wordmark de marca + "ver demonstração" nos cantos e ícone no hover), CTA
+  em 3 colunas quase full-bleed, e Lei da tela cheia (spec §13b) endurecida
+  para valer também no mobile: zero barra de rolagem em qualquer tamanho,
+  shell em grid vertical 100dvh (cabeçalho auto + miolo 1fr + copyright
+  auto — os únicos 3 filhos de `body` em fluxo normal nesta página).
+
+  Reveals on-scroll vêm de graça de app/static/js/main.js
+  (`[data-reveal]`/`[data-hero-title]`, já carregado pelo base.html) — nada
+  de vitrine.js novo só para repetir esse padrão. O push de dicas de IA do
+  mesmo main.js sai cedo nesta página (guard por `data-page="lab"`, ver
+  comentário em main.js) — a home continua recebendo as dicas.
+#}
+{% extends "base.html" %}
+{% block pageid %}lab{% endblock %}
+
+{#
+  O título em português é decisão do dono ("Lab | Minha sala de demonstrações"),
+  registrada em tests/lab/test_vitrine.py: title é o que a pessoa lê na aba, e a
+  versão com palavra-chave lia como etiqueta de SEO, não como convite.
+
+  A descrição tinha 317 caracteres e cortava no meio da lista de recursos; o que
+  faz clicar é "no ar agora, sem cadastro", então isso subiu. Os termos da
+  pesquisa de mercado (engenheiro de IA, Curitiba, RH) são obrigatórios aqui —
+  mesmo teste.
+
+  As duas eram fixas em português e apareciam assim em /en, a única página do
+  site com idioma misturado quando os cases foram traduzidos (23/08/2026).
+#}
+{% block title %}{% if lang == 'en' %}Lab &#x7C;︎ My demo room ·︎ {{ site_name }}{% else %}Lab &#x7C;︎ Minha sala de demonstrações ·︎ {{ site_name }}{% endif %}{% endblock %}
+{% block description %}{% if lang == 'en' %}Three SaaS systems built from scratch by Leandro Furtado, AI engineer in Curitiba, Brazil. The HR one is live to click right now, no sign-up.{% else %}Três sistemas SaaS feitos do zero por Leandro Furtado, engenheiro de IA em Curitiba. O de RH já está no ar para clicar agora, sem cadastro.{% endif %}{% endblock %}
+{% block ogtype %}website{% endblock %}
+{# a vitrine compartilha com a capa do Admita, que e o sistema que abre #}
+{% block ogimage %}{{ base_url }}/static/lab/img/og-lab.jpg?v={{ asset_v }}{% endblock %}
+
+{#
+  SEO da vitrine (§10 da spec): title/description cruzam cargo (engenheiro
+  de IA, diretor de arte) + domínio (RH, financeiro, escola) + técnica (IA
+  aplicada) + geografia (Curitiba) — termos da pesquisa de mercado, seção 5
+  de .superpowers/sdd/2026-08-20-lab-demos/pesquisa-mercado.md. As páginas
+  INTERNAS de cada demo continuam noindex (meta já em lab/_base_demo.html);
+  só esta vitrine é indexável, herdando o `robots` padrão do base.html
+  ("index, follow ...") sem sobrescrever nada aqui.
+#}
+{% block jsonld_extra %},
+    {
+      "@type": "CollectionPage",
+      "@id": "{{ base_url }}/lab/#collectionpage",
+      "url": "{{ base_url }}/lab",
+      "name": "{{ self.title() }}",
+      "description": "{{ self.description() }}",
+      "inLanguage": "pt-BR",
+      "isPartOf": {"@id": "{{ base_url }}/#website"},
+      "about": {"@id": "{{ base_url }}/#person"}
+    },
+    {
+      "@type": "ItemList",
+      "name": "Sistemas do Lab de Demos",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Admita", "url": "{{ base_url }}/lab/admita"},
+        {"@type": "ListItem", "position": 2, "name": "Notável", "url": "{{ base_url }}/lab/notavel"},
+        {"@type": "ListItem", "position": 3, "name": "Caderneta", "url": "{{ base_url }}/lab/caderneta"}
+      ]
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Início", "item": "{{ base_url }}/"},
+        {"@type": "ListItem", "position": 2, "name": "Lab de Demos", "item": "{{ base_url }}/lab"}
+      ]
+    }{% endblock %}
+
+{% block head_extra %}
+{#
+  lab-moldura.css: só as peças NOVAS da logo do Lab (`.brand-lab-badge`/
+  `.brand-lab-ic`/`.brand-lab-word`/`.brand-sep`/`.lab-nav-voltar`) — o
+  cabeçalho e a faixa de copyright em si (`.site-header`/`.brand`/
+  `.site-nav`/`.nav-link`/`.footer-bottom`/`.mono-label`) já vêm de
+  main.css, herdado normalmente pelo base.html. vitrine.css não redefine
+  nenhuma dessas classes.
+#}
+<link rel="stylesheet" href="/static/lab/lab-moldura.css?v={{ asset_v }}">
+<link rel="stylesheet" href="/static/lab/vitrine.css?v={{ asset_v }}">
+{% endblock %}
+
+{#
+  Cabeçalho do Lab: o MESMO parcial que o site inteiro usa
+  (app/templates/_cabecalho.html), com `moldura_lab=true` — troca PT/EN +
+  busca + "ver todo trabalho" + hambúrguer pela navegação das 3 demos +
+  voltar ao site, e acrescenta "| LAB" ao lado da marca do Leandro (dono,
+  20/08: "Isso serve para o cabeçalho também, só mudando a marca do lab:
+  Minha marca | LAB"). Sem `demo` no contexto: nenhum link fica marcado
+  como ativo (você está no hub, não dentro de uma demo).
+#}
+{% set pagina_lab_vitrine = True %}
+{% block cabecalho %}
+{% set moldura_lab = true %}
+{% include "_cabecalho.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="lab-vt-shell">
+<section class="lab-vt-hero">
+  {# `data-reveal` no lugar de `data-hero-title`: a animação de entrada do
+     site parte o título em linhas e palavras (GSAP SplitText), e a
+     segunda metade desta manchete TROCA sozinha depois. Reescrever o
+     texto dentro de uma linha já partida fazia as duas metades
+     dividirem a mesma linha e escreverem uma por cima da outra no
+     celular. Sem o split, a manchete entra com o reveal comum e a
+     troca acontece num DOM que continua sendo o que o HTML diz. #}
+  <h1 class="lab-vt-title display" data-reveal>
+    <span class="lab-vt-t1">Não vou te contar.</span> <span class="ol">Vou te deixar clicar.</span>
+  </h1>
+  <p class="lab-vt-sub" data-reveal>O primeiro já está no ar, pronto para você usar.</p>
+  <p class="lab-vt-desc" data-reveal>Construí três sistemas SaaS do zero. O de RH está pronto e é seu para testar agora, sem cadastro. O financeiro e o de escola estão em desenvolvimento.</p>
+</section>
+
+<section class="lab-vt-grid" aria-label="os três sistemas do lab">
+  <a class="lab-vt-card" data-reveal href="/lab/admita"
+     aria-label="Admita. Contratou? A gente cuida do resto. Entrar na demo de RH.">
+    {# Linha de aplicativo (só no celular): ícone do sistema, nome e o
+       que ele faz. No desktop some, porque lá a capa 16:9 já conta a
+       história com muito mais espaço. #}
+    <span class="lab-vt-app" aria-hidden="true">
+      <span class="lab-vt-app-ic lab-vt-app-ic-admita">{% with id='vtm', simbolo=True, classe='lab-vt-glifo' %}{% include 'lab/admita/_marca.html' %}{% endwith %}</span>
+      <span class="lab-vt-app-txt">
+        <strong>Admita</strong>
+        <em>Admissão sem papelada, do currículo ao crachá.</em>
+      </span>
+    </span>
+    <div class="lab-vt-capa lab-vt-capa-admita">
+      <span class="lab-vt-hover-ic" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="1.4"/><path d="M17 31 31 17M31 17H20M31 17V28" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="lab-vt-word" aria-hidden="true">{% with id='vt', tom='claro', classe='lab-vt-marca lab-vt-marca-admita' %}{% include 'lab/admita/_marca.html' %}{% endwith %}</span>
+      <span class="lab-vt-ver" aria-hidden="true">ver demonstração <i>→︎</i></span>
+      {# Capa conceitual do Admita: o "a" da marca como peça escultórica. O
+         gradiente continua embaixo como reserva, então a capa nunca fica
+         vazia se a imagem demorar. WebP em duas larguras, carregada tarde. #}
+      <img class="lab-vt-foto"
+           src="/static/lab/img/vitrine-admita-1280.webp?v={{ asset_v }}"
+           srcset="/static/lab/img/vitrine-admita-640.webp?v={{ asset_v }} 640w,
+                   /static/lab/img/vitrine-admita-1280.webp?v={{ asset_v }} 1280w"
+           sizes="(max-width: 900px) 100vw, 420px"
+           width="1280" height="720"
+           alt="" loading="lazy" decoding="async">
+    </div>
+    <p class="lab-vt-tags">
+      <span class="lab-vt-estado lab-vt-estado-ativo"><i aria-hidden="true"></i>sistema ativo</span>
+      <span class="lab-vt-tag">RH</span>
+      <span class="lab-vt-tag">Admissão digital</span>
+      <span class="lab-vt-tag">IA aplicada</span>
+    </p>
+  </a>
+
+  <div class="lab-vt-card lab-vt-card-breve" data-reveal
+     aria-label="Notável. Sistema em desenvolvimento, ainda sem demonstração.">
+    {# Linha de aplicativo (só no celular): ícone do sistema, nome e o
+       que ele faz. No desktop some, porque lá a capa 16:9 já conta a
+       história com muito mais espaço. #}
+    <span class="lab-vt-app" aria-hidden="true">
+      <span class="lab-vt-app-ic lab-vt-app-ic-notavel"><img src="/static/lab/img/simbolo-notavel.svg?v={{ asset_v }}" alt="" class="lab-vt-glifo-img"></span>
+      <span class="lab-vt-app-txt">
+        <strong>Notável</strong>
+        <em>Nota fiscal, caixa e conciliação no mesmo lugar.</em>
+      </span>
+    </span>
+    <div class="lab-vt-capa lab-vt-capa-notavel">
+      <span class="lab-vt-hover-ic" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="1.4"/><path d="M17 31 31 17M31 17H20M31 17V28" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="lab-vt-word" aria-hidden="true"><img src="/static/lab/img/marca-notavel.svg?v={{ asset_v }}" alt="" class="lab-vt-marca-img lab-vt-marca-notavel"></span>
+      <span class="lab-vt-ver lab-vt-ver-breve" aria-hidden="true"><i class="lab-vt-ponto"></i>em desenvolvimento</span>
+      {#
+        Task 12: <img src="/static/lab/img/vitrine-notavel.webp?v={{ asset_v }}"
+             srcset="/static/lab/img/vitrine-notavel-640.webp?v={{ asset_v }} 640w,
+                     /static/lab/img/vitrine-notavel-1280.webp?v={{ asset_v }} 1280w"
+             sizes="(max-width: 900px) 100vw, 1200px"
+             alt="" loading="lazy" decoding="async">
+      #}
+    </div>
+    <p class="lab-vt-tags">
+      <span class="lab-vt-estado lab-vt-estado-obra"><i aria-hidden="true"></i>em desenvolvimento</span>
+      <span class="lab-vt-tag">Financeiro</span>
+      <span class="lab-vt-tag">NF-e</span>
+      <span class="lab-vt-tag">Conciliação</span>
+    </p>
+  </div>
+
+  <div class="lab-vt-card lab-vt-card-breve" data-reveal
+     aria-label="Caderneta. Sistema em desenvolvimento, ainda sem demonstração.">
+    {# Linha de aplicativo (só no celular): ícone do sistema, nome e o
+       que ele faz. No desktop some, porque lá a capa 16:9 já conta a
+       história com muito mais espaço. #}
+    <span class="lab-vt-app" aria-hidden="true">
+      <span class="lab-vt-app-ic lab-vt-app-ic-caderneta"><img src="/static/lab/img/simbolo-caderneta.svg?v={{ asset_v }}" alt="" class="lab-vt-glifo-img"></span>
+      <span class="lab-vt-app-txt">
+        <strong>Caderneta</strong>
+        <em>Diário de classe, notas e boletim sem planilha.</em>
+      </span>
+    </span>
+    <div class="lab-vt-capa lab-vt-capa-caderneta">
+      <span class="lab-vt-hover-ic" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="1.4"/><path d="M17 31 31 17M31 17H20M31 17V28" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="lab-vt-word" aria-hidden="true"><img src="/static/lab/img/marca-caderneta.svg?v={{ asset_v }}" alt="" class="lab-vt-marca-img lab-vt-marca-caderneta"></span>
+      <span class="lab-vt-ver lab-vt-ver-breve" aria-hidden="true"><i class="lab-vt-ponto"></i>em desenvolvimento</span>
+      {#
+        Task 12: <img src="/static/lab/img/vitrine-caderneta.webp?v={{ asset_v }}"
+             srcset="/static/lab/img/vitrine-caderneta-640.webp?v={{ asset_v }} 640w,
+                     /static/lab/img/vitrine-caderneta-1280.webp?v={{ asset_v }} 1280w"
+             sizes="(max-width: 900px) 100vw, 1200px"
+             alt="" loading="lazy" decoding="async">
+      #}
+    </div>
+    <p class="lab-vt-tags">
+      <span class="lab-vt-estado lab-vt-estado-obra"><i aria-hidden="true"></i>em desenvolvimento</span>
+      <span class="lab-vt-tag">Escola</span>
+      <span class="lab-vt-tag">Diário de classe</span>
+      <span class="lab-vt-tag">Boletim</span>
+    </p>
+  </div>
+</section>
+
+<section class="lab-vt-cta">
+  <div class="lab-vt-cta-col lab-vt-cta-tit">
+    <p class="lab-vt-cta-frase display" data-reveal>O Lab é a minha sala de demonstrações.</p>
+    <p class="lab-vt-cta-sub" data-reveal>Me diga o que eu construo para você.</p>
+  </div>
+  <div class="lab-vt-cta-col lab-vt-cta-bt">
+    <a class="cta-pill lab-vt-cta-btn" href="/contato?origem=lab" data-reveal>
+      Me conta o que você precisa <i aria-hidden="true">→︎</i>
+    </a>
+  </div>
+</section>
+</div>
+
+<script src="/static/lab/vitrine.js?v={{ asset_v }}" defer></script>
+{% endblock %}
+
+{#
+  Item 4 da rodada de direção de arte (20/08) + reforço do dono: a vitrine
+  elimina o rodapé institucional do site (colunas SITE/SOCIAL/ASPECTOS
+  LEGAIS, selo Nodal, newsletter) e troca o `<footer>` inteiro pelo MESMO
+  parcial de copyright que o site inteiro usa (app/templates/_copyright.html,
+  dono, 20/08: "o mesmo rodapé copyright que tem no site inteiro") — sem
+  nenhum parâmetro, texto/marcação/CSS idênticos ao rodapé padrão.
+  Mecanismo: o bloco `rodape` (base.html) sobrescrito aqui — nenhuma outra
+  página é afetada, todas continuam com o `<footer>` padrão de base.html.
+#}
+{% block rodape %}
+<footer class="lab-vt-rodape">
+  {% include "_copyright.html" %}
+</footer>
+{% endblock %}

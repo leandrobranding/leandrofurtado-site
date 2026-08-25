@@ -1,0 +1,211 @@
+{#
+  Pedaços que se repetem em toda tela que mostra um card de trabalho.
+
+  Home, portfólio, página de cliente e relacionados falavam do mesmo case com
+  markup diferente, e a diferença sempre aparecia num lugar só: um esquecia que
+  site tem captura e não capa, outro esquecia que o clique vai para fora. Aqui
+  a resposta é uma, e todos importam com contexto (`with context`), então `t`,
+  `lp`, `f` e `lang` do render continuam valendo dentro dos macros.
+#}
+
+{# Etiqueta SITE + endereço clicável com seta. Chama o olho e diz para onde vai. #}
+{% macro tag_site(case) %}
+{% set host = host_de(case) %}
+<span class="site-tag">
+  <b class="st-box mono-label">SITE</b>
+  <a class="st-url mono-label" href="{{ case.site_url }}" target="_blank" rel="noopener noreferrer"
+     title="{{ t('open_site') }}: {{ host }}">
+    <span>{{ host }}</span>
+    <svg class="st-seta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M7 17 17 7"/><path d="M8.5 7H17v8.5"/>
+    </svg>
+  </a>
+</span>
+{% endmacro %}
+
+{#
+  A mesma etiqueta, sem link.
+
+  Serve onde o card inteiro já é um link para o mesmo site: um <a> dentro de
+  outro <a> é HTML inválido, e o navegador resolve fechando o de fora no meio
+  do card — foi assim que o card de relacionado apareceu partido em dois.
+#}
+{% macro tag_site_fixa(case) %}
+<span class="site-tag">
+  <b class="st-box mono-label">SITE</b>
+  <span class="st-url mono-label">
+    <span>{{ host_de(case) }}</span>
+    <svg class="st-seta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M7 17 17 7"/><path d="M8.5 7H17v8.5"/>
+    </svg>
+  </span>
+</span>
+{% endmacro %}
+
+{# A categoria é sempre um caminho: leva para a própria página da categoria. #}
+{% macro cat_link(cat, classe='') %}
+{% if cat %}
+<a class="cat-link {{ classe }}" href="{{ lp('/portfolio') }}?c={{ cat.slug }}"
+   title="{{ t('work') }}: {{ f(cat, 'name') }}">{{ f(cat, 'name') }}</a>
+{% endif %}
+{% endmacro %}
+
+{#
+  O cliente de um case leva à página dele, no mesmo peso visual da categoria.
+  Sem cliente cadastrado no painel sobra o texto puro: apontar para uma página
+  que não existe é pior que não apontar para lugar nenhum.
+#}
+{% macro cli_link(case, classe='') %}
+{%- if case.client_ref -%}
+<a class="cat-link {{ classe }}" href="{{ lp('/cliente/' ~ case.client_ref.slug) }}"
+   title="{{ t('client') }}: {{ case.client_ref.name }}">{{ case.client_ref.name }}</a>
+{%- elif case.client -%}{{ case.client }}{%- endif -%}
+{% endmacro %}
+
+{#
+  Selos de programa: com o que o case foi feito, dito em ícones oficiais.
+  Dessaturados em repouso e coloridos no hover — a regra de toda imagem daqui.
+  O nome vai no title e no aria-label: quem é do ofício lê o ícone, quem não é
+  lê o tooltip. Sem programa marcado, o bloco simplesmente não existe.
+#}
+{% macro selos_programas(case, classe='') %}
+{%- set progs = programas_de(case) -%}
+{%- if progs -%}
+<span class="selos {{ classe }}" aria-label="{{ 'Ferramentas' if lang == 'pt' else 'Tools' }}">
+  {%- for slug, nome in progs -%}
+  <img class="selo" src="/static/img/programas/{{ slug }}.svg" alt="{{ nome }}" title="{{ nome }}"
+       width="20" height="20" loading="lazy" decoding="async">
+  {%- endfor -%}
+</span>
+{%- endif -%}
+{% endmacro %}
+
+{# Moldura de navegador com a captura do site. Lê como site à primeira vista. #}
+{% macro moldura_site(case, lazy=false) %}
+<figure class="site-frame">
+  <span class="site-bar" aria-hidden="true">
+    <i></i><i></i><i></i>
+    <em>{{ host_de(case) }}</em>
+  </span>
+  <span class="site-tela">
+    {% if capa_de(case) %}
+    <img src="{{ capa_de(case) }}" alt="{{ alt_de('', f(case, 'title'), case.client) }}"
+         {% if lazy %}loading="lazy" decoding="async"{% endif %}>
+    {% else %}<span class="ph"></span>{% endif %}
+  </span>
+  <span class="site-capa" aria-hidden="true">
+    <b>{{ case.client or f(case, 'title') }}</b>
+    <span class="site-url">{{ host_de(case) }}</span>
+    <span class="site-abrir">
+      {{ t('open_site') }}
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 17 17 7"/><path d="M8.5 7H17v8.5"/>
+      </svg>
+    </span>
+  </span>
+</figure>
+{% endmacro %}
+
+{#
+  Trilho de marcas: uma linha, sempre, arrastável.
+
+  A mesma regra em todo lugar do site onde existe uma fileira de logotipos —
+  primeira dobra da home e "outros clientes" na página de marca. Não anda
+  sozinho: já existe uma faixa animada na página, e duas coisas se mexendo ao
+  mesmo tempo cansam. Quem quiser ver o resto arrasta (mouse) ou desliza (toque).
+
+  Cada logo carrega a própria escala óptica (ver services/logos.py), então
+  assinatura horizontal e lockup empilhado pesam igual na fila.
+#}
+{% macro trilho_marcas(marcas, classe='', primeira_dobra=False) %}
+{% set visiveis = marcas | selectattr('logo') | list %}
+{#
+  O trilho anda sozinho, em laço, e para quando o mouse encosta.
+
+  O laço funciona porque a fila é escrita duas vezes e a animação desloca
+  exatamente metade: quando a primeira cópia sai, a segunda está no lugar dela e
+  o corte é invisível. A segunda cópia é `aria-hidden`, senão leitor de tela
+  anunciaria cada marca duas vezes.
+
+  A duração cresce com o número de marcas para a velocidade não mudar quando
+  entrar cliente novo: são ~4,5s por logo, independente de quantos existam.
+#}
+<div class="trilho trilho-anda {{ classe }}"
+     aria-label="{{ t('clients_brands') }}"
+     style="--dur: {{ (visiveis | length * 4.5) | round(1) }}s">
+  <div class="trilho-fila">
+    {% for volta in [1, 2] %}
+    {% for m in visiveis %}
+    <a class="trilho-item" {% if volta == 2 %}aria-hidden="true" tabindex="-1"{% endif %}
+       href="{{ lp('/cliente/' ~ m.slug) }}"
+       title="{{ t('client_everything') }} {{ m.name }}">
+      <img class="client-logo {{ 'chapa' if m.chapa }}" style="--escala: {{ m.escala | default(1) }}"
+           src="{{ m.logo }}" alt="{{ m.name if volta == 1 else '' }}" width="120" height="30"
+           {% if not (primeira_dobra and volta == 1) %}loading="lazy"{% endif %} draggable="false">
+    </a>
+    {% endfor %}
+    {% endfor %}
+  </div>
+</div>
+{% endmacro %}
+
+{#
+  Ícone da linha da ficha técnica, escolhido pelo rótulo que a pessoa digitou.
+  O rótulo é campo livre no painel, então isto casa por palavra e cai num
+  genérico quando não reconhece: ficha com ícone errado é pior que sem ícone,
+  ficha com um ponto neutro não incomoda ninguém.
+#}
+{% macro ficha_ico(rotulo) %}
+{%- set r = (rotulo or '') | lower -%}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{%- if 'agênc' in r or 'agenc' in r or 'estúd' in r or 'estud' in r or 'produtora' in r -%}
+<path d="M3 21h18M5 21V6l7-3 7 3v15M9 9h1.5M9 13h1.5M9 17h1.5M13.5 9H15M13.5 13H15M13.5 17H15"/>
+{%- elif 'client' in r or 'marca' in r -%}
+<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/>
+{%- elif 'event' in r or 'convenç' in r or 'convenc' in r or 'feira' in r -%}
+<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>
+{%- elif 'funç' in r or 'func' in r or 'papel' in r or 'cargo' in r -%}
+<g transform="translate(.95 -.4)"><path d="M4 20 14 10M12.5 5.5a3.5 3.5 0 0 1 4.9 4.9L15 12.8"/><circle cx="6" cy="18" r="2"/></g>
+{%- elif 'ano' in r or 'data' in r or 'perío' in r or 'perio' in r -%}
+<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>
+{%- elif 'intelig' in r or r in ('ia', 'ai') -%}
+<path d="M10 6l1.7 5.3 5.3 1.7-5.3 1.7L10 20l-1.7-5.3L3 13l5.3-1.7z"/><path d="M17.5 4l.95 2.55 2.55.95-2.55.95-.95 2.55-.95-2.55L14 7.5l2.55-.95z"/>
+{%- elif 'equip' in r or 'time' in r or 'direç' in r or 'direc' in r -%}
+<circle cx="9" cy="8.5" r="3"/><path d="M3 19c0-3.1 2.7-5 6-5s6 1.9 6 5"/><path d="M16 6.2a3 3 0 0 1 0 5.6M17.5 19c0-2.2-.9-3.9-2.3-4.6"/>
+{%- elif 'foto' in r or 'imagem' in r -%}
+<rect x="3" y="6.5" width="18" height="13" rx="2"/><circle cx="12" cy="13" r="3.5"/><path d="M8.5 6.5 10 4h4l1.5 2.5"/>
+{%- elif 'vídeo' in r or 'video' in r or 'filme' in r or 'motion' in r -%}
+<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10.5 5-3v9l-5-3z"/>
+{%- elif 'prêmi' in r or 'premi' in r or 'result' in r -%}
+<path d="M8 3h8v5a4 4 0 0 1-8 0z"/><path d="M8 5H5.5a2.5 2.5 0 0 0 2.5 5M16 5h2.5a2.5 2.5 0 0 1-2.5 5M9.5 21h5M12 12v9"/>
+{%- elif 'local' in r or 'cidade' in r or 'praça' in r or 'praca' in r -%}
+<path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/>
+{%- else -%}
+<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/>
+{%- endif -%}
+</svg>
+{% endmacro %}
+
+{#
+  Quadro da marca: um só desenho para a página do cliente e a do case.
+
+  Duas variantes, porque forçar tudo num quadro só é o que fazia o Bradesco
+  aparecer minúsculo numa faixa larga: assinatura horizontal e lockup empilhado
+  não cabem no mesmo retângulo sem um dos dois sobrar.
+
+  O que as mantém no mesmo sistema é a área. As duas caixas têm exatamente a
+  mesma área, só distribuída de outro jeito (2,8:1 e 1,55:1), e o logotipo
+  dentro já vem com a escala óptica, que também é área constante. Então o peso
+  visual de uma marca é o mesmo em qualquer página, seja ela comprida ou
+  quadrada.
+#}
+{% macro quadro_marca(logo, nome, escala=1, chapa=false, formato='larga', classe='') %}
+<span class="marca-quadro q-{{ formato }} {{ classe }}">
+  <img class="client-logo {{ 'chapa' if chapa }}" style="--escala: {{ escala | default(1) }}"
+       src="{{ logo }}" alt="{{ nome }}">
+</span>
+{% endmacro %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block pageid %}sitemap{% endblock %}
+{% block title %}{{ t('sitemap_page') }} ·︎ {{ site_name }}{% endblock %}
+{% block description %}{{
+  'Todas as páginas, categorias e cases do site de Leandro Furtado, diretor de arte sênior e engenheiro de IA, em um só lugar.' if lang == 'pt'
+  else "Every page, category and case study on Leandro Furtado's website, senior art director and AI engineer, in one place."
+}}{% endblock %}
+
+{% block content %}
+<section class="legal-page">
+  <header class="page-head">
+    <h1 class="page-title display" data-hero-title>{{ t('sitemap_page') }}</h1>
+  </header>
+
+  <div class="sitemap-grid">
+    <div class="cv-block">
+      <h2>{{ 'Páginas' if lang == 'pt' else 'Pages' }}</h2>
+      <a href="{{ lp('/') }}">{{ 'Início' if lang == 'pt' else 'Home' }}</a>
+      <a href="{{ lp('/portfolio') }}">{{ t('work') }}</a>
+      <a href="{{ lp('/about') }}">{{ t('about') }}</a>
+      <a href="{{ lp('/contato') }}">{{ t('contact') }}</a>
+      <a href="{{ lp('/clientes') }}">{{ t('hall_title') }}</a>
+      <a href="{{ lp('/privacidade') }}">{{ t('privacy') }}</a>
+    </div>
+
+    <div class="cv-block">
+      <h2>{{ 'Categorias' if lang == 'pt' else 'Categories' }}</h2>
+      {% for cat in categories %}
+      <a href="{{ lp('/portfolio') }}?c={{ cat.slug }}">{{ f(cat, 'name') }}</a>
+      {% endfor %}
+    </div>
+
+    <div class="cv-block">
+      <h2>{{ 'Cases' if lang == 'pt' else 'Case studies' }} ({{ cases | length }})</h2>
+      {% for case in cases %}
+      <a href="{{ destino(case) }}"{% if eh_site(case) %} target="_blank" rel="noopener"{% endif %}>{{ f(case, 'title') }}{% if eh_site(case) %} ↗︎{% endif %}</a>
+      {% endfor %}
+    </div>
+
+    {% if nodal_cursos %}
+    <div class="cv-block">
+      <h2>{{ 'Nodal — Cursos' if lang == 'pt' else 'Nodal — Courses' }}</h2>
+      <a href="{{ lp('/nodal') }}">Nodal</a>
+      {% for curso in nodal_cursos %}
+      <a href="{{ lp('/nodal/curso/' + curso.slug) }}">{{ curso.titulo }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if nodal_situacoes %}
+    <div class="cv-block">
+      <h2>{{ 'Nodal — Situações' if lang == 'pt' else 'Nodal — Situations' }}</h2>
+      {% if not nodal_cursos %}
+      <a href="{{ lp('/nodal') }}">Nodal</a>
+      {% endif %}
+      {% for situacao in nodal_situacoes %}
+      <a href="{{ lp('/nodal/situacao/' + situacao.slug) }}">{{ situacao.titulo }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="cv-block">
+      <h2>{{ 'Idiomas' if lang == 'pt' else 'Languages' }}</h2>
+      <a href="/">Português (BR)</a>
+      <a href="/en">English</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,73 @@
+{# ============================================================
+   Painel de agenda de entrevistas. Vive DENTRO do `_shell.html` porque a
+   lista muda a cada mutação da esteira (nome novo, entrevista marcada) e
+   precisa vir junto na troca de fragmento.
+
+   Duas metades, como o dono pediu: à esquerda os candidatos com a data da
+   entrevista; à direita um calendário clicável. As duas conversam: clicar
+   num candidato o seleciona, clicar num dia marca a entrevista dele
+   naquele dia. O calendário é montado no navegador (`admita.js`) a partir
+   dos `data-` desta lista, então trocar de mês é instantâneo e não existe
+   um segundo lugar guardando as datas.
+   ============================================================ #}
+<div class="admita-modal-fundo admita-agenda-fundo" id="admita-modal-agenda" hidden>
+  <section class="admita-modal admita-agenda" aria-labelledby="admita-agenda-titulo">
+    <header class="admita-agenda-topo">
+      <div>
+        <h2 id="admita-agenda-titulo">Agenda de entrevistas</h2>
+        <p class="admita-modal-sub">
+          Escolha um candidato à esquerda e clique num dia para marcar a entrevista.
+        </p>
+      </div>
+      <button type="button" class="admita-agenda-x" data-fechar-agenda aria-label="Fechar a agenda">
+        <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5 12.5 12.5M12.5 3.5 3.5 12.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+
+    <div class="admita-agenda-corpo">
+      <div class="admita-agenda-lista" id="admita-agenda-lista" data-hoje="{{ hoje_iso }}">
+        {% for item in agenda %}
+        <button type="button" class="admita-agenda-pessoa{{ ' tem-data' if item.iso }}"
+                data-agenda-candidato="{{ item.id }}" data-agenda-data="{{ item.iso }}">
+          <span class="avatar {{ item.avatar_classe }}">{{ item.iniciais }}</span>
+          <span class="admita-agenda-pessoa-txt">
+            <strong>{{ item.nome }}</strong>
+            <em>{{ item.cargo }}</em>
+          </span>
+          <span class="admita-agenda-quando">
+            {% if item.iso %}
+            <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-calendario"/></svg>
+            {{ item.legivel }}
+            {% else %}
+            sem data
+            {% endif %}
+          </span>
+        </button>
+        {% endfor %}
+        <button type="button" class="admita-agenda-mais" data-agenda-mais hidden>
+          <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-seta-direita"/></svg>
+          <span data-agenda-mais-texto>mais</span>
+        </button>
+      </div>
+
+      <div class="admita-agenda-calendario">
+        <div class="admita-agenda-mes">
+          <button type="button" class="admita-agenda-nav" data-agenda-mes="-1" aria-label="Mês anterior">
+            <svg class="icone icone-esq" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-seta-direita"/></svg>
+          </button>
+          <strong id="admita-agenda-mes-nome">&#xA0;</strong>
+          <button type="button" class="admita-agenda-nav" data-agenda-mes="1" aria-label="Próximo mês">
+            <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-seta-direita"/></svg>
+          </button>
+        </div>
+        <div class="admita-agenda-semana" aria-hidden="true">
+          <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+        </div>
+        <div class="admita-agenda-grade" id="admita-agenda-grade" role="grid"></div>
+        <p class="admita-agenda-dica" id="admita-agenda-dica">
+          Selecione um candidato para liberar o calendário.
+        </p>
+      </div>
+    </div>
+  </section>
+</div>

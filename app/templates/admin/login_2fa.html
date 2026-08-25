@@ -1,0 +1,60 @@
+{% extends "admin/base.html" %}
+{% block title %}Código de verificação{% endblock %}
+{% block content %}
+<div class="lg-tela">
+  <div class="lg-textura" aria-hidden="true"></div>
+  <div class="lg-card">
+    <span class="lg-markwrap">
+      <svg class="lg-frame" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <rect x="0.5" y="0.5" width="99" height="99" pathLength="1"/>
+      </svg>
+      <svg viewBox="0 0 100 100" class="lg-mark" role="img" aria-label="Leandro Furtado">
+        <polygon class="lg-poly" pathLength="1" points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+        <polygon class="lg-poly" pathLength="1" points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+        <polygon class="lg-poly" pathLength="1" points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+      </svg>
+    </span>
+
+    <span class="lg-eyebrow">Segunda etapa</span>
+    <h1>Código de verificação</h1>
+    <p class="lg-sub">Abra o aplicativo autenticador e digite o código de 6 dígitos.</p>
+
+    {% if error %}<div class="lg-erro">{{ error }}</div>{% endif %}
+
+    <form method="post" action="/admin/login/codigo" class="lg-form" id="form2fa">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label class="lg-campo">
+        <span>Código</span>
+        <input type="text" name="codigo" id="campoCodigo" required autofocus
+               inputmode="numeric" autocomplete="one-time-code" maxlength="9"
+               spellcheck="false" class="lg-otp">
+      </label>
+      <button class="lg-entrar" type="submit">
+        <span>Verificar</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <path d="M5 12h13M13 6l6 6-6 6"/>
+        </svg>
+      </button>
+    </form>
+
+    <div class="lg-pe">
+      <span>Perdeu o celular? Use um código de recuperação</span>
+    </div>
+    <div class="lg-pe" style="border:0;padding-top:6px;margin-top:0">
+      <a href="/admin/login">←︎ Voltar</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var campo = document.getElementById("campoCodigo");
+  if (!campo) return;
+  // 6 dígitos entram e já envia: um dígito a mais seria código de recuperação,
+  // que tem hífen, então só dispara quando são exatamente seis números
+  campo.addEventListener("input", function () {
+    if (/^\d{6}$/.test(campo.value.trim())) document.getElementById("form2fa").submit();
+  });
+})();
+</script>
+{% endblock %}

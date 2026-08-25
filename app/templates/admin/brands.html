@@ -1,0 +1,103 @@
+{% extends "admin/base.html" %}
+{% block title %}Marcas & Clientes{% endblock %}
+{% block content %}
+{% import "admin/_ico.html" as ico %}
+<header class="panel-head">
+  <h1>Marcas & Clientes <small>{{ brands | length }}</small></h1>
+</header>
+
+{% if request.query_params.get('logo_err') %}
+<div class="flash err">Logo inválido. Envie um arquivo .svg de até 400KB, sem scripts.</div>
+{% endif %}
+
+<p class="hint">
+  A lógica do site é <em>marca = cliente</em>: toda marca aparece com o logotipo em SVG e é
+  clicável para a página <code>/cliente/…</code> com tudo que foi feito para ela.
+  <b>Marca sem logotipo não vai para o site</b> — fica só nesta lista, esperando o arquivo.
+  Marcas entram aqui de duas formas: cadastradas nesta lista (aparecem na hero, no Sobre e na Galeria de Honra)
+  ou automaticamente quando um case publicado tem o campo <em>Cliente</em> preenchido.
+</p>
+
+<form class="brand-add" method="post" action="/admin/brands/add">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <input name="name" maxlength="120" required placeholder="Nome da marca (ex.: Coca-Cola)">
+  <button class="btn primary" type="submit">+ Adicionar marca</button>
+</form>
+
+<ul class="brand-list">
+  {% for b in brands %}
+  <li class="brand-row">
+    <span class="brand-logo-box">
+      {% if b.logo %}
+      <img src="{{ b.logo }}?v={{ asset_v }}" alt="{{ b.name }}">
+      {% else %}
+      <em class="brand-wordmark">{{ b.name }}</em>
+      {% endif %}
+    </span>
+    <div class="case-cell">
+      <strong>{{ b.name }}</strong>
+      <span>
+        {{ b.count }} case{{ 's' if b.count != 1 }} publicado{{ 's' if b.count != 1 }}
+        ·︎ {{ 'cadastrada + cases' if b.from_profile and b.count else ('cadastrada nesta lista' if b.from_profile else 'veio de um case') }}
+      </span>
+    </div>
+    {#
+      Sem arquivo de logotipo a marca não sai no site — nem na home, nem na
+      Galeria de Honra, nem na página de outro cliente. Ela fica aqui, e só
+      aqui, para o logotipo ser enviado. Antes o site desenhava o nome em
+      tipografia no lugar da marca, e isso passava por logotipo provisório.
+    #}
+    <div class="badges">
+      {% if b.logo %}<span class="badge pub">logo SVG</span>
+      {% else %}<span class="badge draft" title="Envie o SVG para esta marca aparecer no site">sem logo ·︎ fora do site</span>{% endif %}
+    </div>
+    {#
+      Interruptor do trilho da home: a primeira dobra não comporta a lista
+      inteira, e escolher quem aparece lá é decisão editorial, não técnica.
+      Desligar aqui não apaga nada — a marca continua na Galeria de Honra.
+    #}
+    {% if b.logo %}
+    <form class="brand-home" method="post" action="/admin/brands/home">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="slug" value="{{ b.slug }}">
+      <button class="cf-pill {{ 'on' if b.na_home }}" type="submit"
+              title="{{ 'Aparece no trilho da home' if b.na_home else 'Fora do trilho da home' }}">
+        {{ ico.i('olho' if b.na_home else 'olho-off') }}
+        <span>Home: <b>{{ 'sim' if b.na_home else 'não' }}</b></span>
+      </button>
+    </form>
+    {% endif %}
+    <div class="brand-actions">
+      <form method="post" action="/admin/brands/logo" enctype="multipart/form-data">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="name" value="{{ b.name }}">
+        <label class="btn file-btn">{{ 'Substituir logo' if b.logo else 'Enviar logo SVG' }}
+          <input type="file" name="file" accept=".svg,image/svg+xml" data-autosubmit hidden>
+        </label>
+      </form>
+      {% if b.logo %}
+      <form method="post" action="/admin/brands/logo/delete" onsubmit='return confirm({{ ("Remover o logo de " ~ b.name ~ "? Sem logotipo ela sai do site e fica só nesta lista.") | tojson }})'>
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="name" value="{{ b.name }}">
+        <button class="btn ghost" type="submit">Remover logo</button>
+      </form>
+      {% endif %}
+      {% if b.from_profile and not b.count %}
+      <form method="post" action="/admin/brands/remove" onsubmit='return confirm({{ ("Remover " ~ b.name ~ " da lista de marcas?") | tojson }})'>
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="name" value="{{ b.name }}">
+        <button class="btn danger" type="submit">Remover</button>
+      </form>
+      {% endif %}
+      <a class="btn ghost" href="/cliente/{{ b.slug }}" target="_blank" rel="noopener" title="Ver página da marca">↗︎</a>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+
+<p class="hint">
+  Dica: o SVG ideal é monocromático (o site aplica o tratamento cinza automaticamente) e com o
+  desenho ocupando o arquivo inteiro, sem margens grandes. Marcas que vieram de cases só somem
+  quando o case deixa de existir ou muda de cliente.
+</p>
+{% endblock %}

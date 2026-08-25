@@ -1,0 +1,545 @@
+/* ============================================================
+   Lab de Demos — base compartilhada pelas 3 demos (Admita, Notável,
+   Caderneta). Nenhuma cor de marca mora aqui: os tokens de cor/tipografia
+   vêm de admita.css / notavel.css / caderneta.css, carregados DEPOIS deste
+   arquivo (ver app/templates/lab/_base_demo.html) e definidos como
+   variáveis CSS que as classes utilitárias abaixo consomem.
+
+   Kit de padrões (referência: .superpowers/sdd/2026-08-20-lab-demos/
+   referencias-ui-behance-estudo.md — síntese das 7 referências do
+   Leandro): raio de borda grande e uniforme em tudo, ícone SEMPRE dentro
+   de um container circular/pill (nunca solto), KPI = numeral display bold
+   + rótulo pequeno abaixo, cartão de IA com pill "IA" + justificativa
+   curta, sombra difusa opcional (nunca "dura"), cor fixa por categoria.
+   PROIBIDO (regra do Leandro, Global Constraints do Plano 2): rótulo
+   uppercase com tracking largo, dark neon, tab bar mobile, mascote.
+   ============================================================ */
+
+/* ---------------------------------------------------------- @font-face --
+   Fontes baixadas do Google Fonts (subset "latin" — cobre todo acento do
+   português) e servidas localmente: NENHUM host externo em produção (regra
+   de custo zero do site). Várias famílias abaixo são fontes VARIÁVEIS: o
+   MESMO arquivo físico cobre um intervalo de pesos — por isso o
+   `font-weight` de cada @font-face é um INTERVALO (ex. "500 700"), o mesmo
+   padrão já usado em app/static/css/main.css. O navegador escolhe a
+   instância exata dentro do intervalo pelo `font-weight` pedido no CSS de
+   cada marca, sem baixar um arquivo por peso. */
+
+@font-face {
+  font-family: "Alegreya";
+  src: url("/static/lab/fonts/alegreya-variavel.woff2") format("woff2");
+  font-weight: 500 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Alegreya";
+  src: url("/static/lab/fonts/alegreya-500italic.woff2") format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Karla";
+  src: url("/static/lab/fonts/karla-variavel.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Source Serif 4";
+  src: url("/static/lab/fonts/source-serif-4-variavel.woff2") format("woff2");
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("/static/lab/fonts/ibm-plex-sans-variavel.woff2") format("woff2");
+  font-weight: 400 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/static/lab/fonts/ibm-plex-mono-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/static/lab/fonts/ibm-plex-mono-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Lora";
+  src: url("/static/lab/fonts/lora-variavel.woff2") format("woff2");
+  font-weight: 500 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Lora";
+  src: url("/static/lab/fonts/lora-400italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito Sans";
+  src: url("/static/lab/fonts/nunito-sans-variavel.woff2") format("woff2");
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* -------------------------------------------------------------- reset --
+   Reset local mínimo: as demos NÃO herdam app/static/css/main.css (o
+   cabeçalho/copyright do site são portados em app/static/lab/
+   lab-moldura.css, ver comentário mais abaixo) NEM a11y.css — CONSERTO 2 (decisão
+   do dono): a barra de acessibilidade do site SAIU da moldura das demos
+   ("As demonstrações não precisam ter a barra de acessibilidade... Como
+   são demonstrações, precisam ter o básico para demonstração"). PRINCÍPIO
+   DO ENXUTO (§3 da spec): nada de peso institucional do site dentro das
+   demos — nenhum parcial do site além do necessário para a moldura. */
+
+html, body.lab-body { margin: 0; padding: 0; }
+
+/* LEI DA TELA CHEIA (§13b, decisão do Leandro): a PÁGINA nunca rola. `body`
+   só reseta margem e trava a altura — o grid vertical de verdade mora
+   direto em `.lab-demo`, que ocupa o `body` inteiro (sem a barra a11y
+   como irmã, não precisa mais de um grid externo no `body` para
+   acomodá-la).
+
+   Rodada de 20/08 (reforço do dono: cabeçalho reusado do site,
+   `.site-header` de lab-moldura.css): o cabeçalho é `position:fixed`
+   (MESMO comportamento do site, ver lab-moldura.css) e por isso NÃO
+   ocupa linha de grid — só `.lab-conteudo` e a faixa de copyright estão
+   em fluxo normal dentro de `.lab-demo`, por isso o grid caiu para 2
+   linhas reais (miolo 1fr + copyright auto). O respiro do "cabeçalho
+   (auto)" pedido pelo dono vira padding-top em `.lab-conteudo`, do
+   tamanho real do cabeçalho fixo (`top:0` sem a11y, ver lab-moldura.css)
+   — mesma técnica que a vitrine usa (vitrine.css) para o mesmo
+   `.site-header`. */
+body.lab-body {
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--marca-fundo, #fff);
+}
+
+.lab-demo, .lab-demo *, .lab-demo *::before, .lab-demo *::after {
+  box-sizing: border-box;
+}
+.lab-demo {
+  /* Grid do shell: miolo (1fr) + copyright (auto) — as duas únicas faixas
+     em fluxo normal (o cabeçalho é fixo, ver comentário acima). Nunca
+     gera scroll de página, só `.lab-conteudo` (via `.rola-interno`, ver
+     mais abaixo) controla overflow. */
+  height: 100%;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 1fr auto; /* miolo · copyright */
+  background: var(--marca-fundo, #fff);
+  color: var(--marca-texto, #1b1b1f);
+  font-family: var(--marca-fonte-ui, system-ui, sans-serif);
+  font-size: 16px;
+  line-height: 1.6; /* corpo 1.55-1.65 — regra anti-IA de espaçamento */
+  -webkit-font-smoothing: antialiased;
+}
+.lab-demo img, .lab-demo svg { max-width: 100%; display: block; }
+.lab-demo a { color: inherit; }
+.lab-demo button { font: inherit; color: inherit; }
+.lab-demo h1, .lab-demo h2, .lab-demo h3 {
+  font-family: var(--marca-fonte-display, serif);
+  line-height: 1.1; /* display 1.05-1.15 — regra anti-IA de espaçamento */
+  margin: 0 0 .4em;
+  text-wrap: balance;
+}
+.lab-demo p { margin: 0 0 1em; }
+
+/* ------------------------------------------------------------ tokens --
+   Raios e sombra são compartilhados pelas 3 marcas (só a COR muda por
+   marca); ficam aqui, não duplicados em admita/notavel/caderneta.css. */
+
+.lab-demo {
+  --raio-sm: 16px;
+  --raio-md: 22px;
+  --raio-lg: 28px;
+  --sombra-suave: 0 12px 30px rgba(20, 20, 24, .07);
+  --sombra-flutuante: 0 20px 46px rgba(20, 20, 24, .12);
+}
+
+/* --------------------------------------------------------- ícone-container
+   Regra de ouro do kit: ícone SEMPRE dentro de um container circular ou
+   pill — nunca solto (Global Constraints do Plano 2). `.icone` é o próprio
+   <svg>; `.icone-caixa` é o container circular ao redor dele. */
+
+.lab-demo .icone {
+  width: 1.35em;
+  height: 1.35em;
+  flex-shrink: 0;
+}
+.lab-demo .icone-caixa {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--marca-superficie-realce, rgba(0, 0, 0, .06));
+  color: var(--marca-primaria, currentColor);
+}
+.lab-demo .icone-caixa.pequena { width: 32px; height: 32px; }
+.lab-demo .icone-caixa.grande { width: 52px; height: 52px; }
+
+/* ----------------------------------------------------------------- .pill --
+   Filtro/status/badge em cápsula — nunca uppercase com tracking largo
+   (proibido pelas Global Constraints: é o cacoete de "eyebrow de IA"). */
+
+.lab-demo .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: .35em;
+  border-radius: 999px;
+  padding: 4px 13px;
+  font-size: .8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.lab-demo .pill.pill-ativa {
+  background: var(--marca-primaria, #1b1b1f);
+  color: var(--marca-primaria-contraste, #fff);
+}
+.lab-demo .pill.pill-neutra {
+  background: var(--marca-superficie-realce, rgba(0, 0, 0, .06));
+  color: var(--marca-texto, #1b1b1f);
+}
+.lab-demo .pill.pill-positiva {
+  background: var(--marca-positivo-fundo, #e7f3ec);
+  color: var(--marca-positivo, #0e7c3f);
+}
+.lab-demo .pill.pill-alerta {
+  background: var(--marca-alerta-fundo, #fbf1dc);
+  color: var(--marca-alerta, #8a6414);
+}
+.lab-demo .pill.pill-negativa {
+  background: var(--marca-negativo-fundo, #fbe9e4);
+  color: var(--marca-negativo, #b3261e);
+}
+
+/* --------------------------------------------------------------- .botao --
+   Cor vem da marca (`--marca-primaria`), forma é sempre pill. */
+
+.lab-demo .botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5em;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 24px;
+  font-weight: 700;
+  font-size: .95rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+}
+.lab-demo .botao:active { transform: scale(.97); }
+.lab-demo .botao:focus-visible {
+  outline: 3px solid var(--marca-primaria, #1b1b1f);
+  outline-offset: 2px;
+}
+.lab-demo .botao-primario {
+  background: var(--marca-primaria, #1b1b1f);
+  color: var(--marca-primaria-contraste, #fff);
+  box-shadow: var(--sombra-suave);
+}
+.lab-demo .botao-primario:hover { box-shadow: var(--sombra-flutuante); }
+.lab-demo .botao-secundario {
+  background: transparent;
+  color: var(--marca-texto, #1b1b1f);
+  border: 1.5px solid var(--marca-borda, #e5e3de);
+}
+.lab-demo .botao-secundario:hover { background: var(--marca-superficie-realce, rgba(0,0,0,.04)); }
+.lab-demo .botao:disabled { opacity: .5; cursor: not-allowed; }
+
+/* -------------------------------------------------------------- .celula --
+   Padrão nº 1 do kit: avatar/ícone + nome + valor. Base de listas de
+   candidato (Admita), lançamento de extrato (Notável), aluno (Caderneta). */
+
+.lab-demo .celula {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--raio-sm);
+  background: var(--marca-superficie, #fff);
+  border: 1px solid var(--marca-borda, #eceae6);
+}
+.lab-demo .celula .celula-conteudo {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.lab-demo .celula .celula-nome {
+  font-weight: 700;
+  font-size: .95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lab-demo .celula .celula-meta {
+  font-size: .8125rem;
+  color: var(--marca-texto-suave, #6e6a75);
+}
+.lab-demo .celula .celula-valor {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.lab-demo .avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: .8125rem;
+  flex-shrink: 0;
+  background: var(--marca-superficie-realce, rgba(0, 0, 0, .06));
+  color: var(--marca-primaria, #1b1b1f);
+}
+
+/* ---------------------------------------------------------------- .kpi --
+   Padrão nº 2 do kit: numeral display bold + rótulo pequeno abaixo, DENTRO
+   de card de raio grande sem sombra pesada. Nunca uppercase tracked. */
+
+.lab-demo .kpi {
+  border-radius: var(--raio-md);
+  padding: 20px 22px;
+  background: var(--marca-superficie, #fff);
+  border: 1px solid var(--marca-borda, #eceae6);
+  display: grid;
+  gap: 6px;
+}
+.lab-demo .kpi .kpi-rotulo {
+  font-size: .85rem;
+  color: var(--marca-texto-suave, #66717e);
+  font-weight: 600;
+}
+.lab-demo .kpi .kpi-valor {
+  font-size: clamp(1.75rem, 3vw, 2.375rem);
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--marca-fonte-display, inherit);
+}
+.lab-demo .kpi .kpi-delta {
+  font-size: .8125rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.lab-demo .kpi .kpi-delta.kpi-delta-positivo { color: var(--marca-positivo, #0e7c3f); }
+.lab-demo .kpi .kpi-delta.kpi-delta-negativo { color: var(--marca-negativo, #b3261e); }
+
+/* ----------------------------------------------------------- .cartao-ia --
+   Padrão "a IA já decidiu, aqui está o porquê" (item 10 do kit): pill "IA"
+   + frase curta de justificativa, nunca tabela crua de comparação. Selo
+   discreto de fallback é decisão de template (F5: motivo_fallback NUNCA
+   cru na tela — só um texto fixo tipo "exemplo pré-computado"). */
+
+.lab-demo .cartao-ia {
+  border-radius: var(--raio-sm);
+  padding: 16px 18px;
+  background: var(--marca-superficie-ia, var(--marca-superficie-realce, rgba(0, 0, 0, .04)));
+  border: 1px solid var(--marca-borda-ia, var(--marca-borda, #eceae6));
+  display: grid;
+  gap: 8px;
+}
+.lab-demo .cartao-ia .cartao-ia-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lab-demo .cartao-ia .cartao-ia-titulo {
+  font-weight: 700;
+  font-size: .95rem;
+}
+.lab-demo .cartao-ia .cartao-ia-justificativa {
+  font-size: .875rem;
+  color: var(--marca-texto-suave, #55515c);
+  line-height: 1.6;
+}
+.lab-demo .cartao-ia .cartao-ia-selo-exemplo {
+  font-size: .75rem;
+  color: var(--marca-texto-suave, #8a8690);
+  font-style: italic;
+}
+
+/* --------------------------------------------------------------- .skeleton
+   Só entre 400ms e 3s de espera real (§14 da spec — decisão de JS, não
+   deste CSS): formato do CONTEÚDO que vai aparecer, nunca um retângulo
+   genérico — por isso os modificadores de forma abaixo, para a tela de
+   destino escolher o que combina com o que está carregando. */
+
+.lab-demo .skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--raio-sm);
+  background: var(--marca-borda, #eceae6);
+}
+.lab-demo .skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, .5),
+    transparent
+  );
+  animation: lab-skeleton-onda 1.4s ease-in-out infinite;
+}
+.lab-demo .skeleton.skeleton-linha { height: 14px; border-radius: 7px; }
+.lab-demo .skeleton.skeleton-titulo { height: 22px; width: 60%; border-radius: 8px; }
+.lab-demo .skeleton.skeleton-avatar { width: 40px; height: 40px; border-radius: 999px; }
+.lab-demo .skeleton.skeleton-cartao { height: 88px; border-radius: var(--raio-md); }
+
+@keyframes lab-skeleton-onda {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lab-demo .skeleton::after { animation: none; }
+}
+
+/* ------------------------------------------------------------- cabeçalho
+   Rodada de 20/08 (reforço do dono, verbatim: "o mesmo cabeçalho e rodapé
+   copyright... o mesmo visual, o mesmo tamanho, o mesmo tudo"): as regras
+   de `.lab-cabecalho`/`.lab-marca*`/`.lab-nav*` SAÍRAM daqui — moraram
+   para app/static/lab/lab-moldura.css, o MESMO arquivo que a vitrine
+   carrega, para as duas telas nunca poderem divergir por CSS duplicado em
+   dois lugares. `_base_demo.html` carrega lab-moldura.css no `<head>`
+   (ver o `<link>` logo abaixo do lab-base.css). Nada aqui redefine esses
+   seletores — varredura confirmada, ver relatório da rodada. */
+
+/* ------------------------------------------------------------------ miolo
+   Território exclusivo da identidade da demo. Nunca gera scroll de
+   página: se o conteúdo excede o espaço, quem estende este template marca
+   o box que excede com `.rola-interno` (abaixo), não deixa o miolo
+   inteiro rolar (§13b — Lei da tela cheia).
+
+   Rodada de 20/08 (reforço do dono): o shell caiu para 2 linhas de grid —
+   miolo/copyright, o cabeçalho é fixo (ver comentário no `.lab-demo`
+   acima) — então o CTA de contato que antes era a 3ª linha do `.lab-demo`
+   agora mora AQUI DENTRO, como último filho do miolo: `.lab-conteudo-
+   corpo` centraliza `demo_conteudo` nos dois eixos no espaço que sobra
+   por cima da faixa `.lab-faixa` (que continua a mesma peça visual de
+   sempre, só mudou de pai). `padding-top` aqui reserva o espaço do
+   cabeçalho fixo — 67px reais (16px de padding + 34px do glifo + 1px de
+   borda, `top:0` sem barra de a11y) + folga. */
+.lab-demo .lab-conteudo {
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-top: calc(67px + 1vh);
+}
+.lab-demo .lab-conteudo-corpo {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(14px, 2.6vh, 28px) clamp(16px, 4vw, 48px);
+}
+
+/* --------------------------------------------------------- CTA de contato
+   Fixo, na cor da MARCA da demo (a única parte do miolo que pode colorir
+   fora da identidade da própria demo — estrutura do site: convite fixo +
+   tagline + botão). Discreto por ficar mais fino e por não ser mais uma
+   linha inteira do shell, só a última faixa do miolo. */
+
+.lab-demo .lab-faixa {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px clamp(16px, 4vw, 48px);
+  background: var(--marca-faixa-fundo, var(--marca-texto, #1b1b1f));
+  color: var(--marca-faixa-texto, #fff);
+}
+.lab-demo .lab-faixa-texto { display: grid; gap: 2px; max-width: 52ch; }
+.lab-demo .lab-faixa-convite {
+  font-weight: 700;
+  font-size: .95rem;
+  margin: 0;
+}
+.lab-demo .lab-faixa-tagline {
+  /* mesma geométrica dos títulos do sistema, e na cor do botão de CTA: a
+     linha vira parte da chamada em vez de um sussurro em serifa. */
+  font-family: "Nunito Sans", var(--marca-fonte-ui, sans-serif);
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--marca-faixa-cta, var(--marca-primaria, #fff));
+  margin: 0;
+}
+.lab-demo .lab-faixa .botao-primario {
+  background: var(--marca-faixa-cta, var(--marca-primaria, #fff));
+  color: var(--marca-faixa-cta-contraste, var(--marca-primaria-contraste, #1b1b1f));
+  flex-shrink: 0;
+}
+
+/* `.lab-copyright` também saiu daqui — mesmo motivo do cabeçalho acima,
+   mora em lab-moldura.css (compartilhado com a vitrine). */
+
+/* ---------------------------------------------------------- .rola-interno
+   Único lugar onde conteúdo excedente pode rolar dentro de uma demo
+   (§13b): scrollbar fina, na cor da marca — nunca a barra do sistema
+   operacional a toda largura. `scrollbar-width`/`scrollbar-color` cobrem
+   Firefox; `::-webkit-scrollbar*` cobre Chrome/Safari/Edge. */
+
+.lab-demo .rola-interno {
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--marca-primaria, #999) transparent;
+}
+.lab-demo .rola-interno::-webkit-scrollbar { width: 8px; height: 8px; }
+.lab-demo .rola-interno::-webkit-scrollbar-track { background: transparent; }
+.lab-demo .rola-interno::-webkit-scrollbar-thumb {
+  background: var(--marca-primaria, #999);
+  border-radius: 999px;
+}
+.lab-demo .rola-interno::-webkit-scrollbar-thumb:hover {
+  background: var(--marca-secundaria, #777);
+}
+
+/* ---------------------------------------------------------- utilidades --
+   Esconde texto só de leitor de tela (rótulo de ícone sem texto visível) e
+   marca número que precisa de alinhamento tabular fora de .kpi/.celula. */
+
+.lab-demo .visualmente-oculto {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.lab-demo .num { font-variant-numeric: tabular-nums; }
+
+@media (max-width: 640px) {
+  .lab-demo .lab-barra { font-size: .75rem; }
+  .lab-demo .lab-faixa { padding: 20px clamp(14px, 5vw, 28px); }
+}

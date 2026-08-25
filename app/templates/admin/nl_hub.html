@@ -1,0 +1,98 @@
+{% extends "admin/base.html" %}
+{% block title %}Central de e-mail{% endblock %}
+{% block content %}
+<header class="panel-head">
+  <h1>Central de e-mail <small>{{ resumo.contatos }} contato{{ 's' if resumo.contatos != 1 }} na base</small></h1>
+  <a class="btn primary" href="/admin/newsletter/nova">+ Nova newsletter</a>
+</header>
+
+{% include "admin/_nl_nav.html" %}
+
+{% if not smtp_ok %}
+<div class="flash err">
+  SMTP não configurado: dá para escrever e salvar, mas nada sai daqui.
+  <a class="linklike" href="/admin/newsletter/config">Configurar agora</a>.
+</div>
+{% endif %}
+
+<div class="nl-tiles">
+  <a class="nl-tile" href="/admin/newsletter/nova">
+    <span class="nl-tile-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>
+    </span>
+    <strong>Nova newsletter</strong>
+    <span>Monte o e-mail em blocos e veja o resultado enquanto escreve.</span>
+  </a>
+  <a class="nl-tile" href="/admin/newsletter/campanhas">
+    <span class="nl-tile-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+    </span>
+    <strong>Campanhas</strong>
+    <span>{{ resumo.enviadas }} enviada{{ 's' if resumo.enviadas != 1 }} ·︎ aberturas, cliques e histórico.</span>
+  </a>
+  <a class="nl-tile" href="/admin/newsletter/leads">
+    <span class="nl-tile-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    </span>
+    <strong>Contatos</strong>
+    <span>{{ resumo.leads }} lead{{ 's' if resumo.leads != 1 }} ·︎ {{ resumo.assinantes }} assinante{{ 's' if resumo.assinantes != 1 }} ·︎ {{ resumo.clientes }} cliente{{ 's' if resumo.clientes != 1 }}.</span>
+  </a>
+  <a class="nl-tile" href="/admin/newsletter/temas">
+    <span class="nl-tile-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18 4.5 4.5 0 0 0 0-9 4.5 4.5 0 0 1 0-9z"/></svg>
+    </span>
+    <strong>Temas</strong>
+    <span>As cores do e-mail, trocáveis por campanha.</span>
+  </a>
+  <a class="nl-tile" href="/admin/newsletter/config">
+    <span class="nl-tile-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.5-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.5 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.5 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.5-2-1.5c.06-.4.1-.8.1-1.2z"/></svg>
+    </span>
+    <strong>Configurações</strong>
+    <span>SMTP, remetente e para onde vão os leads.</span>
+  </a>
+  <a class="nl-tile accent" href="/admin/newsletter/config#teste">
+    <span class="nl-tile-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+    </span>
+    <strong>Teste de e-mail</strong>
+    <span>Manda uma mensagem real e confirma que o SMTP responde.</span>
+  </a>
+</div>
+
+<section class="nl-block">
+  <h2 class="nl-h">Números da base</h2>
+  <div class="nl-audience">
+    <div class="nl-aud"><strong>{{ resumo.contatos }}</strong><span>Contatos alcançáveis</span></div>
+    <div class="nl-aud"><strong>{{ resumo.assinantes }}</strong><span>Assinantes</span></div>
+    <div class="nl-aud"><strong>{{ resumo.aberturas }}</strong><span>Aberturas registradas</span></div>
+    <div class="nl-aud"><strong>{{ resumo.cliques }}</strong><span>Cliques registrados</span></div>
+  </div>
+  <p class="hint">
+    Abertura depende de o programa de e-mail carregar a imagem de rastreio. Gmail e Apple Mail
+    fazem cache ou pré-carregam, então o número serve para comparar campanhas entre si, e não
+    como contagem exata de pessoas. <em>Clique é confiável</em>, porque passa por redirecionamento.
+  </p>
+</section>
+
+<section class="nl-block">
+  <h2 class="nl-h">Boas-vindas automáticas</h2>
+  {% if welcome %}
+  <div class="nl-welcome ok">
+    <div>
+      <strong>{{ welcome.subject }}</strong>
+      <span>Enviada sozinha para quem assina a newsletter, com o cabeçalho <em>Newsletter / Boas-vindas</em>.</span>
+    </div>
+    <a class="btn ghost" href="/admin/newsletter/editar/{{ welcome.id }}">Editar</a>
+  </div>
+  {% else %}
+  <div class="nl-welcome">
+    <div>
+      <strong>Nenhuma campanha marcada</strong>
+      <span>Quem assinar a newsletter não recebe nada. Marque uma campanha como boas-vindas no editor.</span>
+    </div>
+    <a class="btn ghost" href="/admin/newsletter/campanhas">Escolher</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

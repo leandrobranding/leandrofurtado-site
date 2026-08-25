@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="{% block html_lang %}{{ 'en' if lang == 'en' else 'pt-BR' }}{% endblock %}" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{# `viewport-fit=cover` SAIU daqui (21/08). Era ele que mandava o Safari do
+   iPhone estender a página para debaixo da barra de status e da pílula de
+   endereço, criando a faixa onde o conteúdo aparecia por trás da barra fixa
+   de acessibilidade. Sem ele o Safari entrega a viewport já recortada e a
+   faixa deixa de existir. Os `env(safe-area-inset-*)` do CSS passam a valer
+   0 e continuam inofensivos. Só volte a usar `cover` se algum dia houver um
+   elemento que PRECISE pintar até a borda física da tela. #}
+<script>
+document.documentElement.classList.remove('no-js');
+/* tema antes do primeiro paint: sem flash */
+(function(){try{var t=localStorage.getItem('lf-theme');if(t==='light')document.documentElement.dataset.theme='light';}catch(e){}})();
+/* intro de marca: só no primeiríssimo acesso, decidido antes do paint */
+(function(){try{
+  if(!localStorage.getItem('lf-intro')
+     && !matchMedia('(prefers-reduced-motion: reduce)').matches
+     && location.search.indexOf('nomotion') === -1){
+    document.documentElement.classList.add('intro');
+  }
+}catch(e){}})();
+</script>
+
+{% set _path = path|default('/') %}
+{% set canonical = base_url ~ ('/en' ~ (_path if _path != '/' else '') if lang == 'en' else _path) %}
+<title>{% block title %}{{ t('meta_title') }}{% endblock %}</title>
+<meta name="description" content="{% block description %}{{ t('meta_desc') }}{% endblock %}">
+{#
+  Isolado num bloco para o Nodal poder se declarar sem alternativa em inglês
+  (ver bloco `hreflang` sobrescrito em app/templates/nodal/*.html): as quatro
+  páginas do módulo não têm tradução, e apontar hreflang="en" para uma URL
+  que devolve o mesmo português é dizer ao buscador que são duas versões
+  idiomáticas do mesmo conteúdo — sinal de conteúdo duplicado.
+#}
+{% block hreflang %}
+<link rel="canonical" href="{{ canonical }}">
+<link rel="alternate" hreflang="pt-BR" href="{{ base_url }}{{ _path }}">
+<link rel="alternate" hreflang="en" href="{{ base_url }}/en{{ _path if _path != '/' else '' }}">
+<link rel="alternate" hreflang="x-default" href="{{ base_url }}{{ _path }}">
+{% endblock %}
+
+<meta property="og:type" content="{% block ogtype %}website{% endblock %}">
+<meta property="og:site_name" content="{{ site_name }}">
+<meta property="og:title" content="{{ self.title() }}">
+<meta property="og:description" content="{{ self.description() }}">
+<meta property="og:url" content="{{ canonical }}">
+<meta property="og:image" content="{% block ogimage %}{{ base_url }}/static/img/og-default.png{% endblock %}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Leandro Furtado: Engenharia de IA e Direção de Arte">
+<meta property="og:locale" content="{{ 'en_US' if lang == 'en' else 'pt_BR' }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="robots" content="{% block robots %}index, follow, max-image-preview:large{% endblock %}">
+<meta name="author" content="Leandro Furtado">
+<meta name="theme-color" content="#0d0d0d">
+
+<link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+<link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png">
+
+<link rel="preload" href="/static/fonts/SpaceGrotesk.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/Montserrat.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/css/main.css?v={{ asset_v }}">
+{# a11y.css veio de dentro do body (_a11y.html): aqui os dois CSS baixam em
+   paralelo, sem re-descoberta tardia. #}
+<link rel="stylesheet" href="/static/css/a11y.css?v={{ asset_v }}">
+
+{% block jsonld %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Person",
+      "@id": "{{ base_url }}/#person",
+      "name": "Leandro Furtado",
+      "alternateName": "Leandro Branding",
+      "url": "{{ base_url }}/",
+      "jobTitle": "{{ 'Senior Art Director' if lang == 'en' else 'Diretor de Arte Sênior' }}",
+      {#
+        Foto da pessoa (22/08/2026). É o que o Google usa para montar a
+        entidade e, com sorte, o painel de conhecimento — sem `image` ele sabe
+        que existe um Leandro Furtado, mas não tem rosto para associar. O
+        retrato vem antes da capa porque `Person.image` pede a pessoa, não o
+        cenário; o og-default é a última rede, para o campo nunca sair vazio
+        (JSON-LD com propriedade vazia é pior que sem a propriedade).
+      #}
+      "image": "{{ (base_url ~ '/media/' ~ profile.photo) if (profile is defined and profile and profile.photo) else ((base_url ~ '/media/' ~ profile.cover) if (profile is defined and profile and profile.cover) else (base_url ~ '/static/img/og-default.png')) }}",
+      "knowsLanguage": ["pt-BR", "en"],{% if site is defined and site and site.cnpj %}
+      "taxID": "{{ site.cnpj }}",{% endif %}
+      "description": "{{ t('meta_desc') }}",
+      "email": "mailto:{{ (profile.email if profile is defined and profile else 'contatoleandrofurtado@gmail.com') }}",
+      "address": {"@type": "PostalAddress", "addressLocality": "Curitiba", "addressRegion": "PR", "addressCountry": "BR"},
+      "knowsAbout": ["AI Engineering", "Art Direction", "Creative Direction", "Branding", "Key Visual", "UI Design", "Motion Design", "Photography", "Web Development", "Generative AI"],
+      "award": "Top de Marketing ADVB/PR 2015"{% if site is defined and site %}{% set links = [site.social_linkedin, site.social_github, site.social_instagram, site.social_facebook, site.social_google] | select | list %}{% if links %},
+      "sameAs": [{% for l in links %}"{{ l }}"{% if not loop.last %},{% endif %}{% endfor %}]{% endif %}{% endif %}
+    },
+    {
+      "@type": "WebSite",
+      "@id": "{{ base_url }}/#website",
+      "url": "{{ base_url }}/",
+      "name": "{{ site_name }}",
+      "inLanguage": ["pt-BR", "en"],
+      "publisher": {"@id": "{{ base_url }}/#person"}
+    }{% block jsonld_extra %}{% endblock %}
+  ]
+}
+</script>
+{% endblock %}
+{% block head_extra %}{% endblock %}
+{% if site is defined and site and site.analytics_head %}{{ site.analytics_head | safe }}{% endif %}
+{#
+  GTM só entra com consentimento — `gtm_id` já chega vazio de render() quando
+  falta o cookie `lf_consent=sim`, o campo no painel, ou a tela é da área
+  logada do aluno (ver `_gtm_ativo` em app/main.py). A marca <meta> some
+  quando não há ID: consentimento.js confere ela e não faz nada sem conteúdo,
+  então o arquivo pode ser incluído sempre, sem inline novo na CSP.
+#}
+<meta name="gtm-id" content="{{ gtm_id if gtm_id is defined else '' }}">
+<script src="/static/js/consentimento.js?v={{ asset_v }}" defer></script>
+</head>
+{#
+  `body_attrs` (Tarefa 11, regra do Leandro de 18/08): o gancho, decidido no
+  SERVIDOR, que desliga o toast de "dicas de IA" (main.js, seção "push de
+  dicas de IA") fora do site — main.js roda em toda página que o carrega,
+  Nodal incluso, e o toast é retenção do PORTFÓLIO, não do produto pago. O
+  bloco vazio aqui é o padrão de sempre (toast ligado); só
+  app/templates/nodal/_base_nodal.html sobrescreve com `data-tips="off"`.
+#}
+<body data-page="{% block pageid %}default{% endblock %}"{% block body_attrs %}{% endblock %}>
+{% if gtm_id is defined and gtm_id %}
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id={{ gtm_id }}"
+  height="0" width="0" style="display:none;visibility:hidden" title="Google Tag Manager"></iframe></noscript>
+{% endif %}
+
+{% include "_a11y.html" %}
+
+{% macro lfmark(cls) %}
+<svg viewBox="0 0 100 100" class="{{ cls }}" aria-hidden="true">
+  <polygon fill="currentColor" points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+  <polygon fill="currentColor" points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+  <polygon fill="currentColor" points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+</svg>
+{% endmacro %}
+
+{#
+  Marca do Nodal (glifo), reproduzida fiel do macro `no()` em
+  app/templates/nodal/_nos.html na branch main ("A identidade do Nodal: nós
+  ligados por arestas. Um nó é um círculo vazado ... herdam currentColor").
+  Este site não importa esse arquivo (fica em outra branch/worktree — ver
+  isolamento em CLAUDE.md), então o glifo é copiado aqui, formalizado como
+  macro para não duplicar o desenho nos lugares que passam a usá-lo: a fita
+  da home (item 5), o rodapé (item 11) e o menu full screen — sempre
+  acompanhado do wordmark "Nodal" ao lado, nunca sozinho (pedido do
+  Leandro em 19/08: "círculo + texto 'Nodal', exatamente como aparece no
+  site do Nodal"). Monocromático (`currentColor`), sem a cor de destaque que
+  o ponto pulsante antigo usava ("não pode ter nenhuma cor").
+#}
+{% macro nodalmark(cls) %}
+<svg viewBox="0 0 12 12" class="{{ cls }}" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true" focusable="false">
+  <circle cx="6" cy="6" r="4"/>
+</svg>
+{% endmacro %}
+
+{% macro social_icon(name) %}
+{% if name == 'instagram' %}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
+{% elif name == 'facebook' %}<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7h2.6l.4-3h-3V9.1c0-.9.3-1.5 1.6-1.5H16.6V4.9c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9V11H7.9v3h2.6v7h3z"/></svg>
+{% elif name == 'linkedin' %}<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.4 8.6H3.2V21h3.2V8.6zM4.8 7.2a1.9 1.9 0 1 0 0-3.8 1.9 1.9 0 0 0 0 3.8zM21 14.2c0-3.1-1.7-4.6-3.9-4.6-1.8 0-2.6 1-3.1 1.7V8.6h-3.2V21H14v-6.6c0-1.5.7-2.4 2-2.4 1.2 0 1.8.8 1.8 2.4V21H21v-6.8z"/></svg>
+{% elif name == 'github' %}<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.2 11.39.6.11.82-.26.82-.58 0-.29-.01-1.05-.02-2.06-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.09 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.5.99.11-.78.42-1.3.76-1.6-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.25 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.8 5.62-5.48 5.92.43.37.81 1.1.81 2.22 0 1.6-.01 2.89-.01 3.28 0 .32.22.7.83.58A12 12 0 0 0 24 12.5C24 5.87 18.63.5 12 .5z"/></svg>
+{% elif name == 'whatsapp' %}<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.6-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.3-.6.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.4-3c-.3-.4 0-.5.1-.7l.4-.5c.1-.2.2-.3.3-.5v-.5c0-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1.1 2.7c.1.2 1.8 2.8 4.4 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.5-.2z"/></svg>
+{% endif %}
+{% endmacro %}
+
+{% set socials = [
+  ('instagram', site.social_instagram if site is defined and site else ''),
+  ('facebook',  site.social_facebook  if site is defined and site else ''),
+] %}
+
+<div class="brand-intro" aria-hidden="true">
+  <div class="bi-stage">
+    <svg viewBox="0 0 100 100" class="bi-mark" aria-hidden="true">
+      <polygon class="bi-poly" pathLength="1" points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+      <polygon class="bi-poly" pathLength="1" points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+      <polygon class="bi-poly" pathLength="1" points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+    </svg>
+    <span class="bi-line" aria-hidden="true"></span>
+    <span class="bi-name display"><i>Leandro&nbsp;Furtado</i></span>
+    <span class="bi-tag mono-label">{{ 'Engenharia de IA e Direção de Arte' if lang == 'pt' else 'AI Engineering & Art Direction' }}</span>
+  </div>
+</div>
+
+{#
+  Spec §17, adendo de 18/08 (chegou no fim da Tarefa 10 — "nada de tela de
+  carregamento no espaço do aluno"): o esqueleto do preloader nem é
+  RENDERIZADO nas páginas do aluno logado do Nodal (estudo, meus-cursos,
+  caderno, entrar/sair) — melhor que só escondê-lo por CSS/JS, porque não
+  existe nem o flash preto de um quadro antes do JavaScript decidir
+  removê-lo. `aluno_area` é a MESMA função (`_area_aluno_do_nodal`,
+  app/main.py) que já desliga GTM e o banner de consentimento nessas
+  mesmas páginas — uma fonte só, nunca uma terceira lista de rotas.
+
+  Só o CATÁLOGO PÚBLICO do Nodal (catálogo, curso, situações) continua
+  com o preloader normal — o pedido do Leandro foi "espaço do aluno",
+  não "todo o Nodal"; ver o Ruling registrado no relatório da Tarefa 10
+  sobre por que não estendi sozinho.
+
+  `is defined` porque nem toda rota que passa por `base.html` necessariamente
+  usa `render()` de app/main.py (algumas respostas de erro/admin montam o
+  contexto à mão) — sem a guarda, uma dessas quebraria com
+  `UndefinedError` em vez de simplesmente manter o preloader ligado (o
+  padrão seguro: na dúvida, mostra).
+#}
+{% if not (aluno_area is defined and aluno_area) %}
+<div class="preloader" aria-hidden="true">
+  {{ lfmark('pre-mark') }}
+  <span class="pre-count mono-label">0</span>
+</div>
+{% endif %}
+<div class="curtain" aria-hidden="true"></div>
+<div class="cursor-chip" aria-hidden="true"><span>{{ t('view_case') }}</span></div>
+
+{#
+  Aviso de link copiado. Mora aqui, e não na página de case, porque a regra vale
+  para o site inteiro: todo botão de copiar link, onde quer que esteja, devolve
+  o mesmo aviso. Enquanto ele vivia só na página de case, o mesmo botão na
+  página de cliente copiava em silêncio — o clique não dizia nada.
+
+  Segue o padrão dos outros modais: marca no topo, ícone e uma frase. A frase é
+  genérica de propósito; o que muda de um lugar para outro é o endereço, que
+  aparece embaixo e é o que a pessoa precisa reconhecer.
+#}
+<dialog class="aviso-modal" id="avisoCopia" aria-live="polite"
+        aria-label="{{ 'Link copiado' if lang == 'pt' else 'Link copied' }}"
+        data-am-erro="{{ 'Não deu para copiar' if lang == 'pt' else 'Could not copy' }}">
+  <div class="am-card">
+    {{ lfmark('am-marca') }}
+    <span class="am-ic" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 12.5 5 5 10-11"/></svg>
+    </span>
+    <p class="am-msg display">{{ 'Link copiado' if lang == 'pt' else 'Link copied' }}</p>
+    <p class="am-sub mono-label" data-am-url></p>
+  </div>
+</dialog>
+
+{#
+  Bloco `cabecalho` (rodada de direção de arte de 20/08 + reforço do dono:
+  "Isso serve para o cabeçalho também"): o `<header>` do site inteiro
+  virou o parcial único app/templates/_cabecalho.html, incluído aqui SEM
+  parâmetro nenhum (cabeçalho padrão) e pela moldura do Lab COM
+  `moldura_lab=true` (vitrine.html, lab/_base_demo.html) — o MESMO
+  componente, mudando só a marca e os links, nunca uma recriação. Nenhuma
+  página comum precisa declarar nada; só as 3 páginas do Lab sobrescrevem
+  este bloco.
+#}
+{% block cabecalho %}
+{% include "_cabecalho.html" %}
+{% endblock %}
+
+
+{#
+  A navegação fullscreen do site (rail social, menu mobile com Início,
+  Portfólio, Sobre... e a busca global com os modais dela) mora NUM bloco só,
+  e não em vários: é tudo a MESMA navegação, acionada pelos botões do
+  `header` acima — sem eles (o Nodal os substitui), estes elementos ficam
+  inalcançáveis por clique mas continuam no DOM, tabuláveis por teclado e
+  visíveis para leitor de tela. Um `{% if %}` no lugar de `{% block %}`
+  resolveria o clique mas não isso: o HTML inteiro ainda seria construído e
+  entregue, só escondido — o oposto da regra "servidor decide, nunca
+  esconde". O bloco vazio em app/templates/nodal/_base_nodal.html é o
+  servidor decidindo que esta navegação não existe nesta resposta.
+#}
+{% macro selo_google(classe='') %}
+{% set _rev = (site.social_google_review if site is defined and site and site.social_google_review else '') %}
+{% if _rev %}
+<a class="selo selo-google {{ classe }}" href="{{ _rev }}" target="_blank" rel="noopener"
+   aria-label="{{ t('review_cta') }} {{ t('review_on') }}">
+  <svg class="selo-g" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47a5.53 5.53 0 0 1-2.4 3.63v3.02h3.88c2.27-2.09 3.54-5.17 3.54-8.89z"/>
+    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.01c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09A11.99 11.99 0 0 0 12 24z"/>
+    <path fill="#FBBC05" d="M5.27 14.28c-.25-.72-.38-1.49-.38-2.28s.14-1.56.38-2.28V6.63H1.29A11.99 11.99 0 0 0 0 12c0 1.94.46 3.77 1.29 5.37l3.98-3.09z"/>
+    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.7 0 3.99 2.47 1.29 6.63l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z"/>
+  </svg>
+  <span class="selo-txt"><b>{{ t('review_cta') }}</b><i>{{ t('review_on') }}</i></span>
+</a>
+{% endif %}
+{% endmacro %}
+
+{% macro selo_seguro() %}
+<div class="selo selo-seguro">
+  <svg class="selo-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="1.7" aria-hidden="true" focusable="false">
+    <rect x="4" y="10.5" width="16" height="10.5" rx="2"/>
+    <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>
+  </svg>
+  <span class="selo-txt"><b>{{ t('secure_title') }}</b><i>{{ t('secure_detail') }}</i></span>
+</div>
+{% endmacro %}
+
+{% block site_menu %}
+
+{#
+  Ordem do trilho: LinkedIn e GitHub primeiro, que são os canais de quem
+  contrata engenharia; Instagram e WhatsApp depois. Mudou em 24/08 junto
+  com o reposicionamento — antes o GitHub nem existia no site.
+#}
+{% set rail_socials = [
+  ('linkedin',  site.social_linkedin  if site is defined and site else ''),
+  ('github',    site.social_github    if site is defined and site else ''),
+  ('instagram', site.social_instagram if site is defined and site else ''),
+  ('whatsapp',  site.social_whatsapp  if site is defined and site else ''),
+] %}
+<aside class="social-rail" aria-label="social">
+  <span class="rail-line" aria-hidden="true"></span>
+  {% for name, url in rail_socials %}
+    {% if url %}
+    <a class="rail-icon" href="{{ url }}" target="_blank" rel="noopener" aria-label="{{ name }}">{{ social_icon(name) }}</a>
+    {% endif %}
+  {% endfor %}
+  <span class="rail-line" aria-hidden="true"></span>
+</aside>
+
+{#
+  Menu em duas colunas: a navegação ocupa o espaço todo e o retrato é uma faixa
+  de ~20% colada na direita, de topo a base. A foto fica fora do bloco com
+  respiro justamente para poder encostar nas bordas — por isso o conteúdo tem
+  um invólucro próprio com o padding.
+#}
+{#
+  Selos do rodapé e do menu (23/08/2026, pedido do dono).
+
+  O "G" é o desenho oficial de quatro cores do Google, usado como o próprio
+  Google recomenda para botão de avaliação. É a ÚNICA cor do site inteiro, que
+  é monocromático por decisão — e é de propósito: cor num lugar só vira acento,
+  não ruído.
+
+  O selo de segurança NÃO imita Norton, McAfee ou Sectigo. Aqueles são emitidos
+  por terceiro que auditou e cobrou; um selo caseiro parecido afirmaria uma
+  verificação que não existe, e quem percebe perde a confiança justamente por
+  causa dele. Este declara, em nome próprio, quatro fatos medidos em 23/08 e
+  conferíveis por qualquer um: TLS 1.3 no handshake, HSTS com max-age de dois
+  anos, CSP servida em toda resposta e consentimento real por cookie.
+#}
+
+<div class="mobile-menu" aria-hidden="true">
+  <div class="mm-conteudo">
+  <div class="mm-head">
+    <a class="brand" href="{{ lp('/') }}">{{ lfmark('brand-mark') }}<span class="brand-name">Leandro&nbsp;Furtado</span></a>
+    <div class="mm-head-actions">
+      <button class="mm-search" type="button" aria-label="{{ t('search') }}"
+              title="{{ 'O que você procura hoje?' if lang == 'pt' else 'What are you looking for today?' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      </button>
+      <button class="mm-close" type="button" aria-label="{{ 'Fechar menu' if lang == 'pt' else 'Close menu' }}">✕︎</button>
+    </div>
+  </div>
+  <div class="mm-body">
+    <nav class="mm-nav">
+      <a href="{{ lp('/') }}"><em>01</em><span>{{ 'Início' if lang == 'pt' else 'Home' }}</span></a>
+      <a href="{{ lp('/portfolio') }}"><em>02</em><span>{{ t('work') }}</span></a>
+      <a href="{{ lp('/about') }}"><em>03</em><span>{{ t('about') }}</span></a>
+      <a href="{{ lp('/contato') }}"><em>04</em><span>{{ t('contact') }}</span></a>
+      {#
+        Lab de Demos (Plano 2/Task 3): item real, não "em breve" — as três
+        demos já estão de pé e a vitrine é indexável. Entra como 05, ANTES
+        dos dois itens "em breve", porque `.mobile-menu.closing .mm-nav >
+        a:nth-child(5)` já esperava um quinto <a> aqui (ver a régua de
+        transition-delay logo acima no CSS — ela cobre 1 a 5, nunca contou
+        os dois <span class="mm-breve"> que vinham depois). Nome só, sem
+        tradução: "Lab" é o mesmo em pt/en, como "Nodal" abaixo.
+      #}
+      <a href="{{ lp('/lab') }}"><em>05</em><span>Lab</span></a>
+      {#
+        Área do cliente: existe como promessa, não como link. É <span> e não
+        <a> de propósito — link que não leva a lugar nenhum é pior que aviso
+        honesto, e leitor de tela anunciaria um caminho que não existe. O
+        `aria-disabled` diz isso em voz alta.
+      #}
+      {#
+        Nodal: a plataforma de aprendizado de IA para criativos que o Leandro vai
+        lançar em seguida. Mesmo tratamento da Área do cliente — promessa, não
+        link — porque /nodal não existe em produção ainda.
+      #}
+      <span class="mm-breve" aria-disabled="true">
+        <em>06</em>
+        <span class="mb-txt">
+          {#
+            Logo do Nodal (círculo + palavra), não texto solto — pedido do
+            Leandro em 19/08: "as entradas do Nodal usam a logo, não texto
+            solto", igual ao rodapé e à fita da home.
+          #}
+          <span class="mb-nodal-brand">{{ nodalmark('mb-nodal-mark') }}Nodal</span>
+          <span class="mb-selo-wrap">
+            <b class="mb-selo mono-label">
+              <i aria-hidden="true"></i>{{ 'em breve' if lang == 'pt' else 'soon' }}
+            </b>
+          </span>
+        </span>
+      </span>
+      <span class="mm-breve" aria-disabled="true">
+        <em>07</em>
+        <span class="mb-txt">
+          {{ 'Área do cliente' if lang == 'pt' else 'Client area' }}
+          {#
+            Selo e cadeado juntos, num grupo próprio: alinhados entre si por
+            align-items:center DELE, não pela linha de base do texto grande —
+            é o grupo inteiro que fica na régua do texto, mas o selo e o
+            cadeado precisam estar alinhados um com o outro, não cada um
+            flutuando pela própria conta.
+          #}
+          <span class="mb-selo-wrap">
+            <b class="mb-selo mono-label">
+              <i aria-hidden="true"></i>{{ 'em breve' if lang == 'pt' else 'soon' }}
+            </b>
+            <svg class="mb-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+                 stroke-linecap="round" aria-hidden="true">
+              <rect x="4" y="10.5" width="16" height="10" rx="2.5"/>
+              <path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/><circle cx="12" cy="15.4" r="1.3"/>
+            </svg>
+          </span>
+        </span>
+      </span>
+      <div class="mm-small mono-label">
+        <a href="{{ lp('/mapa-do-site') }}">{{ t('sitemap_page') }}</a>
+        <a href="{{ lp('/privacidade') }}">{{ t('privacy') }}</a>
+      </div>
+    </nav>
+  </div>
+  <div class="mm-foot">
+    <div class="mm-social">
+      {% for name, url in rail_socials %}{% if url %}<a href="{{ url }}" target="_blank" rel="noopener" aria-label="{{ name }}">{{ social_icon(name) }}</a>{% endif %}{% endfor %}
+      <a href="mailto:{{ profile.email if profile is defined and profile else 'contatoleandrofurtado@gmail.com' }}" aria-label="E-mail">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m2 7 10 6L22 7"/></svg>
+      </a>
+    </div>
+    {{ selo_google('mm-selo') }}
+    <a class="cta-pill mm-cta" href="{{ lp('/contato') }}"><i>✳︎</i> {{ t('start_project') }}</a>
+    <a class="mm-lang mono-label" href="{{ ('/en' ~ (path if path != '/' else '')) if lang == 'pt' else path }}">{{ 'English' if lang == 'pt' else 'Português' }}</a>
+  </div>
+  </div>
+
+  {#
+    O retrato vem de Perfil & CV, não de um arquivo fixo no código: trocar a
+    foto é um upload no painel, não um deploy. Sem foto cadastrada, entra a arte
+    de reserva. Some no celular de propósito — ali a tela inteira é do menu.
+  #}
+  <figure class="mm-art {{ 'mm-retrato' if profile is defined and profile and profile.photo }}" aria-hidden="true">
+    <img src="{{ ('/media/' ~ profile.photo) if profile is defined and profile and profile.photo else '/static/img/menu-art.webp' }}"
+         alt="" loading="lazy">
+    <figcaption>
+      <span class="mm-tema">{{ t('site_theme') }}</span>
+    </figcaption>
+  </figure>
+</div>
+
+<div class="search-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-label="{{ t('search') }}"
+     data-lang="{{ lang }}"
+     data-t-noresults="{{ t('search_no_results') }}"
+     data-t-listening="{{ t('search_listening') }}"
+     data-t-analyzing="{{ t('search_analyzing') }}"
+     data-t-imgkw="{{ t('search_img_kw') }}"
+     data-t-aioff="{{ t('search_ai_off') }}"
+     data-t-voiceoff="{{ t('search_voice_off') }}"
+     data-t-hint="{{ t('search_hint') }}"
+     data-t-results="{{ t('results_found') }}"
+     data-t-result="{{ t('result_found') }}"
+     data-t-vtitle="{{ t('voice_title') }}"
+     data-t-vwait="{{ t('voice_wait') }}"
+     data-t-vsub="{{ t('voice_sub') }}"
+     data-t-vdenied="{{ t('voice_denied') }}"
+     data-t-vnothing="{{ t('voice_nothing') }}"
+     data-t-vdone="{{ t('voice_done') }}"
+     data-t-ierr-esquema="{{ t('img_err_esquema') }}"
+     data-t-ierr-privado="{{ t('img_err_privado') }}"
+     data-t-ierr-host="{{ t('img_err_host') }}"
+     data-t-ierr-tipo="{{ t('img_err_tipo') }}"
+     data-t-ierr-tamanho="{{ t('img_err_tamanho') }}"
+     data-t-ierr-resposta="{{ t('img_err_resposta') }}">
+  <div class="so-head">
+    <a class="brand" href="{{ lp('/') }}">{{ lfmark('brand-mark') }}<span class="brand-name">Leandro&nbsp;Furtado</span></a>
+    <button class="so-close" type="button" aria-label="{{ 'Fechar busca' if lang == 'pt' else 'Close search' }}">✕︎</button>
+  </div>
+  <div class="so-body">
+    <form class="so-bar" role="search" autocomplete="off">
+      <svg class="so-lupa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input class="so-input display" type="search" name="q" placeholder="{{ t('search_placeholder') }}"
+             aria-label="{{ t('search') }}" maxlength="120" spellcheck="false">
+      <button class="so-tool so-mic" type="button" aria-pressed="false"
+              aria-label="{{ 'Buscar por voz' if lang == 'pt' else 'Voice search' }}"
+              title="{{ 'Buscar por voz' if lang == 'pt' else 'Voice search' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>
+      </button>
+      <button class="so-tool so-img" type="button"
+              aria-label="{{ 'Buscar por imagem (IA)' if lang == 'pt' else 'Image search (AI)' }}"
+              title="{{ 'Buscar por imagem (IA)' if lang == 'pt' else 'Image search (AI)' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m3.5 18 5.5-5 4 3.6L17 13l3.5 3.5"/></svg>
+      </button>
+      <input class="so-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+      <button class="cta-pill so-go" type="submit">{{ t('search') }}</button>
+    </form>
+    <p class="so-status mono-label"><i>✳︎</i> <span>{{ t('search_hint') }}</span></p>
+    <div class="so-results" aria-live="polite"></div>
+
+    <footer class="so-sign" aria-hidden="true">
+      <p class="so-count mono-label" data-so-count hidden></p>
+      <span class="so-sign-line"></span>
+      {{ lfmark('so-mark') }}
+      <span class="so-sign-name mono-label">Leandro&nbsp;Furtado</span>
+      <span class="so-sign-tag mono-label">{{ 'Engenharia de IA e Direção de Arte' if lang == 'pt' else 'AI Engineering & Art Direction' }}</span>
+    </footer>
+  </div>
+</div>
+
+{#
+  Captação de voz.
+
+  Ganhou tela própria porque falar é um momento com começo, meio e fim: sem um
+  lugar que diga "estou ouvindo agora", a pessoa fala no vazio e só descobre se
+  funcionou quando o texto aparece — ou não aparece. As barras reagem ao volume
+  real do microfone, então dá para ver que o som está chegando antes de qualquer
+  palavra ser reconhecida.
+
+  Fica fora da busca, e não dentro: a busca abre e fecha com `clip-path`, que
+  recorta tudo que está dentro dela. Aninhado ali, este modal seria cortado pela
+  animação da tela que o abriu.
+#}
+{#
+  Assinatura dos modais: a marca e, ao lado, o ícone da ferramenta que abriu a
+  caixa. É o mesmo par que já assina o rodapé da busca — quem chega numa janela
+  pedindo microfone precisa reconhecer de quem é a janela antes de falar.
+#}
+{% macro mdx_marca(ferramenta) %}
+<div class="mdx-marca" aria-hidden="true">
+  {{ lfmark('mdx-mark') }}
+  <span class="mdx-sep"></span>
+  <span class="mdx-ferramenta">
+    {% if ferramenta == 'mic' %}
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5"/></svg>
+    {% else %}
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m3.5 18 5.5-5 4 3.6L17 13l3.5 3.5"/></svg>
+    {% endif %}
+  </span>
+</div>
+{% endmacro %}
+
+<div class="mdx voz" data-voz hidden>
+  <div class="mdx-caixa" role="dialog" aria-modal="true" aria-labelledby="vozTitulo">
+    <button class="mdx-x" type="button" data-voz-fechar
+            aria-label="{{ 'Fechar' if lang == 'pt' else 'Close' }}">✕︎</button>
+
+    {{ mdx_marca('mic') }}
+
+    <div class="voz-onda" data-voz-onda aria-hidden="true">
+      {% for _ in range(28) %}<i></i>{% endfor %}
+    </div>
+
+    <h2 class="mdx-titulo display" id="vozTitulo" data-voz-titulo>{{ t('voice_wait') }}</h2>
+    <p class="mdx-sub mono-label" data-voz-sub>{{ t('voice_sub') }}</p>
+
+    <p class="voz-texto" data-voz-texto>
+      <span class="voz-final"></span><span class="voz-parcial"></span><i class="voz-cursor" aria-hidden="true"></i>
+    </p>
+
+    <div class="mdx-bts">
+      <button class="cta-pill outline" type="button" data-voz-de-novo hidden>{{ t('voice_again') }}</button>
+      <button class="cta-pill" type="button" data-voz-usar disabled>{{ t('voice_use') }}</button>
+    </div>
+  </div>
+</div>
+
+{#
+  Busca por imagem: mesma caixa, duas entradas.
+
+  Arrastar um arquivo e colar um endereço resolvem a mesma necessidade por
+  caminhos diferentes — quem tem o arquivo arrasta, quem viu a imagem em outro
+  site copia o link. A comparação é local e sem IA: a imagem é reduzida a um
+  hash e confrontada com as dos cases, e nada sai do servidor.
+#}
+<div class="mdx img" data-img hidden>
+  <div class="mdx-caixa" role="dialog" aria-modal="true" aria-labelledby="imgTitulo">
+    <button class="mdx-x" type="button" data-img-fechar
+            aria-label="{{ 'Fechar' if lang == 'pt' else 'Close' }}">✕︎</button>
+
+    {{ mdx_marca('img') }}
+
+    <h2 class="mdx-titulo display" id="imgTitulo" data-img-titulo>{{ t('img_title') }}</h2>
+    <p class="mdx-sub mono-label" data-img-sub>{{ t('img_sub') }}</p>
+
+    <div class="img-solte" data-img-solte>
+      <figure class="img-previa" data-img-previa hidden><img alt=""></figure>
+      <svg class="img-icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m3.5 18 5.5-5 4 3.6L17 13l3.5 3.5"/>
+      </svg>
+      <p>{{ t('img_drop') }}
+        <button type="button" class="linklike" data-img-escolher>{{ t('img_pick') }}</button></p>
+      <input type="file" hidden data-img-arquivo accept="image/jpeg,image/png,image/webp,image/gif">
+    </div>
+
+    <div class="img-ou" aria-hidden="true"><span></span><em class="mono-label">{{ t('img_or') }}</em><span></span></div>
+
+    <form class="img-url" data-img-form>
+      <input type="url" data-img-link placeholder="{{ t('img_url_ph') }}" spellcheck="false" maxlength="600"
+             aria-label="{{ t('img_url_ph') }}">
+      <button class="cta-pill" type="submit" data-img-buscar>{{ t('search') }}</button>
+    </form>
+
+    <p class="mdx-erro mono-label" data-img-erro hidden></p>
+  </div>
+</div>
+{% endblock %}
+
+<main id="main">
+{% block content %}{% endblock %}
+</main>
+
+{#
+  Bloco `rodape` (Plano 2, Task 3, item 4 + reforço do dono 20/08: "o mesmo
+  cabeçalho e rodapé copyright" entre vitrine e demos): envolve o
+  `<footer>` inteiro do site. Páginas comuns herdam o conteúdo padrão
+  abaixo sem declarar nada; a vitrine /lab é a única que sobrescreve este
+  bloco inteiro, trocando pelo parcial compartilhado lab/_copyright.html —
+  o MESMO componente (mesma marcação, mesmo CSS de lab-moldura.css) que
+  lab/_base_demo.html usa como faixa de copyright das 3 demos. Nenhuma
+  outra página é afetada, testado dos dois lados.
+#}
+{% block rodape %}
+<footer class="site-footer">
+  {% if self.pageid() != "contact" %}
+  <div class="footer-hero">
+    <a class="footer-cta" href="{{ lp('/contato') }}">
+      <span class="mono-label"><i>✳︎</i> {{ 'Entre em contato' if lang == 'pt' else 'Get in touch' }}</span>
+      <span class="footer-cta-title display">{{ t('get_in_touch') }}</span>
+    </a>
+    <div class="newsletter" id="newsletter">
+      <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m2 7 10 6L22 7"/></svg>{{ t('nl_title') }}</h2>
+      <p>{{ t('nl_desc') }}</p>
+      {% if request.query_params.get('nl') %}
+      <p class="nl-ok mono-label">{{ t('nl_ok') }}</p>
+      {% else %}
+      <form class="nl-form" method="post" action="{{ lp('/newsletter') }}">
+        <input type="text" name="website" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true">
+        <input type="hidden" name="t" value="{{ carimbo_anti_spam() }}">
+        <input type="email" name="email" required maxlength="200" placeholder="{{ t('nl_placeholder') }}" aria-label="e-mail">
+        <button class="cta-pill" type="submit">{{ t('nl_btn') }} →︎</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <button class="footer-logo-box to-top" type="button" aria-label="{{ 'Voltar ao topo' if lang == 'pt' else 'Back to top' }}">
+        {{ lfmark('footer-mark') }}
+      </button>
+      <p class="footer-brand-line">{{ 'Engenharia de IA e Direção de Arte, do conceito ao código.' if lang == 'pt' else 'AI Engineering & Art Direction, from concept to code.' }}</p>
+      {#
+        Antes aqui ficava a minha cidade fixa. Agora é a de quem está lendo,
+        com o relógio no fuso dela. Sem localização (rede local, VPN sem
+        registro) entra uma frase neutra, nunca um espaço vazio.
+      #}
+      {#
+        Local e hora em linhas separadas. Juntos, um nome de cidade comprido
+        empurrava o relógio para a linha de baixo pela metade, e a informação
+        quebrava no meio em vez de quebrar onde faz sentido.
+      #}
+      <span class="mono-label footer-local">
+        {% if visitante is defined and visitante and visitante.cidade %}
+        {{ t('you_are_in') }} <b>{{ visitante.cidade }}</b>{% if visitante.pais %} ·︎ {{ visitante.pais }}{% endif %}
+        {% else %}{{ t('somewhere') }}{% endif %}
+      </span>
+      <span class="mono-label footer-hora"><span data-clock>--:--</span></span>
+      {% if site is defined and site and site.cnpj %}
+      <span class="mono-label footer-cnpj">CNPJ {{ site.cnpj }}</span>
+      {% endif %}
+      <a class="footer-mail-icon" href="mailto:{{ profile.email if profile is defined and profile else 'contatoleandrofurtado@gmail.com' }}"
+         aria-label="E-mail" title="{{ profile.email if profile is defined and profile else 'contatoleandrofurtado@gmail.com' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m2 7 10 6L22 7"/></svg>
+      </a>
+    </div>
+    <div class="footer-col">
+      <h3 class="mono-label">{{ t('col_site') }}</h3>
+      <a href="{{ lp('/') }}">{{ 'Início' if lang == 'pt' else 'Home' }}</a>
+      <a href="{{ lp('/portfolio') }}">{{ t('work') }}</a>
+      <a href="{{ lp('/about') }}">{{ t('about') }}</a>
+      <a href="{{ lp('/contato') }}">{{ t('contact') }}</a>
+      <a href="{{ lp('/lab') }}">Lab</a>
+      {#
+        Destaque maior que um link comum, sem virar banner (Leandro, 19/08,
+        item 11): a marca de nós entra em vez de um traço solto de texto, e o
+        selo "em breve" ganha borda própria — mesmo tratamento monocromático
+        da fita da home, só que em repouso, sem o movimento.
+      #}
+      {#
+        Rodada 3, item 6 (19/08): no mobile o selo precisa ficar centralizado
+        NA TELA, não só dentro da coluna "Site" onde mora no desktop. O
+        invólucro é só para o breakout (mesma técnica de `.trilho`: 100vw
+        com margem negativa, independente da largura da coluna que o
+        contém) — o selo em si (borda, pílula, conteúdo) não muda.
+      #}
+      <span class="foot-nodal-wrap">
+        <span class="foot-breve foot-nodal" aria-disabled="true">
+          {{ nodalmark('foot-nodal-mark') }}
+          <b>Nodal</b>
+          <i>{{ 'em breve' if lang == 'pt' else 'soon' }}</i>
+        </span>
+      </span>
+    </div>
+    <div class="footer-col">
+      <h3 class="mono-label">{{ t('col_social') }}</h3>
+      {% for name, url in socials %}{% if url %}<a href="{{ url }}" rel="noopener" target="_blank">{{ name | capitalize }}</a>{% endif %}{% endfor %}
+      {% if site is defined and site and site.social_linkedin %}<a href="{{ site.social_linkedin }}" rel="noopener" target="_blank">LinkedIn</a>{% endif %}
+      {% if site is defined and site and site.social_github %}<a href="{{ site.social_github }}" rel="noopener" target="_blank">GitHub</a>{% endif %}
+      {% if site is defined and site and site.social_whatsapp %}<a href="{{ site.social_whatsapp }}" rel="noopener" target="_blank">WhatsApp</a>{% endif %}
+    </div>
+    <div class="footer-col">
+      <h3 class="mono-label">{{ t('col_legal') }}</h3>
+      <a href="{{ lp('/privacidade') }}">{{ t('privacy') }}</a>
+      <a href="{{ lp('/mapa-do-site') }}">{{ t('sitemap_page') }}</a>
+      <a href="{{ lp('/clientes') }}">{{ t('hall_title') }}</a>
+      <span class="foot-breve" aria-disabled="true">
+        {{ 'Área do cliente' if lang == 'pt' else 'Client area' }} ·︎ {{ 'em breve' if lang == 'pt' else 'soon' }}
+      </span>
+    </div>
+  </div>
+
+  <div class="footer-selos">
+    {{ selo_google() }}
+    {{ selo_seguro() }}
+  </div>
+
+  {% include "_copyright.html" %}
+</footer>
+{% endblock %}
+
+<button class="top-fab to-top" type="button" aria-label="{{ 'Voltar ao topo' if lang == 'pt' else 'Back to top' }}">↑︎</button>
+
+<button class="theme-fab theme-toggle" type="button" aria-label="{{ 'Alternar tema claro/escuro' if lang == 'pt' else 'Toggle light/dark theme' }}">
+  <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+  <svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+</button>
+
+{#
+  Banner de consentimento (LGPD, opt-in real — pacote de 18/08). Decidido no
+  SERVIDOR: `mostrar_consentimento` só é verdadeiro sem escolha registrada
+  (render() em app/main.py), então o bloco nem existe no HTML depois que a
+  pessoa decide — nada de esconder com CSS/JS e torcer para o cookie bater.
+  As duas ações têm o mesmo peso visual e são o mesmo <form>, um POST comum:
+  funciona sem JavaScript nenhum, inclusive em leitor de tela.
+#}
+{% if mostrar_consentimento is defined and mostrar_consentimento %}
+<div class="cookie-note" role="dialog" aria-label="cookies">
+  <p>{{ t('an_consent_msg') }} <a href="{{ lp('/privacidade') }}">{{ t('privacy') }}</a></p>
+  <form method="post" action="/consentimento" class="cookie-actions">
+    <input type="hidden" name="csrf" value="{{ csrf if csrf is defined else '' }}">
+    <input type="hidden" name="proximo" value="{{ path }}{{ '?' ~ request.url.query if request.url.query else '' }}">
+    <button type="submit" name="escolha" value="nao" class="cta-pill outline">{{ t('an_consent_essential') }}</button>
+    <button type="submit" name="escolha" value="sim" class="cta-pill cookie-ok">{{ t('an_consent_accept') }}</button>
+  </form>
+</div>
+{% endif %}
+
+<script src="/static/vendor/gsap.min.js?v={{ asset_v }}" defer></script>
+<script src="/static/vendor/ScrollTrigger.min.js?v={{ asset_v }}" defer></script>
+<script src="/static/vendor/SplitText.min.js?v={{ asset_v }}" defer></script>
+<script src="/static/vendor/lenis.min.js?v={{ asset_v }}" defer></script>
+<script src="/static/js/main.js?v={{ asset_v }}" defer></script>
+<script src="/static/js/assinatura.js?v={{ asset_v }}" defer></script>
+</body>
+</html>

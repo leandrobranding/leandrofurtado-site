@@ -1,0 +1,59 @@
+{# ============================================================
+   Entrada do Admita: splash da marca, tela de acesso e o usuário fictício
+   entrando sozinho. É a primeira coisa que quem chega vê, então ela conta
+   em três segundos o que a demo é: um sistema de verdade, com sessão, com
+   marca, com gente dentro.
+
+   Regras que ela respeita:
+   · nada de rolagem: a camada é fixa e some por completo ao terminar;
+   · qualquer clique ou tecla pula para o fim, porque ninguém deve ser
+     obrigado a assistir duas vezes;
+   · `prefers-reduced-motion` não vê animação nenhuma, entra direto;
+   · o campo de senha nunca guarda nem envia nada: os pontinhos são
+     desenhados, não digitados, e não existe input de senha de verdade.
+   ============================================================ #}
+<div class="admita-entrada" id="admita-entrada" role="presentation">
+  <div class="admita-entrada-fundo" aria-hidden="true">
+    <span class="admita-entrada-brilho"></span>
+    <span class="admita-entrada-brilho admita-entrada-brilho-2"></span>
+  </div>
+
+  <div class="admita-entrada-splash" aria-hidden="true">
+    {% with id='ent', simbolo=True, classe='admita-entrada-simbolo' %}
+      {% include 'lab/admita/_marca.html' %}
+    {% endwith %}
+    <span class="admita-entrada-linha"></span>
+    <p class="admita-entrada-status" data-entrada-status></p>
+  </div>
+
+  <section class="admita-entrada-cartao" aria-hidden="true">
+    <div class="admita-entrada-marca">
+      {% with id='entl', tom='escuro', classe='admita-entrada-lockup' %}
+        {% include 'lab/admita/_marca.html' %}
+      {% endwith %}
+    </div>
+    <p class="admita-entrada-titulo">Entrar no sistema</p>
+    <p class="admita-entrada-sub">{{ empresa_rh }} {{ empresa_rh_nota }}</p>
+
+    <div class="admita-entrada-campo">
+      <span class="admita-entrada-rotulo">E-mail</span>
+      <span class="admita-entrada-valor" data-entrada-email><i class="admita-entrada-cursor"></i></span>
+    </div>
+
+    <div class="admita-entrada-campo">
+      <span class="admita-entrada-rotulo">Senha</span>
+      <span class="admita-entrada-valor admita-entrada-pontos" data-entrada-senha></span>
+    </div>
+
+    <div class="admita-entrada-botao" data-entrada-botao>
+      <span class="admita-entrada-botao-txt">Entrar</span>
+      <span class="admita-entrada-giro" aria-hidden="true"></span>
+    </div>
+
+    <p class="admita-entrada-nota">
+      Demonstração: nenhuma senha é digitada, enviada ou guardada.
+    </p>
+  </section>
+
+  <p class="admita-entrada-pular" data-entrada-pular>toque para pular</p>
+</div>

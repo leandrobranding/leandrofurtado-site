@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{# `viewport-fit=cover` SAIU daqui (21/08). Era ele que mandava o Safari do
+   iPhone estender a página para debaixo da barra de status e da pílula de
+   endereço, criando a faixa onde o conteúdo aparecia por trás da barra fixa
+   de acessibilidade. Sem ele o Safari entrega a viewport já recortada e a
+   faixa deixa de existir. Os `env(safe-area-inset-*)` do CSS passam a valer
+   0 e continuam inofensivos. Só volte a usar `cover` se algum dia houver um
+   elemento que PRECISE pintar até a borda física da tela. #}
+<meta name="robots" content="noindex, nofollow">
+<title>{% block title %}Admin{% endblock %} — LF</title>
+<link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+<link rel="stylesheet" href="/static/css/admin.css?v={{ asset_v }}">
+</head>
+<body>
+{% if user %}
+
+{#
+  Header do painel. A lateral diz onde você está; o header diz de quem é isto e
+  dá as saídas rápidas — ver o site, notificações e sair. Fica grudado no topo
+  porque essas três coisas são procuradas de qualquer tela.
+#}
+<header class="topo">
+  {#
+    No celular a lateral não cabe ao lado do conteúdo, e a trilha some: numa
+    tela estreita, saber onde se está vale menos que ter um caminho curto para
+    qualquer outro lugar. Por isso o hambúrguer abre a lateral por cima, e o
+    header fica com o essencial em ícone — marca, avisos, ver o site e sair.
+  #}
+  <button type="button" class="topo-menu" id="menuBtn" aria-expanded="false"
+          aria-controls="side" aria-label="Abrir o menu">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+         stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+  </button>
+
+  <a class="topo-marca" href="/admin" aria-label="Início do painel">
+    <svg viewBox="0 0 100 100" width="30" height="30" aria-hidden="true">
+      <polygon fill="currentColor" points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+      <polygon fill="currentColor" points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+      <polygon fill="currentColor" points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+    </svg>
+    <span class="topo-nome">Leandro Furtado</span>
+    <span class="topo-chip">ADMIN</span>
+    <span class="topo-sep" aria-hidden="true">//</span>
+  </a>
+
+  {#
+    Onde estou, agora. O caminho é montado do endereço a cada tela, então
+    acompanha a navegação sozinho e sempre permite voltar um nível sem procurar.
+  #}
+  <nav class="topo-trilha" aria-label="Você está aqui">
+    {% for passo in trilha | default([]) %}
+      {% if passo.atual %}
+      <span aria-current="page">{{ passo.nome }}</span>
+      {% else %}
+      <a href="{{ passo.url }}">{{ passo.nome }}</a>
+      <i aria-hidden="true">›︎</i>
+      {% endif %}
+    {% endfor %}
+  </nav>
+
+  <div class="topo-acoes">
+  {#
+    Sino. Fica na lateral, acima da navegação, porque é a primeira pergunta de
+    quem abre o painel: o que aconteceu desde a última vez? A janelinha mostra
+    os últimos e leva para a página cheia, onde dá para filtrar e abrir cada um.
+  #}
+  <div class="sino-wrap">
+    <button type="button" class="sino" id="sinoBtn" aria-expanded="false" aria-controls="sinoCaixa"
+            aria-label="Notificações{% if avisos_nao_lidos %} ({{ avisos_nao_lidos }} não lidas){% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+        <path d="M18 8.5a6 6 0 1 0-12 0c0 6-2 7.5-2 7.5h16s-2-1.5-2-7.5z"/>
+        <path d="M13.7 20a2 2 0 0 1-3.4 0"/>
+      </svg>
+      <span>Notificações</span>
+      {% if avisos_nao_lidos %}<b class="sino-conta">{{ avisos_nao_lidos }}</b>{% endif %}
+    </button>
+
+    <div class="sino-caixa" id="sinoCaixa" hidden>
+      <div class="sino-topo">
+        <strong>Últimas</strong>
+        {% if avisos_nao_lidos and csrf is defined and csrf %}
+        <form method="post" action="/admin/avisos/lidas">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button type="submit">Marcar lidas</button>
+        </form>
+        {% endif %}
+      </div>
+      <ul>
+        {% for a in avisos_recentes %}
+        <li class="{{ 'nova' if not a.lida }}{{ ' do-site' if a.do_site }}">
+          <a href="{{ a.url or '/admin/avisos' }}">
+            <em>{{ a.verbo }}</em> {{ a.titulo }}
+            <time>{{ a.created_at | local | strftime_('%d/%m %H:%M') }}</time>
+          </a>
+        </li>
+        {% else %}
+        <li class="sino-vazio">Nada por aqui ainda. O que você fizer no painel e o que
+          chegar pelo site aparece nesta lista.</li>
+        {% endfor %}
+      </ul>
+      <a class="sino-tudo" href="/admin/avisos">Ver todas as notificações →︎</a>
+    </div>
+  </div>
+    <a class="topo-ver" href="/" target="_blank" rel="noopener" aria-label="Ver o site">
+      <span class="topo-pulso" aria-hidden="true"></span>
+      <span class="topo-rot">Ver site</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M7 17 17 7"/><path d="M8.5 7H17v8.5"/>
+      </svg>
+    </a>
+
+    <a class="topo-sair" href="/admin/logout" aria-label="Sair do painel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M15 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v2"/>
+        <path d="M19 12H9m10 0-3.2-3.2M19 12l-3.2 3.2"/>
+      </svg>
+      <span class="topo-rot">Sair</span>
+    </a>
+  </div>
+</header>
+
+<div class="side-veu" id="sideVeu" hidden></div>
+<aside class="side" id="side">
+  <a class="side-brand" href="/admin">
+    <svg viewBox="0 0 100 100" width="34" height="34" aria-hidden="true">
+      <polygon fill="currentColor" points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+      <polygon fill="currentColor" points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+      <polygon fill="currentColor" points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+    </svg>
+    <span>Admin</span>
+  </a>
+  {% set path = request.url.path %}
+
+  <nav>
+    <a href="/admin" class="{% if path == '/admin' %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+      Dashboard</a>
+
+    <span class="nav-label">Conteúdo</span>
+    {# Uma entrada só para tudo de case. "Cases" e "Novo case" lado a lado na
+       lateral duplicavam o caminho: dentro da central já existe a aba de novo
+       case, junto de números, comentários e categorias. #}
+    <a href="/admin/cases" class="{% if path.startswith('/admin/cases') %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3.5 17 5.5-5 4 3.6L17 12l3.5 3.5"/><circle cx="9" cy="9" r="1.6"/></svg>
+      Central de cases</a>
+    <a href="/admin/brands" class="{% if '/brands' in path %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M3.5 12h17"/><circle cx="12" cy="12" r="3.4"/></svg>
+      Marcas & Clientes</a>
+    <a href="/admin/linkedin" class="{% if '/linkedin' in path %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.4 8.6H3.2V21h3.2V8.6zM4.8 7.2a1.9 1.9 0 1 0 0-3.8 1.9 1.9 0 0 0 0 3.8zM21 14.2c0-3.1-1.7-4.6-3.9-4.6-1.8 0-2.6 1-3.1 1.7V8.6h-3.2V21H14v-6.6c0-1.5.7-2.4 2-2.4 1.2 0 1.8.8 1.8 2.4V21H21v-6.8z"/></svg>
+      LinkedIn</a>
+    <a href="/admin/profile" class="{% if '/profile' in path %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/></svg>
+      Perfil & CV</a>
+
+    <span class="nav-label">Audiência</span>
+    <a href="/admin/newsletter/leads" class="{% if '/leads' in path %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/></svg>
+      Leads & Clientes</a>
+    <a href="/admin/messages" class="{% if '/messages' in path %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m2 7 10 6L22 7"/></svg>
+      Mensagens</a>
+    <a href="/admin/newsletter" class="{% if '/newsletter' in path %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v13H8l-4 4V4z"/><path d="M8 9h8M8 12.5h5"/></svg>
+      Central de e-mail</a>
+
+    <span class="nav-label">Nodal</span>
+    <a href="/admin/nodal/cursos" class="{% if '/admin/nodal/cursos' in path or '/admin/nodal/aulas' in path or '/admin/nodal/modulos' in path %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8 7.2 10.3 16M16 7.2 13.7 16M8.5 6h7"/></svg>
+      Cursos</a>
+    <a href="/admin/nodal/situacoes" class="{% if '/admin/nodal/situacoes' in path %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2.5 4.5 6v6c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6L12 2.5z"/><path d="M9.5 12.5h5M12 9.5v6"/></svg>
+      Situações</a>
+    <a href="/admin/nodal/alunos" class="{% if '/admin/nodal/alunos' in path %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1-3.7 4-5.6 7.5-5.6s6.5 1.9 7.5 5.6"/></svg>
+      Alunos</a>
+    <a href="/admin/nodal/habilidades" class="{% if '/admin/nodal/habilidades' in path %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      Habilidades</a>
+
+    <span class="nav-label">Lab de Demos</span>
+    <a href="/admin/lab" class="{% if '/admin/lab' in path %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h6M10 3v5.5L4.8 18a2 2 0 0 0 1.7 3h11a2 2 0 0 0 1.7-3L14 8.5V3"/><path d="M7.5 14.5h9"/></svg>
+      Painel do Lab</a>
+
+    <span class="nav-label">Sistema</span>
+    <a href="/admin/seguranca" class="{% if '/seguranca' in path %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2.5 4.5 6v6c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6L12 2.5z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg>
+      Segurança</a>
+    <a href="/admin/settings" class="{% if '/settings' in path %}on{% endif %}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.5-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.5 2 1.5a7 7 0 0 0 0 2.4l-2 1.5 2 3.5 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.5-2-1.5c.06-.4.1-.8.1-1.2z"/></svg>
+      Configurações</a>
+  </nav>
+  </aside>
+{% endif %}
+<main class="panel {% if not user %}panel-center{% endif %}">
+{% if request.query_params.get('ok') %}<div class="flash ok">Salvo com sucesso.</div>{% endif %}
+{% if error is defined and error %}<div class="flash err">{{ error }}</div>{% endif %}
+{% block content %}{% endblock %}
+</main>
+<script>window.CSRF = "{{ csrf }}";</script>
+<script src="/static/js/admin.js?v={{ asset_v }}" defer></script>
+<script>
+/* Janela de notificações: abre no clique, fecha no Esc ou ao clicar fora. Não
+   fecha ao clicar dentro, senão marcar como lida fecharia antes de enviar. */
+(function () {
+  var b = document.getElementById("sinoBtn"), cx = document.getElementById("sinoCaixa");
+  if (!b || !cx) return;
+  function abrir(v) { cx.hidden = !v; b.setAttribute("aria-expanded", v ? "true" : "false"); }
+  b.addEventListener("click", function (e) { e.stopPropagation(); abrir(cx.hidden); });
+  cx.addEventListener("click", function (e) { e.stopPropagation(); });
+  document.addEventListener("click", function () { abrir(false); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") abrir(false); });
+})();
+
+/* Gaveta do menu no celular. Abre por cima do conteúdo, fecha no véu, no Esc,
+   ao escolher um item e ao voltar para tela larga — onde a lateral é fixa e uma
+   gaveta aberta ficaria presa sem botão para fechar. */
+(function () {
+  var bt = document.getElementById("menuBtn"),
+      lat = document.getElementById("side"),
+      veu = document.getElementById("sideVeu");
+  if (!bt || !lat || !veu) return;
+
+  function abrir(v) {
+    lat.classList.toggle("aberta", v);
+    veu.hidden = !v;
+    bt.setAttribute("aria-expanded", v ? "true" : "false");
+    document.body.classList.toggle("travado", v);
+  }
+  bt.addEventListener("click", function () { abrir(!lat.classList.contains("aberta")); });
+  veu.addEventListener("click", function () { abrir(false); });
+  lat.addEventListener("click", function (e) { if (e.target.closest("a")) abrir(false); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") abrir(false); });
+  matchMedia("(min-width: 861px)").addEventListener("change", function (e) {
+    if (e.matches) abrir(false);
+  });
+})();
+</script>
+</body>
+</html>

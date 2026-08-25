@@ -1,0 +1,238 @@
+{% extends "admin/base.html" %}
+{% block title %}Cases{% endblock %}
+{% block content %}
+{% import "admin/_ico.html" as ico %}
+<header class="panel-head">
+  <h1>Cases <small><b data-cs-conta>{{ cases|length }}</b> de {{ todos|length }}</small></h1>
+  <div class="head-actions">
+    <a class="btn ghost" href="/portfolio" target="_blank" rel="noopener">{{ ico.i('externo') }} Ver portfólio</a>
+    <a class="btn primary" href="/admin/cases/new">{{ ico.i('mais') }} Novo case</a>
+  </div>
+</header>
+
+{% include "admin/_cases_nav.html" %}
+
+{#
+  Filtros sem botão: digitar já peneira a lista na hora, sem recarregar, e trocar
+  um seletor recarrega sozinho. Um botão "Filtrar" só existia para dizer ao
+  servidor o que a tela já sabia.
+#}
+{% set base_q = [] %}
+{% if f.q %}{% set _ = base_q.append('q=' ~ f.q | urlencode) %}{% endif %}
+{% if f.cat %}{% set _ = base_q.append('cat=' ~ f.cat) %}{% endif %}
+{% if f.cli %}{% set _ = base_q.append('cli=' ~ f.cli) %}{% endif %}
+{% if f.ano %}{% set _ = base_q.append('ano=' ~ f.ano) %}{% endif %}
+{% if f.ordem and f.ordem != 'recentes' %}{% set _ = base_q.append('ordem=' ~ f.ordem) %}{% endif %}
+{% set cauda = ('&' ~ base_q | join('&')) if base_q else '' %}
+
+<form class="cs-filtros" method="get" action="/admin/cases/lista" data-cs-form>
+  <input type="hidden" name="estado" value="{{ f.estado }}">
+
+  <label class="cs-busca">
+    {{ ico.i('busca') }}
+    <input type="search" name="q" value="{{ f.q }}" autocomplete="off"
+           placeholder="Buscar por título, cliente, categoria ou endereço" data-cs-busca>
+    <button type="button" class="cs-limpa" data-cs-limpa hidden aria-label="Limpar busca">{{ ico.i('x') }}</button>
+  </label>
+
+  <label class="cs-sel">
+    {{ ico.i('etiqueta') }}
+    <select name="cat" aria-label="Categoria">
+      <option value="">Todas as categorias</option>
+      {% for c in categories %}
+      <option value="{{ c.slug }}" {% if f.cat == c.slug %}selected{% endif %}>{{ c.name_pt }}</option>
+      {% endfor %}
+      <option value="_sem" {% if f.cat == '_sem' %}selected{% endif %}>— Sem categoria</option>
+    </select>
+  </label>
+
+  <label class="cs-sel">
+    {{ ico.i('pessoa') }}
+    <select name="cli" aria-label="Cliente">
+      <option value="">Todos os clientes</option>
+      {% for c in clientes %}
+      <option value="{{ c.slug }}" {% if f.cli == c.slug %}selected{% endif %}>{{ c.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  <label class="cs-sel">
+    {{ ico.i('calendario') }}
+    <select name="ano" aria-label="Ano">
+      <option value="">Todos os anos</option>
+      {% for a in anos %}<option value="{{ a }}" {% if f.ano == a %}selected{% endif %}>{{ a }}</option>{% endfor %}
+    </select>
+  </label>
+
+  <label class="cs-sel">
+    {{ ico.i('ordenar') }}
+    <select name="ordem" aria-label="Ordenar">
+      {% for chave, nome in ordens.items() %}
+      <option value="{{ chave }}" {% if f.ordem == chave %}selected{% endif %}>{{ nome }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  {% if f.q or f.cat or f.cli or f.ano %}
+  <a class="btn ghost sm cs-zera" href="/admin/cases/lista?estado={{ f.estado }}">{{ ico.i('x') }} Limpar</a>
+  {% endif %}
+  <noscript><button class="btn" type="submit">Filtrar</button></noscript>
+</form>
+
+<div class="cs-abas" role="tablist">
+  {% set estados = [('publicados', 'Publicados', 'olho'), ('rascunhos', 'Rascunhos', 'lapis'),
+                    ('arquivados', 'Arquivados', 'caixa')] %}
+  {% for chave, nome, icone in estados %}
+  <a role="tab" aria-selected="{{ 'true' if f.estado == chave else 'false' }}"
+     href="/admin/cases/lista?estado={{ chave }}{{ cauda }}">
+    {{ ico.i(icone) }}{{ nome }}<b>{{ contagens[chave] }}</b></a>
+  {% endfor %}
+</div>
+
+{% if cases %}
+<ul class="cs-lista" data-cs-lista>
+  {% for case in cases %}
+  {% set eh_site = case.category and case.category.kind == 'sites' %}
+  {% set n = vistos.get(case.id, 0) %}
+  {% set acima = n >= media and n > 0 %}
+  <li class="cs-item {{ 'arquivado' if case.archived }}"
+      data-busca="{{ case.title_pt }} {{ case.client_ref.name if case.client_ref else case.client }} {{ case.category.name_pt if case.category }} {{ case.year }} {{ case.slug }} {{ case.site_url }}">
+    <a class="cs-capa" href="/admin/cases/{{ case.id }}" aria-label="Editar {{ case.title_pt }}">
+      {% if eh_site and case.site_shot %}<img src="/media/{{ case.site_shot }}" alt="" loading="lazy">
+      {% elif case.cover_image %}<img src="/media/{{ case.cover_image }}" alt="" loading="lazy">
+      {% else %}<span class="ph"></span>{% endif %}
+    </a>
+
+    <div class="cs-corpo">
+      <a class="cs-titulo" href="/admin/cases/{{ case.id }}">{{ case.title_pt or '(sem título)' }}</a>
+      <div class="cs-meta mono-label">
+        {% if case.client_ref %}<span>{{ ico.i('pessoa') }}{{ case.client_ref.name }}</span>
+        {% elif case.client %}<span>{{ ico.i('pessoa') }}{{ case.client }}</span>{% endif %}
+        {% if case.category %}<span class="dim">{{ ico.i('etiqueta') }}{{ case.category.name_pt }}</span>{% endif %}
+        {% if case.year %}<span class="dim">{{ ico.i('calendario') }}{{ case.year }}</span>{% endif %}
+        {% if eh_site and case.site_url %}<span class="dim">{{ ico.i('externo') }}{{ case.site_url | replace('https://','') | replace('http://','') | replace('www.','') | trim('/') }}</span>{% endif %}
+      </div>
+      {% if comentarios.get(case.id) or pendentes.get(case.id) %}
+      <div class="cs-numeros mono-label">
+        {% if comentarios.get(case.id) %}
+        <span>{{ ico.i('balao') }}{{ comentarios.get(case.id) }} comentário{{ 's' if comentarios.get(case.id) != 1 }}</span>
+        {% endif %}
+        {% if pendentes.get(case.id) %}<span class="hot">{{ pendentes.get(case.id) }} a moderar</span>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    {#
+      Desempenho. A barra é o case contra o mais visto do portfólio; a cor é o
+      case contra a média. Verde é quem puxa, vermelho é quem está ficando para
+      trás — e um case no ar com zero acesso é sempre vermelho, porque zero não
+      é pouco: é sinal de que ninguém chega lá.
+    #}
+    <div class="cs-insight" title="{{ n }} acesso{{ 's' if n != 1 }} · média do portfólio {{ media | round(1) }}">
+      <span class="ci-n">{{ n }}</span>
+      <span class="ci-barra">
+        <i class="{{ 'sobe' if acima else 'cai' }}"
+           style="width: {{ ((n / pico * 100) if pico else 0) | round(1) }}%"></i>
+      </span>
+      <span class="ci-rot mono-label {{ 'sobe' if acima else 'cai' }}">
+        {{ ico.i('sobe' if acima else 'cai') }}{{ 'acima da média' if acima else ('sem acesso' if not n else 'abaixo da média') }}
+      </span>
+    </div>
+
+    <div class="cs-estado">
+      {% if case.archived %}<span class="badge arq">arquivado</span>
+      {% elif case.published %}<span class="badge pub">publicado</span>
+      {% else %}<span class="badge draft">rascunho</span>{% endif %}
+      {% if case.featured %}<span class="badge feat">destaque</span>{% endif %}
+      {% if case.noindex %}<span class="badge" title="Fora do Google">noindex</span>{% endif %}
+    </div>
+
+    <div class="cs-acoes">
+      <a class="btn ghost sm" href="/admin/cases/{{ case.id }}">{{ ico.i('lapis') }} Editar</a>
+      {# copiar o endereço público: para site, o do cliente; senão, o do case #}
+      <button type="button" class="btn ghost sm" data-copiar="{% if eh_site and case.site_url %}{{ case.site_url }}{% else %}{{ base_url }}/case/{{ case.slug }}{% endif %}">
+        {{ ico.i('elo') }} <span>Copiar URL</span></button>
+      <form method="post" action="/admin/cases/{{ case.id }}/duplicar">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn ghost sm" type="submit">{{ ico.i('copia') }} Duplicar</button>
+      </form>
+      <form method="post" action="/admin/cases/{{ case.id }}/arquivar">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn ghost sm" type="submit">
+          {{ ico.i('desarquivar' if case.archived else 'caixa') }}
+          {{ 'Desarquivar' if case.archived else 'Arquivar' }}</button>
+      </form>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<p class="hint cs-vazio" data-cs-vazio {% if cases %}hidden{% endif %}>
+  Nenhum case com esses filtros.
+  {% if f.q or f.cat or f.cli or f.ano %}<a class="linklike" href="/admin/cases/lista?estado={{ f.estado }}">Limpar os filtros</a>.{% endif %}
+</p>
+
+<script>
+/* Copiar URL sem sair da tela. O botão confirma no próprio rótulo, que é mais
+   direto que um alerta e não interrompe quem está cadastrando vários cases. */
+document.querySelectorAll("[data-copiar]").forEach(b => {
+  const rot = b.querySelector("span");
+  b.addEventListener("click", async () => {
+    const url = b.getAttribute("data-copiar");
+    const antes = rot.textContent;
+    try { await navigator.clipboard.writeText(url); rot.textContent = "Copiado"; }
+    catch (e) { rot.textContent = "Copie: " + url; }
+    setTimeout(() => { rot.textContent = antes; }, 1800);
+  });
+});
+
+/* Busca ao vivo e filtros automáticos.
+
+   A lista inteira já veio do servidor, então peneirar por texto é trabalho de
+   tela: acontece na tecla, sem ida e volta. Os seletores continuam indo ao
+   servidor, porque mudam a ordenação e a contagem de verdade. */
+(function () {
+  const form = document.querySelector("[data-cs-form]");
+  if (!form) return;
+
+  const campo = form.querySelector("[data-cs-busca]");
+  const limpa = form.querySelector("[data-cs-limpa]");
+  const conta = document.querySelector("[data-cs-conta]");
+  const vazio = document.querySelector("[data-cs-vazio]");
+  const itens = [...document.querySelectorAll("[data-cs-lista] .cs-item")];
+
+  form.querySelectorAll("select").forEach(s => s.addEventListener("change", () => form.submit()));
+
+  /* sem acento e sem caixa: "video" acha "Vídeo", "sao" acha "São" */
+  const plano = t => (t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const alvo = new Map(itens.map(li => [li, plano(li.getAttribute("data-busca"))]));
+
+  function peneirar() {
+    /* cada palavra precisa aparecer em algum lugar do case: assim "brasa 2024"
+       acha o que "brasa2024" nunca acharia */
+    const termos = plano(campo.value).split(/\s+/).filter(Boolean);
+    let vistos = 0;
+    itens.forEach(li => {
+      const passa = termos.every(t => alvo.get(li).includes(t));
+      li.hidden = !passa;
+      if (passa) vistos++;
+    });
+    if (conta) conta.textContent = vistos;
+    if (vazio) vazio.hidden = vistos > 0;
+    if (limpa) limpa.hidden = !campo.value;
+
+    /* o endereço acompanha, para recarregar ou compartilhar sem perder a busca */
+    const u = new URL(location.href);
+    campo.value ? u.searchParams.set("q", campo.value) : u.searchParams.delete("q");
+    history.replaceState(null, "", u);
+  }
+
+  let t;
+  campo.addEventListener("input", () => { clearTimeout(t); t = setTimeout(peneirar, 130); });
+  form.addEventListener("submit", e => { if (document.activeElement === campo) e.preventDefault(); });
+  if (limpa) limpa.addEventListener("click", () => { campo.value = ""; campo.focus(); peneirar(); });
+  peneirar();
+})();
+</script>
+{% endblock %}

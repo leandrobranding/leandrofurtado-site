@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% block pageid %}client{% endblock %}
+{#
+  SEO das 22 páginas de cliente, refeito em 22/08/2026.
+
+  O que havia: título "{cliente} — Leandro Furtado" e descrição
+  "Tudo o que foi feito para {cliente}: N projetos." — 48 caracteres onde o
+  Google mostra ~155, e com erro de plural em toda página de um projeto só
+  ("1 projetos", visível no resultado de busca do Bradesco, da Electrolux e de
+  mais quatro). A contagem visível na página (bloco .ch-conta, abaixo) sempre
+  tratou o singular certo; só a meta é que não.
+
+  O que passa a valer: o título ganha a especialidade, que é o termo que
+  alguém realmente busca ao lado do nome da marca, e a descrição lista os
+  TÍTULOS dos projetos daquele cliente. Listar os títulos importa porque
+  descrição igual em 22 páginas é conteúdo duplicado aos olhos do Google;
+  assim cada uma fica diferente das outras sem trabalho manual.
+#}
+{#- Nome de cliente longo ("Maratona Internacional do Paraná") estourava os 60
+    caracteres com a especialidade inteira. Encolhe a especialidade, nunca o
+    nome do cliente, que é o termo de busca. -#}
+{% block title %}{{ client_name }} ·︎ {% if client_name | length > 24 %}{{ 'Art Direction' if lang == 'en' else 'Direção de Arte' }}{% else %}{{ 'Art Direction and Branding' if lang == 'en' else 'Direção de Arte e Branding' }}{% endif %}{% endblock %}
+{% block description %}{{ seo_desc_cliente }}{% endblock %}
+
+{% block jsonld_extra %}{% if cases %},
+    {
+      "@type": "CollectionPage",
+      "name": "{{ client_name | e }}",
+      "author": {"@id": "{{ base_url }}/#person"},
+      "mainEntity": {
+        "@type": "ItemList",
+        "itemListElement": [
+          {% for case in cases %}{"@type": "ListItem", "position": {{ loop.index }}, "url": "{{ case.site_url if eh_site(case) else base_url ~ lp('/case/' ~ case.slug) }}", "name": "{{ f(case, 'title') | e }}"}{% if not loop.last %},{% endif %}{% endfor %}
+        ]
+      }
+    }{% endif %},
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "{{ 'Início' if lang == 'pt' else 'Home' }}", "item": "{{ base_url }}{{ lp('/') }}"},
+        {"@type": "ListItem", "position": 2, "name": "{{ t('hall_title') }}", "item": "{{ base_url }}{{ lp('/clientes') }}"},
+        {"@type": "ListItem", "position": 3, "name": "{{ client_name | e }}"}
+      ]
+    }{% endblock %}
+
+{% block content %}
+{% from "_bits.html" import tag_site, cat_link, moldura_site, trilho_marcas, quadro_marca, selos_programas with context %}
+{#
+  O logotipo entra numa moldura da identidade, e não solto sobre o fundo: assim
+  a marca do cliente tem um lugar dela na página sem competir com a tipografia
+  do site. A contagem aparece uma vez só — antes vinha sobrescrita no título e
+  repetida na linha de baixo, dizendo a mesma coisa duas vezes.
+#}
+{#
+  Hero em duas colunas: o trabalho à esquerda, a identificação à direita.
+
+  A foto sai da capa do case mais recente deste cliente. Sem case com capa, a
+  coluna simplesmente não existe e a identificação ocupa a linha inteira: melhor
+  uma coluna a menos que um retângulo vazio ocupando metade da tela.
+
+  No celular a ordem se inverte por CSS: quem é quem vem antes da foto, porque
+  a imagem é o item pesado e não deve atrasar a primeira leitura.
+#}
+{% macro share_icons() %}
+<div class="wc-share-icons">
+  <button class="share-ic" type="button" data-share="x" aria-label="X" title="X">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.2l7.3-8.4L1 2h6.4l4.4 5.9L18.9 2zM17.8 20.1h1.7L7.3 3.8H5.5l12.3 16.3z"/></svg>
+  </button>
+  <button class="share-ic" type="button" data-share="threads" aria-label="Threads" title="Threads">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3.4"/><path d="M15.4 12v1c0 1.6 1 2.6 2.3 2.6 1.5 0 2.5-1.3 2.5-3.6 0-4.5-3.4-7.5-8.2-7.5S3.8 7.5 3.8 12s3.4 7.5 8.2 7.5c2.5 0 4.6-.9 6-2.4"/></svg>
+  </button>
+  <button class="share-ic" type="button" data-share="linkedin" aria-label="LinkedIn" title="LinkedIn">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 8.6H3.2V21h3.2V8.6zM4.8 7.2a1.9 1.9 0 1 0 0-3.8 1.9 1.9 0 0 0 0 3.8zM21 14.2c0-3.1-1.7-4.6-3.9-4.6-1.8 0-2.6 1-3.1 1.7V8.6h-3.2V21H14v-6.6c0-1.5.7-2.4 2-2.4 1.2 0 1.8.8 1.8 2.4V21H21v-6.8z"/></svg>
+  </button>
+  <button class="share-ic" type="button" data-share="pinterest" aria-label="Pinterest" title="Pinterest">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.5 2 2 6.5 2 12c0 4.2 2.6 7.9 6.3 9.3-.1-.8-.2-2 0-2.9l1.2-4.9s-.3-.6-.3-1.5c0-1.4.8-2.4 1.8-2.4.9 0 1.3.6 1.3 1.4 0 .9-.6 2.2-.9 3.4-.2 1 .5 1.9 1.5 1.9 1.8 0 3.2-1.9 3.2-4.7 0-2.4-1.7-4.1-4.2-4.1-2.9 0-4.6 2.2-4.6 4.4 0 .9.3 1.8.8 2.3.1.1.1.2.1.3l-.3 1.1c0 .2-.2.2-.4.1-1.2-.6-1.9-2.3-1.9-3.8 0-3.2 2.3-6.1 6.7-6.1 3.5 0 6.2 2.5 6.2 5.8 0 3.5-2.2 6.3-5.2 6.3-1 0-2-.5-2.3-1.1l-.6 2.4c-.2.9-.8 2-1.2 2.7.9.3 1.9.4 2.9.4 5.5 0 10-4.5 10-10S17.5 2 12 2z"/></svg>
+  </button>
+  <button class="share-ic" type="button" data-share="email" aria-label="E-mail" title="E-mail">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m2 7 10 6L22 7"/></svg>
+  </button>
+  <button class="share-ic" type="button" data-share="whatsapp" aria-label="WhatsApp" title="WhatsApp">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.6-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.3-.6.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.4-3c-.3-.4 0-.5.1-.7l.4-.5c.1-.2.2-.3.3-.5v-.5c0-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1.1 2.7c.1.2 1.8 2.8 4.4 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.5-.2z"/></svg>
+  </button>
+  <button class="share-ic" type="button" data-share="copy" aria-label="{{ t('copy_link') }}" title="{{ t('copy_link') }}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 13.5a4 4 0 0 0 6 .4l2.5-2.5a4 4 0 1 0-5.7-5.7L11.5 7"/><path d="M14 10.5a4 4 0 0 0-6-.4l-2.5 2.5a4 4 0 1 0 5.7 5.7l1.3-1.3"/></svg>
+  </button>
+</div>
+{% endmacro %}
+
+{% set foto_hero = capa_de(hero_case) if hero_case else '' %}
+{% set capa_rel = (hero_case.cover_image or hero_case.site_shot) if hero_case else '' %}
+<section class="cliente-hero">
+  {#
+    Fundo do hero: a mesma capa, desfocada e rebaixada, ocupando a tela inteira
+    atrás das duas colunas. É decoração, então entra sem alt e escondida do
+    leitor de tela — a imagem que informa é a da coluna da esquerda.
+
+    Vai na menor versão da escada: sob 46px de desfoque a de 480 é idêntica à de
+    1600 e pesa uma fração dela.
+  #}
+  {% if foto_hero %}
+  <figure class="ch-fundo" aria-hidden="true">
+    <img src="{{ img_leve(capa_rel) if capa_rel else foto_hero }}" alt="" decoding="async">
+  </figure>
+  {% endif %}
+  <div class="ch-veu" aria-hidden="true"></div>
+
+  {#
+    A seção ocupa a tela inteira para o fundo sangrar de ponta a ponta; quem se
+    centraliza é esta grade interna. Antes as duas colunas eram filhas diretas
+    da seção, a seção tinha largura máxima e `overflow: hidden` — e o fundo,
+    mesmo pedindo 100vw, era recortado na borda dela. Ficavam duas faixas
+    escuras nas laterais, uma tarja no meio da tela.
+  #}
+  <div class="ch-grade {% if not foto_hero %}ch-solo{% endif %}">
+  {% if foto_hero %}
+  <figure class="ch-foto" data-reveal>
+    <img src="{{ foto_hero }}"
+         {% if srcset(hero_case.cover_image) %}srcset="{{ srcset(hero_case.cover_image) }}"
+         sizes="(max-width: 900px) 100vw, 48vw"{% endif %}
+         alt="{{ alt_de('', f(hero_case, 'title'), client_name) }}"
+         fetchpriority="high" decoding="async">
+  </figure>
+  {% endif %}
+
+  <div class="ch-info">
+    {#
+      Marca e contagem na mesma linha: são as duas coisas que identificam a
+      página, e empilhadas empurravam o hero para baixo sem dizer mais nada.
+    #}
+    <div class="ch-linha">
+      {# o rótulo mora dentro da caixa, junto da marca a que ele se refere #}
+      <div class="ch-marca" data-reveal>
+        <span class="ch-rotulo mono-label"><i>✳︎</i> {{ t('client') }}</span>
+        {% if client_logo %}
+        <h1 class="ch-h1">
+          {{ quadro_marca(client_logo, client_name, client_escala, client_chapa, client_formato, 'q-grande') }}
+          <span class="so-leitor">{{ client_name }}</span>
+        </h1>
+        {% else %}
+        <h1 class="ch-h1 ch-h1-texto display">{{ client_name }}</h1>
+        {% endif %}
+      </div>
+
+      {% if cases %}
+      {# mesmo desenho da contagem da Galeria de Honra #}
+      <div class="ch-conta" data-reveal>
+        <b>{{ cases | length }}</b>
+        <i>{{ ('projeto' if cases | length == 1 else 'projetos') if lang == 'pt'
+               else ('project' if cases | length == 1 else 'projects') }}</i>
+      </div>
+      {% endif %}
+
+      {#
+        Compartilhar a marca, não a página genérica: os botões levam o nome do
+        cliente no texto. Mesma caixa das outras duas, para a linha ler como um
+        conjunto de três e não como dois blocos mais um apêndice.
+      #}
+      <div class="ch-share" data-reveal data-share-ctx
+           data-share-url="{{ lp('/cliente/' ~ client_slug) if client_slug else path }}"
+           data-share-title="{{ t('client_everything') }} {{ client_name }}"
+           {% if foto_hero %}data-share-img="{{ foto_hero }}"{% endif %}>
+        <span class="ch-share-rotulo mono-label">{{ 'Compartilhar' if lang == 'pt' else 'Share' }}</span>
+        <div class="ch-share-ic">
+          {{ share_icons() }}
+        </div>
+      </div>
+    </div>
+
+    {% if cases %}
+    {#
+      No lugar do descritivo, uma âncora. A frase dizia o que a pessoa ia
+      encontrar; a âncora diz e leva. A seta desce sozinha, em repouso, para o
+      elemento se anunciar como caminho antes de alguém passar o mouse nele.
+    #}
+    <a class="ch-ancora" href="#projetos" data-reveal data-ancora>
+      <span>{{ 'Confira abaixo, tudo que foi feito para' if lang == 'pt'
+                else 'See below everything made for' }}
+        <strong>{{ client_name }}</strong></span>
+      <i aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 5v14"/><path d="m6 13 6 6 6-6"/>
+        </svg>
+      </i>
+    </a>
+    {% else %}
+    <p class="ch-desc" data-reveal>{{ t('client_empty') }}</p>
+    {% endif %}
+  </div>
+  </div>
+</section>
+
+
+{% if cases %}
+{#
+  Aqui a frase é sempre "projetos", mesmo quando tudo que o cliente tem é site.
+  Na página do cliente o recorte já é ele: dizer "os sites desse cliente" quando
+  por acaso só há sites descreve o acaso do momento, e muda sozinha no dia em
+  que entrar um case de outro tipo. No portfólio a variação continua, porque lá
+  quem escolheu a categoria Sites foi o visitante.
+#}
+<div class="view-switch cases-vs mono-label" id="projetos" data-reveal role="group" aria-label="{{ t('view_mode') }}">
+  <span class="dim vs-hint">{{ t('view_hint_cliente') }}</span>
+  <div class="vs-seg">
+    <span class="vs-ind" aria-hidden="true"></span>
+    <button type="button" data-view2="lista" class="on" data-tip="{{ 'Lista' if lang == 'pt' else 'List' }}" aria-label="{{ 'Lista' if lang == 'pt' else 'List' }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 5.5h18M3 12h18M3 18.5h18"/></svg>
+    </button>
+    <button type="button" data-view2="grid" data-tip="{{ t('view_grid') }}" aria-label="{{ t('view_grid') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+    </button>
+    <button type="button" data-view2="editorial" data-tip="{{ t('view_editorial') }}" aria-label="{{ t('view_editorial') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="9" rx="1.5"/><rect x="3" y="15.5" width="8" height="5.5" rx="1.5"/><rect x="14.5" y="15.5" width="6.5" height="5.5" rx="1.5"/></svg>
+    </button>
+    <button type="button" data-view2="masonry" data-tip="{{ t('view_masonry') }}" aria-label="{{ t('view_masonry') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="8" height="11" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="3" y="16.5" width="8" height="4.5" rx="1.5"/><rect x="13" y="11.5" width="8" height="9.5" rx="1.5"/></svg>
+    </button>
+  </div>
+</div>
+
+<section class="work-grid cases-view cv-lista" data-cases-view data-default-view="lista" data-view-key="cliente">
+  {% for case in cases %}
+  {% set site = eh_site(case) %}
+  <div class="work-card {{ 'site-card' if site }} {{ ['size-a','size-b','size-c','size-b','size-a','size-c'][loop.index0 % 6] }}"
+       {% if capa_de(case) %}data-peek="{{ capa_de(case) }}"{% endif %}>
+    <a class="wc-link" href="{{ destino(case) }}"
+       {% if site %}target="_blank" rel="noopener noreferrer" data-cursor-chip="{{ t('see_site') }}"{% else %}data-cursor-chip{% endif %}
+       aria-label="{{ f(case, 'title') }}{% if site %} — {{ t('open_site') }}{% endif %}"></a>
+    {% if site %}
+    {{ moldura_site(case, lazy=loop.index0 > 1) }}
+    {% else %}
+    <figure>
+      {% if case.cover_image %}
+      <img src="/media/{{ case.cover_image }}"
+           {% if srcset(case.cover_image) %}srcset="{{ srcset(case.cover_image) }}" sizes="(max-width: 900px) 100vw, 42vw"{% endif %}
+           alt="{{ alt_de('', f(case, 'title'), case.client) }}"
+           {% if loop.index0 > 1 %}loading="lazy" decoding="async"{% endif %} data-parallax>
+      {% else %}<div class="ph"></div>{% endif %}
+      {% if case.cover_video %}<video muted loop playsinline preload="none" src="/media/{{ case.cover_video }}"></video>{% endif %}
+    </figure>
+    {% endif %}
+    <div class="work-card-row mono-label">
+      <span class="wc-title">{{ f(case, 'title') }}</span>
+      {{ selos_programas(case) }}
+      <span class="dim wc-meta">
+        {% if site %}{{ tag_site(case) }}{% elif case.category %}{{ cat_link(case.category) }}{% endif %}
+        {% if case.year %}{% if site %}<span class="wc-ano">{{ case.year }}</span>{% else %} ·︎ {{ case.year }}{% endif %}{% endif %}
+      </span>
+    </div>
+    <div class="wc-share" data-share-ctx data-share-url="{{ destino(case) }}"
+         data-share-title="{{ f(case, 'title') | e }}"
+         {% if capa_de(case) %}data-share-img="{{ base_url }}{{ capa_de(case) }}"{% endif %}>
+      {{ share_icons() }}
+      <span class="wc-share-trig">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="6" r="2.6"/><circle cx="18" cy="18" r="2.6"/><path d="m8.4 10.8 7.2-3.6M8.4 13.2l7.2 3.6"/></svg>
+        {{ 'Compartilhar' if lang == 'pt' else 'Share' }}
+      </span>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+<img class="cases-peek" data-cases-peek alt="" aria-hidden="true">
+{# Sem cases não há botão aqui: a faixa de outros clientes logo abaixo já
+   oferece os dois caminhos, e repeti-los deixava quatro CTAs empilhados. #}
+{% endif %}
+
+{% if others %}
+{#
+  Faixa de largura cheia, num tom acima do fundo e com a trama diagonal da
+  identidade. Separa visualmente "o trabalho deste cliente" de "os outros
+  clientes" sem precisar de um título gritando a diferença.
+#}
+<section class="outros" aria-labelledby="outrosTit">
+  <div class="outros-inner">
+    <header class="outros-head" data-reveal>
+      <span class="ig-title display" id="outrosTit">{{ t('other_clients') }}</span>
+    </header>
+    {{ trilho_marcas(others, 'trilho-outros') }}
+    <div class="outros-cta" data-reveal>
+      <a class="cta-pill outline" href="{{ lp('/clientes') }}">{{ t('see_all_clients') }}</a>
+      <a class="cta-pill" href="{{ lp('/contato') }}"><i>✳︎</i> {{ t('start_project') }}</a>
+    </div>
+  </div>
+</section>
+{% else %}
+{# Sem outros clientes a faixa não existe, então o caminho de volta fica aqui. #}
+<section class="about-cta">
+  <a class="cta-pill outline" href="{{ lp('/portfolio') }}">←︎ {{ t('back_to_work') }}</a>
+  <a class="cta-pill" href="{{ lp('/contato') }}"><i>✳︎</i> {{ t('start_project') }}</a>
+</section>
+{% endif %}
+{% endblock %}

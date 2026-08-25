@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% block pageid %}portfolio{% endblock %}
+{% block title %}{{ t('work') }} ·︎ {{ site_name }} ·︎ {{ 'Diretor de Arte Curitiba' if lang == 'pt' else 'Art Director Brazil' }}{% endblock %}
+{% block description %}{{ t('portfolio_sub') }}{% endblock %}
+
+{% block head_extra %}
+{% if pages and pages > 1 %}
+{% if page > 1 %}<link rel="prev" href="{{ base_url }}{{ lp('/portfolio') }}?p={{ page - 1 }}{{ base_qs }}">{% endif %}
+{% if page < pages %}<link rel="next" href="{{ base_url }}{{ lp('/portfolio') }}?p={{ page + 1 }}{{ base_qs }}">{% endif %}
+{% endif %}
+{% endblock %}
+
+{% block jsonld_extra %},
+    {
+      "@type": "CollectionPage",
+      "@id": "{{ base_url }}{{ lp('/portfolio') }}",
+      "name": "{{ t('work') }}",
+      "description": "{{ t('portfolio_sub') }}",
+      "author": {"@id": "{{ base_url }}/#person"},
+      "mainEntity": {
+        "@type": "ItemList",
+        "itemListElement": [
+          {% for case in cases %}{"@type": "ListItem", "position": {{ loop.index }}, "url": "{{ case.site_url if eh_site(case) else base_url ~ lp('/case/' ~ case.slug) }}", "name": "{{ f(case, 'title') | e }}"}{% if not loop.last %},{% endif %}{% endfor %}
+        ]
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "{{ 'Início' if lang == 'pt' else 'Home' }}", "item": "{{ base_url }}{{ lp('/') }}"},
+        {"@type": "ListItem", "position": 2, "name": "{{ t('work') }}"}{% if active_cat_obj %},
+        {"@type": "ListItem", "position": 3, "name": "{{ f(active_cat_obj, 'name') | e }}"}{% endif %}
+      ]
+    }{% endblock %}
+
+{% block content %}
+{% from "_bits.html" import tag_site, cat_link, cli_link, moldura_site, selos_programas with context %}
+<div data-swap="portfolio">
+<section class="pf-hero">
+  <nav class="pf-crumbs mono-label" data-reveal aria-label="breadcrumb">
+    <a href="{{ lp('/') }}">{{ 'Início' if lang == 'pt' else 'Home' }}</a>
+    <i aria-hidden="true">/</i>
+    <a href="{{ lp('/portfolio') }}" {% if not active_cat_obj %}class="on" aria-current="page"{% endif %}>{{ t('work') }}</a>
+    {% if active_cat_obj %}<i aria-hidden="true">/</i><span class="on" aria-current="page">{{ f(active_cat_obj, 'name') }}</span>{% endif %}
+  </nav>
+
+  <h1 class="pf-title display" data-hero-title>{{ f(active_cat_obj, 'name') if active_cat_obj else t('work') }}</h1>
+  <p class="pf-sub" data-reveal>{{ t('portfolio_sub') }}</p>
+
+  <div class="pf-meta" data-reveal>
+    <p class="pf-count mono-label">
+      <span>{{ filtered_total }}</span> {{ t('cases_label') }}{% if active_cat_obj %} ·︎ {{ t('all') | lower }}: {{ total }}{% endif %}{% if pages > 1 %} ·︎ {{ t('page_label') }} {{ page }}/{{ pages }}{% endif %}
+    </p>
+    <span class="pf-meta-sep" aria-hidden="true"></span>
+    <span class="pf-scroll mono-label" aria-hidden="true">{{ t('scroll') }}<i></i></span>
+  </div>
+
+  <!-- filtros: pills no desktop, dropdown no mobile -->
+  <div class="pf-filters" data-reveal>
+    {#
+      Ajuste fino do dono (rodada 2, complemento do item 3): a fila de
+      pílulas ganha `data-drag-scroll` (mesmo utilitário de arrasto do
+      `.trilho` de logos, em main.js) e `fade-edge-x` (a máscara em degradê
+      já padrão do site para qualquer área com rolagem horizontal) — quando
+      pílulas + ordenação + refino de cliente não cabem juntos numa linha só
+      (ver `.pf-filters` em main.css), é esta fila que vira um carrossel de
+      arrastar, sem tirar ordenação/cliente do lugar.
+    #}
+    <div class="filters fade-edge-x" data-drag-scroll role="navigation" aria-label="{{ t('filter_by') }}">
+      <a class="pill mono-label {% if not active_cat %}on{% endif %}" href="{{ lp('/portfolio') }}">{{ t('all') }} <em>// {{ total }}</em></a>
+      {% for cat in categories %}
+      <a class="pill mono-label {% if active_cat == cat.slug %}on{% endif %}" href="{{ lp('/portfolio') }}?c={{ cat.slug }}">{{ f(cat, 'name') }} <em>// {{ counts.get(cat.id, 0) }}</em></a>
+      {% endfor %}
+    </div>
+
+    <div class="pf-select pf-select-cat" data-pf-select>
+      <button class="pf-select-btn mono-label" type="button" aria-expanded="false" aria-haspopup="listbox">
+        <span class="pf-select-label">
+          <em>{{ t('filter_cat') }}</em>
+          <strong>{{ f(active_cat_obj, 'name') if active_cat_obj else t('all') }} <i>// {{ (counts.get(active_cat_obj.id, 0) if active_cat_obj else total) }}</i></strong>
+        </span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <ul class="pf-select-menu" role="listbox">
+        <li><a href="{{ lp('/portfolio') }}" class="{% if not active_cat %}on{% endif %}" role="option" aria-selected="{{ 'true' if not active_cat else 'false' }}">{{ t('all') }} <i>// {{ total }}</i></a></li>
+        {% for cat in categories %}
+        <li><a href="{{ lp('/portfolio') }}?c={{ cat.slug }}" class="{% if active_cat == cat.slug %}on{% endif %}" role="option" aria-selected="{{ 'true' if active_cat == cat.slug else 'false' }}">{{ f(cat, 'name') }} <i>// {{ counts.get(cat.id, 0) }}</i></a></li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    {#
+      Refino por cliente, na segunda linha. Vale para desktop e mobile: no
+      desktop a categoria já vive nas pílulas, então esta fila é o que faltava
+      lá. Mantém a categoria ativa no endereço, para poder cruzar
+      "Digital & UI + Coca-Cola" sem perder um ao escolher o outro.
+
+      Aqui havia um filtro de ano junto. Saiu: o recorte de um portfólio é o
+      tipo de trabalho e para quem ele foi feito, não a data. Ninguém procura
+      "o que ele fez em 2024" — procura campanha, site, identidade, ou uma
+      marca. O ano continua escrito em cada case, onde é informação da ficha;
+      como filtro era só mais uma caixa para ninguém abrir.
+
+      Só aparece com mais de uma opção: um seletor com uma opção só é decoração
+      que ocupa espaço e não decide nada.
+    #}
+    {% if clientes|length > 1 %}
+    <div class="pf-refina">
+    {% set fora_cli = '?c=' ~ active_cat if active_cat else '' %}
+    <div class="pf-select" data-pf-select>
+      <button class="pf-select-btn mono-label" type="button" aria-expanded="false" aria-haspopup="listbox">
+        <span class="pf-select-label">
+          <em>{{ 'Cliente' if lang == 'pt' else 'Client' }}</em>
+          <strong>{% for s, n in clientes %}{% if s == active_cliente %}{{ n }}{% endif %}{% endfor %}{% if not active_cliente %}{{ 'Todos' if lang == 'pt' else 'All' }}{% endif %}</strong>
+        </span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+      </button>
+      <ul class="pf-select-menu" role="listbox">
+        <li><a href="{{ lp('/portfolio') }}{{ fora_cli }}" class="{% if not active_cliente %}on{% endif %}" role="option">{{ 'Todos' if lang == 'pt' else 'All' }}</a></li>
+        {% for s, n in clientes %}
+        <li><a href="{{ lp('/portfolio') }}{{ fora_cli }}{{ '&' if fora_cli else '?' }}cliente={{ s }}"
+               class="{% if active_cliente == s %}on{% endif %}" role="option">{{ n }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    </div>
+    {% endif %}
+
+    {#
+      Ordenação: três valores só — não precisa de dropdown nem de JS, são três
+      links e o ativo fica marcado, do jeito que toda outra tela deste site
+      filtra sem depender de script. Recentes é o padrão (item 1 do pedido);
+      A→Z/Z→A comparam o título no idioma da própria página (item 2) —
+      `filtros_qs` carrega categoria/tag/cliente/agência para o clique não
+      perder o resto do filtro.
+
+      Ajuste fino do dono (rodada 2): sem rótulo "ORDENAR" — os três links já
+      se explicam sozinhos — e, no desktop, na mesma linha das pílulas de
+      categoria e do refino por cliente (ver `.pf-order` em main.css: sem o
+      flex-basis 100% de antes, ele entra como mais um item da fila em vez de
+      forçar a própria linha). O `aria-label` no container continua dizendo
+      "ordenar por" para quem usa leitor de tela, mesmo sem o texto visível.
+    #}
+    <div class="pf-order mono-label" role="navigation" aria-label="{{ t('order_by') }}">
+      <a class="pf-order-link {% if ordem == 'recentes' %}on{% endif %}"
+         href="{{ lp('/portfolio') }}{{ ('?' ~ filtros_qs[1:]) if filtros_qs else '' }}">{{ t('order_recent') }}</a>
+      <a class="pf-order-link {% if ordem == 'az' %}on{% endif %}"
+         href="{{ lp('/portfolio') }}?ordem=az{{ filtros_qs }}">{{ t('order_az') }}</a>
+      <a class="pf-order-link {% if ordem == 'za' %}on{% endif %}"
+         href="{{ lp('/portfolio') }}?ordem=za{{ filtros_qs }}">{{ t('order_za') }}</a>
+    </div>
+  </div>
+
+</section>
+
+{% if cases %}
+{#
+  Lista primeiro, e é ela que abre. É a leitura padrão de qualquer conjunto de
+  cases: mostra título, cliente e ano de todos de uma vez, e a capa aparece no
+  hover. As outras três continuam a um clique, e a escolha fica guardada.
+#}
+{% set so_sites = active_cat_obj and active_cat_obj.kind == 'sites' %}
+<div class="view-switch cases-vs mono-label" data-reveal role="group" aria-label="{{ t('view_mode') }}">
+  <span class="dim vs-hint">{{ t('view_hint_sites') if so_sites else t('view_hint') }}</span>
+  <div class="vs-seg">
+    <span class="vs-ind" aria-hidden="true"></span>
+    <button type="button" data-view2="lista" class="on" data-tip="{{ 'Lista' if lang == 'pt' else 'List' }}" aria-label="{{ 'Lista' if lang == 'pt' else 'List' }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 5.5h18M3 12h18M3 18.5h18"/></svg>
+    </button>
+    <button type="button" data-view2="grid" data-tip="{{ t('view_grid') }}" aria-label="{{ t('view_grid') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+    </button>
+    <button type="button" data-view2="editorial" data-tip="{{ t('view_editorial') }}" aria-label="{{ t('view_editorial') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="9" rx="1.5"/><rect x="3" y="15.5" width="8" height="5.5" rx="1.5"/><rect x="14.5" y="15.5" width="6.5" height="5.5" rx="1.5"/></svg>
+    </button>
+    <button type="button" data-view2="masonry" data-tip="{{ t('view_masonry') }}" aria-label="{{ t('view_masonry') }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="8" height="11" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="3" y="16.5" width="8" height="4.5" rx="1.5"/><rect x="13" y="11.5" width="8" height="9.5" rx="1.5"/></svg>
+    </button>
+  </div>
+</div>
+
+<section class="work-grid cases-view cv-lista" data-cases-view data-default-view="lista" data-view-key="portfolio">
+  {% for case in cases %}
+  {% if eh_site(case) %}
+  {#
+    Card de site. A categoria "sites" não tem página de case: o clique vai
+    direto ao endereço real. A prévia é a captura do próprio site, dentro de
+    uma moldura de navegador, para ler como site à primeira vista.
+  #}
+  <div class="work-card site-card {{ ['size-a','size-b','size-c','size-b','size-a','size-c'][loop.index0 % 6] }}"
+       {% if capa_de(case) %}data-peek="{{ capa_de(case) }}"{% endif %}>
+    <a class="wc-link" href="{{ case.site_url }}" target="_blank" rel="noopener noreferrer"
+       data-cursor-chip="{{ t('see_site') }}"
+       aria-label="{{ f(case, 'title') }} — {{ 'abrir o site em nova aba' if lang == 'pt' else 'open the site in a new tab' }}"></a>
+
+    {{ moldura_site(case, lazy=loop.index0 > 1) }}
+
+    <div class="work-card-row mono-label">
+      <span class="wc-title">{{ f(case, 'title') }}</span>
+      {{ selos_programas(case) }}
+      <span class="dim wc-meta">
+        {{ tag_site(case) }}
+        {% if case.year %}<span class="wc-ano">{{ case.year }}</span>{% endif %}
+      </span>
+    </div>
+  </div>
+  {% else %}
+  <div class="work-card {{ ['size-a','size-b','size-c','size-b','size-a','size-c'][loop.index0 % 6] }}"
+       {% if case.cover_image %}data-peek="/media/{{ case.cover_image }}"{% endif %}>
+    <a class="wc-link" href="{{ lp('/case/' ~ case.slug) }}" data-cursor-chip aria-label="{{ f(case, 'title') }}"></a>
+    <figure>
+      {% if case.cover_image %}
+      <img src="/media/{{ case.cover_image }}"
+           {% if srcset(case.cover_image) %}srcset="{{ srcset(case.cover_image) }}" sizes="(max-width: 900px) 100vw, 42vw"{% endif %}
+           alt="{{ alt_de('', f(case, 'title'), case.client) }}"
+           {% if loop.index0 > 1 %}loading="lazy" decoding="async"{% endif %} data-parallax>
+      {% else %}<div class="ph"></div>{% endif %}
+      {% if case.cover_video %}<video muted loop playsinline preload="none" src="/media/{{ case.cover_video }}"></video>{% endif %}
+    </figure>
+    <div class="work-card-row mono-label">
+      <span class="wc-title">{{ f(case, 'title') }}</span>
+      {{ selos_programas(case) }}
+      <span class="dim wc-meta">
+        {{ cli_link(case) }}
+        {% if case.category %} ·︎ {{ cat_link(case.category) }}{% endif %}
+        {% if case.year %} ·︎ {{ case.year }}{% endif %}
+      </span>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+</section>
+<img class="cases-peek" data-cases-peek alt="" aria-hidden="true">
+
+{% if pages > 1 %}
+<nav class="pager" aria-label="{{ t('page_label') }}">
+  <p class="pager-count mono-label">
+    {{ t('showing') }} <span>{{ range_from }}–{{ range_to }}</span> {{ t('of_total') }} <span>{{ filtered_total }}</span> {{ t('cases_label') }}
+  </p>
+
+  <div class="pager-nav">
+    {% if page > 1 %}
+    <a class="pager-arrow" href="{{ lp('/portfolio') }}?p={{ page - 1 }}{{ base_qs }}" rel="prev" aria-label="{{ t('prev_page') }}">←︎</a>
+    {% else %}
+    <span class="pager-arrow off" aria-hidden="true">←︎</span>
+    {% endif %}
+
+    <div class="pager-nums mono-label">
+      {% for n in range(1, pages + 1) %}
+        {% if n == 1 or n == pages or (n >= page - 1 and n <= page + 1) %}
+        <a class="pager-num {% if n == page %}on{% endif %}" href="{{ lp('/portfolio') }}?p={{ n }}{{ base_qs }}"
+           {% if n == page %}aria-current="page"{% endif %}>{{ '%02d' % n }}</a>
+        {% elif n == page - 2 or n == page + 2 %}
+        <span class="pager-gap" aria-hidden="true">·︎·︎·︎</span>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if page < pages %}
+    <a class="pager-arrow" href="{{ lp('/portfolio') }}?p={{ page + 1 }}{{ base_qs }}" rel="next" aria-label="{{ t('next_page') }}">→︎</a>
+    {% else %}
+    <span class="pager-arrow off" aria-hidden="true">→︎</span>
+    {% endif %}
+  </div>
+
+  <div class="pager-bar" aria-hidden="true"><span style="width: {{ (page / pages * 100) | round(1) }}%"></span></div>
+</nav>
+{% endif %}
+{% else %}
+<section class="empty-state">
+  <h2 class="serif">{{ 'Nada nesta categoria ainda.' if lang == 'pt' else 'Nothing in this category yet.' }}</h2>
+  <a class="cta-pill outline" href="{{ lp('/portfolio') }}">←︎ {{ t('all_work') }}</a>
+</section>
+{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,276 @@
+{% extends "admin/base.html" %}
+{% block title %}Configurações{% endblock %}
+{% block content %}
+<header class="panel-head"><h1>Configurações</h1></header>
+
+{% set q = request.query_params %}
+{% if q.get('ig') == 'permanente' %}
+<div class="flash ok">Instagram conectado. Troquei pelo token da Página, que não expira.</div>
+{% elif q.get('ig') == 'ok' %}
+<div class="flash ok">Instagram conferido: token de pé.</div>
+{% endif %}
+{% if q.get('ig_erro') %}<div class="flash err">Instagram: {{ q.get('ig_erro') }}</div>{% endif %}
+
+<form class="form" method="post" action="/admin/settings">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+
+  <h2>Instagram (publicação automática)</h2>
+  <p class="hint">
+    Requer conta <strong>profissional</strong> do Instagram vinculada a uma Página do Facebook.
+    Crie um app em <em>developers.facebook.com</em>, gere um token de longa duração com as permissões
+    <code>instagram_basic</code> e <code>instagram_content_publish</code> e informe abaixo.
+    A publicação usa a imagem de capa do case — o site precisa estar no ar (URL pública).
+  </p>
+  <div class="grid-2">
+    <label>ID da conta profissional (IG User ID)<input name="ig_user_id" value="{{ s.ig_user_id }}"></label>
+    <label>Access token (longa duração)
+      <small>
+        {% if ig_access_token_ind.configurado %}token configurado ✓︎ (termina em ...{{ ig_access_token_ind.final4 }}) — preencha só para trocar
+        {% else %}nenhum token configurado ainda{% endif %}
+      </small>
+      <input name="ig_access_token" type="password" autocomplete="off"></label>
+  </div>
+  <label class="check">
+    <input type="checkbox" name="ig_access_token_remover">
+    Remover o token guardado <small>(a publicação automática no Instagram para de funcionar até um novo ser colado)</small>
+  </label>
+  <label class="check"><input type="checkbox" name="ig_auto_publish" {% if s.ig_auto_publish == '1' %}checked{% endif %}> Publicar automaticamente no Instagram quando um case for publicado (com a opção marcada no case)</label>
+
+  {% if s.ig_user_id and s.ig_access_token %}
+  <div class="ig-estado {{ 'ok' if ig_estado.ok and ig_estado.permanente else ('aviso' if ig_estado.ok else 'ruim') }}">
+    <span class="nl-dot"></span>
+    <div>
+      {% if ig_estado.ok and ig_estado.permanente %}
+        <strong>Conectado com token de Página, que não expira.</strong>
+        <span>
+          O token em si não vence. Mas a Meta tem um segundo prazo, o de acesso a dados:
+          {% if ig_estado.acesso_dias is defined %}
+          ele termina em <strong>{{ ig_estado.acesso_expira_em[:10] | replace('-', '/') }}</strong>
+          ({{ ig_estado.acesso_dias }} dias). Perto da data, refaça os passos do Explorador
+          e salve o token novo aqui: são dois minutos, uma vez por trimestre.
+          {% else %}sem prazo informado.{% endif %}
+        </span>
+      {% elif ig_estado.ok %}
+        <strong>Conectado, mas com token de usuário.</strong>
+        <span>
+          Token de usuário depende do app ficar em modo Desenvolvimento e vira problema
+          quando você publicar o app. Clique em verificar que eu troco pelo da Página.
+          {% if ig_estado.dias is defined %} Vence em {{ ig_estado.dias }} dia(s).{% endif %}
+        </span>
+      {% elif ig_estado.erro %}
+        <strong>Token com problema.</strong>
+        <span>{{ ig_estado.erro }}</span>
+      {% else %}
+        <strong>Ainda não verificado.</strong>
+        <span>Clique em verificar para eu conferir com a Meta.</span>
+      {% endif %}
+      {% if ig_estado.checado_em %}
+      <small class="dim">conferido em {{ ig_estado.checado_em[:16] | replace('T', ' às ') }}</small>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <h2>Redes sociais (rodapé e SEO)</h2>
+  <div class="grid-2">
+    <label>Instagram<input name="social_instagram" value="{{ s.social_instagram }}" placeholder="https://instagram.com/..."></label>
+    <label>Facebook<input name="social_facebook" value="{{ s.social_facebook }}" placeholder="https://facebook.com/..."></label>
+    <label>GitHub<input name="social_github" value="{{ s.social_github }}" placeholder="https://github.com/..."></label>
+    <label>LinkedIn<input name="social_linkedin" value="{{ s.social_linkedin }}" placeholder="https://linkedin.com/in/..."></label>
+    <label>Perfil da Empresa no Google<input name="social_google" value="{{ s.social_google }}" placeholder="https://share.google/..."></label>
+    <label>Link de avaliação do Google<input name="social_google_review" value="{{ s.social_google_review }}" placeholder="https://g.page/r/.../review"></label>
+    <label>WhatsApp<input name="social_whatsapp" value="{{ s.social_whatsapp }}" placeholder="https://wa.me/55..."></label>
+  </div>
+
+  <h2>Geral</h2>
+  <div class="grid-2">
+    <label>E-mail de contato<input name="contact_email" value="{{ s.contact_email }}"></label>
+    <label>CNPJ <small>(aparece no rodapé)</small><input name="cnpj" value="{{ s.cnpj }}"></label>
+    <label>Snippet de analytics <small>(colado no &lt;head&gt;)</small><textarea name="analytics_head" rows="3">{{ s.analytics_head }}</textarea></label>
+  </div>
+
+  <h2>Barra animada (antes de "vamos conversar")</h2>
+  <p class="hint">
+    A faixa de palavras que corre na home, logo antes do convite de contato. Uma
+    palavra ou frase por linha — a ordem aqui é a ordem que aparece na faixa.
+  </p>
+  <div class="grid-2">
+    <label>Palavras (PT)<textarea name="marquee_words_pt" rows="6">{{ s.marquee_words_pt }}</textarea></label>
+    <label>Words (EN)<textarea name="marquee_words_en" rows="6">{{ s.marquee_words_en }}</textarea></label>
+  </div>
+
+  <h2>Rastreamento (Google Tag Manager)</h2>
+  <p class="hint">
+    O site carrega só o <strong>Tag Manager</strong> — o Analytics (GA4) e o Pixel do Facebook
+    são configurados de dentro do contêiner, no painel do Google (trabalho fora daqui). Os dois
+    campos abaixo ficam guardados só como referência, para quando você for montar as tags lá.
+    Nada disto carrega sem o visitante <strong>aceitar o aviso de cookies</strong>: campo vazio
+    aqui também desliga o rastreamento, mesmo com o aceite dado.
+  </p>
+  <div class="grid-2">
+    <label>Google Tag Manager (ID do contêiner)<input name="gtm_id" value="{{ s.gtm_id }}" placeholder="GTM-XXXXXXX"></label>
+    <label>Google Analytics 4 <small>(referência — configure dentro do GTM)</small><input name="ga4_id" value="{{ s.ga4_id }}" placeholder="G-XXXXXXXXXX"></label>
+    <label>Meta Pixel <small>(referência — configure dentro do GTM)</small><input name="fb_pixel_id" value="{{ s.fb_pixel_id }}" placeholder="1234567890"></label>
+  </div>
+
+  <h2>Modo construção</h2>
+  <p class="hint">
+    Com isso ligado, qualquer visitante cai numa página única de "em construção", com a
+    marca animada, os botões de LinkedIn e WhatsApp e o cadastro da newsletter. Nenhuma
+    outra página abre, nem digitando o endereço na mão. <em>Você, logado aqui, continua
+    navegando no site normal</em> — é assim que dá para revisar o conteúdo antes de abrir
+    para o mundo. Desligue quando os primeiros cases estiverem publicados.
+  </p>
+  <label class="check">
+    <input type="checkbox" name="construction_mode" {% if s.construction_mode == '1' %}checked{% endif %}>
+    Manter o site em modo construção
+  </label>
+  <label class="check">
+    <input type="checkbox" name="cases_publicos" {% if s.cases_publicos == '1' %}checked{% endif %}>
+    Deixar os cases publicados abertos, mesmo em construção
+  </label>
+  <p class="hint">
+    Ligue quando quiser <strong>compartilhar um case</strong> no WhatsApp, LinkedIn ou onde for.
+    Sem isto, o robô dessas redes recebe a página de construção e monta a prévia com ela,
+    por mais correta que a marcação do case esteja: quem lê a página é o robô, e ele lê o que
+    o servidor devolve. Com isto ligado, só as páginas <code>/case/…</code> de cases publicados
+    saem; a home, o portfólio e o resto seguem fechados.
+  </p>
+  <label>Porcentagem pronta <small>(a barra que aparece na página, 0 a 100)</small>
+    <input name="construction_progress" type="number" min="0" max="100"
+           value="{{ s.construction_progress or '85' }}"></label>
+
+  <h2>E-mail dos leads (SMTP)</h2>
+  <p class="hint">
+    Quando alguém envia o formulário de contato, o lead é salvo no site e um e-mail diagramado
+    é disparado para o endereço abaixo. Com Gmail, use uma <em>senha de app</em>
+    (Conta Google →︎ Segurança →︎ Senhas de app), host <code>smtp.gmail.com</code> e porta <code>587</code>.
+    Sem estas credenciais nada se perde: o lead continua salvo no painel, só não sai o aviso por e-mail.
+  </p>
+  <div class="grid-2">
+    <label>Enviar leads para<input name="lead_email" value="{{ s.lead_email }}" placeholder="contatoleandrofurtado@gmail.com"></label>
+    <label>Servidor SMTP<input name="smtp_host" value="{{ s.smtp_host }}" placeholder="smtp.gmail.com"></label>
+    <label>Porta<input name="smtp_port" value="{{ s.smtp_port }}" placeholder="587"></label>
+    <label>Usuário<input name="smtp_user" value="{{ s.smtp_user }}" placeholder="seu@gmail.com" autocomplete="off"></label>
+    <label>Senha de app
+      <small>
+        {% if smtp_password_ind.configurado %}senha configurada ✓︎ (termina em ...{{ smtp_password_ind.final4 }}) — preencha só para trocar
+        {% else %}nenhuma senha configurada ainda{% endif %}
+      </small>
+      <input name="smtp_password" type="password" autocomplete="new-password"></label>
+    <label>Remetente <small>(deixe vazio para usar o usuário)</small><input name="smtp_from" value="{{ s.smtp_from }}"></label>
+  </div>
+  <label class="check">
+    <input type="checkbox" name="smtp_password_remover">
+    Remover a senha guardada <small>(o envio de e-mail para de funcionar até uma nova ser colada)</small>
+  </label>
+
+  <h2>Cloudflare Stream (vídeo)</h2>
+  <p class="hint">
+    O compositor de vídeo do Nodal usa estas credenciais para pedir à Cloudflare um
+    endereço de envio de uso único — o arquivo vai direto do navegador para lá, sem passar
+    pelo servidor. Pegue as quatro no painel da Cloudflare, em Stream →︎ Chaves de assinatura
+    (o token de API precisa de permissão de <em>Stream: Editar</em>). Sem as quatro
+    preenchidas, o compositor avisa que falta configurar e não deixa gravar.
+  </p>
+  <div class="grid-2">
+    <label>Account ID<input name="cf_account_id" value="{{ s.cf_account_id }}"></label>
+    <label>API Token
+      <small>
+        {% if cf_api_token_ind.configurado %}token configurado ✓︎ (termina em ...{{ cf_api_token_ind.final4 }}) — preencha só para trocar
+        {% else %}nenhum token configurado ainda{% endif %}
+      </small>
+      <input name="cf_api_token" type="password" autocomplete="off"></label>
+    <label>Stream Key ID<input name="cf_stream_key_id" value="{{ s.cf_stream_key_id }}"></label>
+    <label>Stream Key PEM
+      <small>
+        {% if s.cf_stream_key_pem %}uma chave já está guardada; preencha só para trocar
+        {% else %}nenhuma chave guardada ainda{% endif %}
+      </small>
+      <textarea name="cf_stream_key_pem" rows="4" autocomplete="off"
+                placeholder="-----BEGIN PRIVATE KEY-----"></textarea>
+    </label>
+  </div>
+  <label class="check">
+    <input type="checkbox" name="cf_api_token_remover">
+    Remover o API Token guardado <small>(o compositor de vídeo para de funcionar até um novo ser colado)</small>
+  </label>
+  <label class="check">
+    <input type="checkbox" name="cf_stream_key_pem_remover">
+    Remover a chave guardada <small>(o compositor de vídeo para de funcionar até uma nova ser colada)</small>
+  </label>
+
+  <h2>Segurança</h2>
+  <p class="hint">
+    A tela de entrada não mostra mais o nome de usuário em lugar nenhum, e a mensagem de
+    erro não diz se o que estava errado era o usuário ou a senha. Se quiser um nome menos
+    óbvio que o seu primeiro nome, troque abaixo: quem tentar entrar vai precisar acertar
+    os dois campos no escuro.
+  </p>
+  <div class="grid-2">
+    <label>Novo nome de usuário <small>(em branco mantém ·︎ mínimo 4 caracteres)</small>
+      <input name="new_username" autocomplete="off" autocapitalize="off" spellcheck="false"
+             placeholder="deixe em branco para manter"></label>
+    <label>Nova senha do admin <small>(em branco mantém ·︎ mínimo 10 caracteres)</small>
+      <input name="new_password" type="password" autocomplete="new-password"></label>
+  </div>
+
+  <div class="form-actions"><button class="btn primary" type="submit">Salvar</button></div>
+</form>
+
+<section class="form" id="instagram-check">
+  <h2>Verificar conexão do Instagram</h2>
+  <p class="hint">
+    Confere o token com a Meta agora. Se ele ainda for de usuário, que expira em 60 dias,
+    eu troco pelo token da Página, que não expira. É a mesma coisa que acontece sozinho
+    quando você salva as configurações, mas aqui dá para forçar quando quiser.
+  </p>
+  <form method="post" action="/admin/settings/instagram-verificar">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="form-actions">
+      <button class="btn ghost" type="submit" {% if not (s.ig_user_id and s.ig_access_token) %}disabled{% endif %}>
+        Verificar agora</button>
+    </div>
+  </form>
+</section>
+
+<section class="form" id="api">
+  <h2>API de conteúdo</h2>
+  <p class="hint">
+    Token para alimentar o site de fora do painel: publicar cases, posts do LinkedIn e
+    rascunhos de newsletter por requisição, sem recortar e colar aqui. É separado da senha
+    do admin de propósito, então se vazar você revoga só ele e a conta continua intacta.
+    <strong>A API nunca dispara newsletter</strong>: ela cria rascunho, o envio para pessoas
+    reais continua sendo um clique seu.
+  </p>
+
+  {% if s.api_token %}
+  <label>Token ativo
+    <input value="{{ s.api_token }}" readonly onclick="this.select()"></label>
+  <p class="hint">Clique para selecionar. Ele não é mostrado em nenhum outro lugar.</p>
+  <div class="form-actions">
+    <form method="post" action="/admin/settings/api-token">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="acao" value="gerar">
+      <button class="btn ghost" type="submit"
+              onclick="return confirm('Gerar um token novo? O atual para de funcionar na hora.')">
+        Gerar outro</button>
+    </form>
+    <form method="post" action="/admin/settings/api-token">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="hidden" name="acao" value="revogar">
+      <button class="btn danger" type="submit"
+              onclick="return confirm('Revogar o token? A API desliga na hora.')">
+        Revogar</button>
+    </form>
+  </div>
+  {% else %}
+  <p class="hint">Nenhum token gerado: a API está desligada e responde 503.</p>
+  <form method="post" action="/admin/settings/api-token">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="acao" value="gerar">
+    <div class="form-actions"><button class="btn primary" type="submit">Gerar token</button></div>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

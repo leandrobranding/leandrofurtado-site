@@ -1,0 +1,115 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<header class="panel-head">
+  <h1>Dashboard</h1>
+  {# "Ver site" agora vive no header, presente em toda tela do painel. Repetir
+     aqui só roubava a atenção do botão que importa nesta página. #}
+  <a class="btn primary" href="/admin/cases/new">+ Novo case</a>
+</header>
+
+<div class="stat-grid">
+  <a class="stat-card" href="/admin/cases/lista">
+    <span class="stat-n">{{ stats.published }}</span>
+    <span class="stat-l">Cases publicados</span>
+    {% if stats.drafts %}<span class="stat-sub">{{ stats.drafts }} rascunho{{ 's' if stats.drafts > 1 }}</span>{% endif %}
+  </a>
+  <a class="stat-card" href="/admin/cases/lista">
+    <span class="stat-n">👍 {{ stats.likes }}</span>
+    <span class="stat-l">Likes nos cases</span>
+    <span class="stat-sub">👎 {{ stats.dislikes }}</span>
+  </a>
+  <a class="stat-card" href="/admin/messages">
+    <span class="stat-n">{{ stats.messages }}</span>
+    <span class="stat-l">Mensagens</span>
+    {% if stats.unread %}<span class="stat-sub hot">{{ stats.unread }} não lida{{ 's' if stats.unread > 1 }}</span>{% endif %}
+  </a>
+  <a class="stat-card" href="/admin/leads">
+    <span class="stat-n">{{ stats.leads }}</span>
+    <span class="stat-l">Leads (contatos)</span>
+    {% if stats.leads_new %}<span class="stat-sub hot">{{ stats.leads_new }} novo{{ 's' if stats.leads_new > 1 }}</span>{% endif %}
+  </a>
+  <a class="stat-card" href="/admin/newsletter">
+    <span class="stat-n">{{ stats.audience }}</span>
+    <span class="stat-l">Base da newsletter</span>
+    <span class="stat-sub">{{ stats.subs }} assinante{{ 's' if stats.subs != 1 }} ·︎ {{ stats.campaigns_sent }} campanha{{ 's' if stats.campaigns_sent != 1 }} enviada{{ 's' if stats.campaigns_sent != 1 }}</span>
+  </a>
+  <a class="stat-card" href="/admin/brands">
+    <span class="stat-n">{{ stats.brands }}</span>
+    <span class="stat-l">Marcas & clientes</span>
+    {% if stats.brands_no_logo %}<span class="stat-sub hot">{{ stats.brands_no_logo }} sem logo</span>{% endif %}
+  </a>
+  <a class="stat-card" href="/admin/linkedin">
+    <span class="stat-n">{{ stats.li_posts }}</span>
+    <span class="stat-l">Posts LinkedIn</span>
+  </a>
+  <div class="stat-card">
+    <span class="stat-n">👍 {{ stats.tips_up }}</span>
+    <span class="stat-l">Votos nas dicas de IA</span>
+    <span class="stat-sub">👎 {{ stats.tips_down }}</span>
+  </div>
+</div>
+
+{% if pending %}
+<section class="dash-block">
+  <h2>Pendências para o site rodar 100%</h2>
+  <ul class="todo-list">
+    {% for label, url in pending %}
+    <li><a href="{{ url }}"><span class="todo-dot"></span>{{ label }}<em>resolver →︎</em></a></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<div class="dash-cols">
+  <section class="dash-block">
+    <h2>Últimos cases <a class="btn ghost sm" href="/admin/cases/lista">todos →︎</a></h2>
+    {% if recent_cases %}
+    <ul class="case-list">
+      {% for case in recent_cases %}
+      {% set votes = case_votes.get(case.id | string, {}) %}
+      <li class="case-item">
+        {% if case.cover_image %}<img class="case-thumb" src="/media/{{ case.cover_image }}" alt="">{% else %}<span class="case-thumb ph"></span>{% endif %}
+        <div class="case-cell">
+          <strong>{{ case.title_pt or '(sem título)' }}</strong>
+          <span>{{ case.client }}{% if case.year %} ·︎ {{ case.year }}{% endif %}</span>
+        </div>
+        <div class="badges">
+          {% if votes.up or votes.down %}<span class="badge">👍 {{ votes.up or 0 }}</span>{% endif %}
+          {% if case.published %}<span class="badge pub">pub</span>{% else %}<span class="badge draft">rasc.</span>{% endif %}
+        </div>
+        <a class="btn ghost" href="/admin/cases/{{ case.id }}">Editar</a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="hint">Nenhum case ainda. <a class="linklike" href="/admin/cases/new">Crie o primeiro</a>.</p>
+    {% endif %}
+  </section>
+
+  <section class="dash-block">
+    <h2>Últimas mensagens <a class="btn ghost sm" href="/admin/messages">todas →︎</a></h2>
+    {% if recent_msgs %}
+    <ul class="msg-list">
+      {% for m in recent_msgs %}
+      <li class="msg">
+        <div class="msg-head"><strong>{{ m.name }}</strong><time>{{ m.created_at | local | strftime_('%d/%m %H:%M') }}</time></div>
+        <p>{{ m.message[:140] }}{% if m.message | length > 140 %}…{% endif %}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="hint">Nenhuma mensagem recebida ainda.</p>
+    {% endif %}
+
+    <h2 class="mt">Atalhos</h2>
+    <div class="qa-row">
+      <a class="btn" href="/admin/cases/new">+ Case</a>
+      <a class="btn" href="/admin/brands">+ Marca</a>
+      <a class="btn" href="/admin/linkedin">+ Post LinkedIn</a>
+      <a class="btn" href="/admin/profile">Perfil & CV</a>
+      <a class="btn" href="/admin/settings">Configurações</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

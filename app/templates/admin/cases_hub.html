@@ -1,0 +1,130 @@
+{% extends "admin/base.html" %}
+{% block title %}Central de cases{% endblock %}
+{% block content %}
+{% import "admin/_ico.html" as ico %}
+<header class="panel-head">
+  <h1>Central de cases
+    <small>{{ resumo.total }} case{{ 's' if resumo.total != 1 }} cadastrado{{ 's' if resumo.total != 1 }}</small>
+  </h1>
+  <a class="btn primary" href="/admin/cases/new">{{ ico.i('mais') }} Novo case</a>
+</header>
+
+{% include "admin/_cases_nav.html" %}
+
+{# O que pede atenção vem antes das portas: comentário esperando moderação ou
+   case sem categoria é trabalho parado, e trabalho parado não devia ficar
+   escondido atrás de um clique. #}
+{% if not resumo.total %}
+<div class="flash">
+  Nenhum case cadastrado ainda. <a class="linklike" href="/admin/cases/new">Cadastre o primeiro</a>
+  e o portfólio do site começa a existir.
+</div>
+{% endif %}
+{% if total_pendentes %}
+<div class="flash">
+  {{ total_pendentes }} comentário{{ 's' if total_pendentes != 1 }} esperando moderação.
+  <a class="linklike" href="/admin/cases/comentarios">Ver agora</a>.
+</div>
+{% endif %}
+{% if resumo.sem_categoria %}
+<div class="flash">
+  {{ resumo.sem_categoria }} case{{ 's' if resumo.sem_categoria != 1 }} sem categoria: fica de fora dos filtros do portfólio.
+  <a class="linklike" href="/admin/cases/lista?cat=_sem">Resolver</a>.
+</div>
+{% endif %}
+
+<div class="nl-tiles">
+  <a class="nl-tile" href="/admin/cases/new">
+    <span class="nl-tile-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg>
+    </span>
+    <strong>Novo case</strong>
+    <span>O formulário muda conforme a categoria: site pede endereço, o resto pede história e capa.</span>
+  </a>
+  <a class="nl-tile" href="/admin/cases/lista">
+    <span class="nl-tile-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3.5 17 5.5-5 4 3.6L17 12l3.5 3.5"/><circle cx="9" cy="9" r="1.6"/></svg>
+    </span>
+    <strong>Cases</strong>
+    <span>{{ resumo.publicados }} no ar ·︎ {{ resumo.rascunhos }} rascunho{{ 's' if resumo.rascunhos != 1 }} ·︎ {{ resumo.arquivados }} arquivado{{ 's' if resumo.arquivados != 1 }}.</span>
+  </a>
+  <a class="nl-tile" href="/admin/cases/insights">
+    <span class="nl-tile-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+    </span>
+    <strong>Números</strong>
+    <span>{{ resumo.vistos }} acesso{{ 's' if resumo.vistos != 1 }} no total ·︎ {{ resumo.mes }} nos últimos 30 dias.</span>
+  </a>
+  <a class="nl-tile" href="/admin/cases/comentarios">
+    <span class="nl-tile-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 12a8 8 0 0 1-8 8H4l2-3.2A8 8 0 1 1 21 12z"/></svg>
+    </span>
+    <strong>Comentários{% if total_pendentes %} <b class="nl-badge">{{ total_pendentes }}</b>{% endif %}</strong>
+    <span>{{ resumo.comentarios }} recebido{{ 's' if resumo.comentarios != 1 }}. Todo comentário nasce pendente e só aparece depois que você aprova.</span>
+  </a>
+  <a class="nl-tile" href="/admin/cases/categorias">
+    <span class="nl-tile-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h18M3 12h18M3 18h12"/></svg>
+    </span>
+    <strong>Categorias</strong>
+    <span>{{ resumo.categorias }} categoria{{ 's' if resumo.categorias != 1 }}. Decidem como o case aparece no portfólio.</span>
+  </a>
+  <a class="nl-tile accent" href="/admin/brands">
+    <span class="nl-tile-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17M3.5 12h17"/></svg>
+    </span>
+    <strong>Clientes</strong>
+    <span>{{ resumo.clientes }} cadastrado{{ 's' if resumo.clientes != 1 }}. Dá para criar um novo direto no formulário do case.</span>
+  </a>
+</div>
+
+<section class="nl-block">
+  <h2 class="nl-h">Números do portfólio</h2>
+  <div class="nl-audience">
+    <div class="nl-aud"><strong>{{ resumo.publicados }}</strong><span>No ar</span></div>
+    <div class="nl-aud"><strong>{{ resumo.vistos }}</strong><span>Acessos registrados</span></div>
+    <div class="nl-aud"><strong>{{ resumo.mes }}</strong><span>Acessos em 30 dias</span></div>
+    <div class="nl-aud"><strong>{{ resumo.sem_acesso }}</strong><span>No ar sem nenhum acesso</span></div>
+  </div>
+  <p class="hint">
+    Um acesso é contado uma vez por visitante por dia, então o número mede interesse e não
+    recarregamento de página. <em>Case no ar sem nenhum acesso</em> costuma ser problema de
+    caminho: sem destaque, sem categoria, ou fora dos filtros do portfólio.
+    <a class="linklike" href="/admin/cases/insights">Ver o detalhe por case →︎</a>
+  </p>
+</section>
+
+<section class="nl-block">
+  <h2 class="nl-h">Últimos cadastrados <span class="dim">{{ recentes|length }} de {{ resumo.total }}</span></h2>
+  {% if recentes %}
+  <ul class="cs-lista compacta">
+    {% for case in recentes %}
+    <li class="cs-item {{ 'arquivado' if case.archived }}">
+      <a class="cs-capa" href="/admin/cases/{{ case.id }}" aria-label="Editar {{ case.title_pt }}">
+        {% if case.site_shot %}<img src="/media/{{ case.site_shot }}" alt="" loading="lazy">
+        {% elif case.cover_image %}<img src="/media/{{ case.cover_image }}" alt="" loading="lazy">
+        {% else %}<span class="ph"></span>{% endif %}
+      </a>
+      <div class="cs-corpo">
+        <a class="cs-titulo" href="/admin/cases/{{ case.id }}">{{ case.title_pt or '(sem título)' }}</a>
+        <div class="cs-meta mono-label">
+          {% if case.client %}<span>{{ ico.i('pessoa') }}{{ case.client }}</span>{% endif %}
+          {% if case.category %}<span class="dim">{{ ico.i('etiqueta') }}{{ case.category.name_pt }}</span>{% endif %}
+          {% if case.year %}<span class="dim">{{ ico.i('calendario') }}{{ case.year }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="cs-estado">
+        {% if case.archived %}<span class="badge arq">arquivado</span>
+        {% elif case.published %}<span class="badge pub">publicado</span>
+        {% else %}<span class="badge draft">rascunho</span>{% endif %}
+      </div>
+      <div class="cs-acoes"><a class="btn ghost sm" href="/admin/cases/{{ case.id }}">{{ ico.i('lapis') }} Editar</a></div>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="hint"><a class="linklike" href="/admin/cases/lista">Ver todos os cases, com busca e filtros →︎</a></p>
+  {% else %}
+  <p class="hint cs-vazio">Assim que o primeiro case existir, os últimos cinco aparecem aqui.</p>
+  {% endif %}
+</section>
+{% endblock %}

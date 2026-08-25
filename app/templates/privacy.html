@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block pageid %}privacy{% endblock %}
+{% block title %}{{ t('privacy') }} ·︎ {{ site_name }}{% endblock %}
+{% block description %}{{
+  'Como o site de Leandro Furtado trata dados pessoais, cookies e o cadastro na newsletter, conforme a LGPD e o GDPR.' if lang == 'pt'
+  else "How Leandro Furtado's website handles personal data, cookies and newsletter sign-ups, under LGPD and GDPR."
+}}{% endblock %}
+{% block robots %}index, follow{% endblock %}
+
+{% block content %}
+<section class="legal-page">
+  <header class="page-head">
+    <h1 class="page-title display" data-hero-title>{{ t('privacy') }}</h1>
+    <p class="mono-label">{{ 'Última atualização' if lang == 'pt' else 'Last updated' }}: 08/2026</p>
+  </header>
+
+  {% if lang == 'pt' %}
+  <div class="legal-body">
+    <section class="cv-block">
+      <h2>1. Quem somos</h2>
+      <p>Este site (leandrofurtado.com.br) é o portfólio profissional de <strong>Leandro Furtado</strong>,
+      Diretor de Arte Sênior, Curitiba/PR, Brasil{% if site.cnpj %}, CNPJ {{ site.cnpj }}{% endif %}.
+      Controlador dos dados: Leandro Furtado, contato:
+      <a href="mailto:{{ profile.email }}">{{ profile.email }}</a>.</p>
+    </section>
+
+    <section class="cv-block">
+      <h2>2. Quais dados coletamos</h2>
+      <p><strong>Formulário de contato:</strong> nome, e-mail e mensagem, fornecidos voluntariamente
+      por você, usados exclusivamente para responder ao seu contato.</p>
+      <p><strong>Dados técnicos:</strong> o servidor registra logs básicos de acesso (endereço IP,
+      data/hora, página acessada) para segurança e diagnóstico, retidos por período limitado.</p>
+      <p><strong>Preferências:</strong> sua escolha de tema (claro/escuro) e o aceite deste aviso são
+      guardados apenas no seu navegador (localStorage), nunca chegam aos nossos servidores.</p>
+      <p>Não coletamos dados sensíveis, não vendemos dados e não usamos publicidade comportamental.</p>
+    </section>
+
+    <section class="cv-block">
+      <h2>3. Cookies</h2>
+      <p><strong>Essenciais:</strong> cookie de sessão usado apenas na área administrativa (restrita).
+      Visitantes do site público não recebem cookies de rastreamento por padrão.</p>
+      <p><strong>Estatísticas (opcional):</strong> se ferramentas de análise de audiência estiverem
+      ativas, elas podem usar cookies próprios; consulte a política da ferramenta indicada nesta página.</p>
+      <p><strong>Terceiros:</strong> conteúdos incorporados (Instagram, YouTube, Vimeo) podem definir
+      cookies próprios ao serem carregados, conforme as políticas das respectivas plataformas.</p>
+      <p><strong>Idioma:</strong> ao escolher PT ou EN, a preferência fica num cookie
+      (<code>lf_lang</code>) para que o site abra no idioma escolhido nas próximas visitas.</p>
+    </section>
+
+    <section class="cv-block">
+      <h2>3.1. Localização aproximada pelo IP</h2>
+      <p>O site mostra a cidade aproximada de quem está navegando e, na primeira visita de fora
+      do Brasil, abre em inglês. Para isso, o endereço de IP da conexão é comparado com uma base
+      de dados pública (<strong>DB-IP Lite</strong>, licença CC BY 4.0) instalada
+      <strong>no próprio servidor</strong>.</p>
+      <p><strong>O IP não é enviado a nenhum serviço externo e não é armazenado.</strong> Ele é
+      usado no instante da requisição, convertido em cidade e país aproximados, e descartado.
+      Não há criação de perfil, não há rastreamento entre visitas e o resultado é apenas
+      aproximado — costuma indicar a região do provedor de acesso, não o endereço da pessoa.</p>
+      <p>Base legal: legítimo interesse (art. 7º, IX da LGPD; art. 6(1)(f) do GDPR), limitado a
+      apresentar o site no idioma adequado.</p>
+    </section>
+
+    <section class="cv-block">
+      <h2>{{ t('an_consent_section_title') }}</h2>
+      <p>{{ t('an_consent_section_body') }}</p>
+      <p><strong>Google Tag Manager (GTM):</strong> organiza as ferramentas abaixo — é o único
+      script que o site carrega; nenhum código de análise vem direto daqui.</p>
+      <p><strong>Google Analytics 4:</strong> páginas visitadas, tempo de navegação e origem do
+      tráfego, de forma agregada.</p>
+      <p><strong>Meta Pixel (Facebook/Instagram):</strong> interações com anúncios e páginas
+      visitadas, para medir o retorno de campanhas.</p>
+      <p>Para revogar a qualquer momento:
+      <a href="{{ lp('/consentimento/mudar') }}?proximo={{ lp('/privacidade') }}">{{ t('an_consent_change') }}</a>
+      — apaga a escolha guardada e reabre o aviso de cookies.</p>
+    </section>
+
+    <section class="cv-block">
+      <h2>4. Base legal (LGPD, Lei nº 13.709/2018)</h2>
+      <p>Tratamos dados com base em: <strong>consentimento</strong> (art. 7º, I, formulário de contato),
+      <strong>legítimo interesse</strong> (art. 7º, IX, segurança e funcionamento do site) e
+      <strong>cumprimento de obrigação legal</strong> quando aplicável.</p>
+    </section>
+
+    <section class="cv-block">
+      <h2>5. Seus direitos (LGPD e GDPR)</h2>
+      <p>Você pode solicitar a qualquer momento: confirmação de tratamento, acesso, correção,
+      anonimização, portabilidade, eliminação dos dados e revogação do consentimento.
+      Para exercer seus direitos, escreva para
+      <a href="mailto:{{ profile.email }}">{{ profile.email }}</a>. Responderemos em até 15 dias.
+      Residentes no Brasil podem ainda peticionar à ANPD; residentes na União Europeia,
+      à autoridade supervisora local (GDPR, arts. 15–22).</p>
+    </section>
+
+    <section class="cv-block">
+      <h2>6. Retenção e segurança</h2>
+      <p>Mensagens de contato são mantidas apenas pelo tempo necessário ao atendimento.
+      O site usa HTTPS, cabeçalhos de segurança, controle de acesso e firewall no servidor.</p>
+    </section>
+
+    <section class="cv-block">
+      <h2>7. Transferência internacional</h2>
+      <p>O site é hospedado em servidor próprio; conteúdos incorporados de terceiros
+      (ex.: Instagram/YouTube) podem processar dados fora do Brasil/UE conforme suas políticas.</p>
+    </section>
+
+    <section class="cv-block">
+      <h2>8. Alterações</h2>
+      <p>Esta política pode ser atualizada; a data no topo indica a versão vigente.</p>
+    </section>
+  </div>
+  {% else %}
+  <div class="legal-body">
+    <section class="cv-block">
+      <h2>1. Who we are</h2>
+      <p>This website (leandrofurtado.com.br) is the professional portfolio of <strong>Leandro
+      Furtado</strong>, Senior Art Director, Curitiba, Brazil{% if site.cnpj %}, CNPJ (Brazilian
+      company registry) {{ site.cnpj }}{% endif %}. Data controller: Leandro Furtado,
+      contact: <a href="mailto:{{ profile.email }}">{{ profile.email }}</a>.</p>
+    </section>
+    <section class="cv-block">
+      <h2>2. Data we collect</h2>
+      <p><strong>Contact form:</strong> name, email and message, provided voluntarily and used solely
+      to reply to you.</p>
+      <p><strong>Technical data:</strong> the server keeps basic access logs (IP address, date/time,
+      page) for security and diagnostics, retained for a limited period.</p>
+      <p><strong>Preferences:</strong> your theme choice and this notice acknowledgement are stored
+      only in your browser (localStorage), they never reach our servers.</p>
+      <p>We do not collect sensitive data, do not sell data and do not use behavioural advertising.</p>
+    </section>
+    <section class="cv-block">
+      <h2>3. Cookies</h2>
+      <p><strong>Essential:</strong> a session cookie is used only in the restricted admin area.
+      Public visitors receive no tracking cookies by default.</p>
+      <p><strong>Analytics (optional):</strong> if audience analytics tools are enabled they may set
+      their own cookies; see the tool's policy referenced on this page.</p>
+      <p><strong>Third parties:</strong> embedded content (Instagram, YouTube, Vimeo) may set its own
+      cookies when loaded, under those platforms' policies.</p>
+      <p><strong>Language:</strong> choosing PT or EN stores that preference in a cookie
+      (<code>lf_lang</code>) so the site opens in your language on later visits.</p>
+    </section>
+
+    <section class="cv-block">
+      <h2>3.1. Approximate location from IP</h2>
+      <p>The site shows the approximate city you are browsing from and, on a first visit from
+      outside Brazil, opens in English. To do this your connection's IP address is matched against
+      a public database (<strong>DB-IP Lite</strong>, CC BY 4.0) installed
+      <strong>on this server</strong>.</p>
+      <p><strong>Your IP is never sent to any external service and is never stored.</strong> It is
+      used at request time, turned into an approximate city and country, and discarded. No profile
+      is built, there is no tracking across visits, and the result is approximate — it usually
+      points to your internet provider's region, not to your address.</p>
+      <p>Legal basis: legitimate interest (LGPD art. 7(IX); GDPR art. 6(1)(f)), limited to
+      presenting the site in the right language.</p>
+    </section>
+    <section class="cv-block">
+      <h2>{{ t('an_consent_section_title') }}</h2>
+      <p>{{ t('an_consent_section_body') }}</p>
+      <p><strong>Google Tag Manager (GTM):</strong> organizes the tools below — it is the only
+      script the site loads; no analytics code comes directly from here.</p>
+      <p><strong>Google Analytics 4:</strong> pages visited, time on site and traffic source,
+      aggregated.</p>
+      <p><strong>Meta Pixel (Facebook/Instagram):</strong> ad interactions and pages visited, to
+      measure campaign return.</p>
+      <p>To revoke at any time:
+      <a href="{{ lp('/consentimento/mudar') }}?proximo={{ lp('/privacidade') }}">{{ t('an_consent_change') }}</a>
+      — deletes the stored choice and reopens the cookie notice.</p>
+    </section>
+
+    <section class="cv-block">
+      <h2>4. Legal basis (LGPD & GDPR)</h2>
+      <p>We process data based on <strong>consent</strong> (contact form), <strong>legitimate
+      interest</strong> (site security and operation) and <strong>legal obligation</strong> where
+      applicable, under Brazil's LGPD (Law 13,709/2018) and the EU GDPR.</p>
+    </section>
+    <section class="cv-block">
+      <h2>5. Your rights</h2>
+      <p>You may request at any time: confirmation of processing, access, rectification,
+      anonymisation, portability, erasure and consent withdrawal. Write to
+      <a href="mailto:{{ profile.email }}">{{ profile.email }}</a>; we reply within 15 days.
+      EU residents may also contact their local supervisory authority (GDPR arts. 15–22);
+      Brazilian residents may petition the ANPD.</p>
+    </section>
+    <section class="cv-block">
+      <h2>6. Retention & security</h2>
+      <p>Contact messages are kept only as long as needed. The site uses HTTPS, security headers,
+      access control and a server firewall.</p>
+    </section>
+    <section class="cv-block">
+      <h2>7. International transfers</h2>
+      <p>The site is self-hosted; embedded third-party content may process data outside Brazil/EU
+      under the respective platforms' policies.</p>
+    </section>
+    <section class="cv-block">
+      <h2>8. Changes</h2>
+      <p>This policy may be updated; the date above indicates the current version.</p>
+    </section>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

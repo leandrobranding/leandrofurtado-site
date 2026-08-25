@@ -1,0 +1,77 @@
+{% extends "admin/base.html" %}
+{% block title %}Leads{% endblock %}
+{% block content %}
+<header class="panel-head">
+  <h1>Leads <small>{{ leads | length }}</small></h1>
+</header>
+
+{% if not smtp_ok %}
+<div class="flash err">
+  SMTP não configurado: os leads estão sendo salvos aqui, mas o aviso por e-mail não sai.
+  <a class="linklike" href="/admin/settings">Configurar agora</a>.
+</div>
+{% endif %}
+
+<p class="hint">
+  Cada envio do formulário de contato vira um lead com a prova de consentimento (texto aceito, data, IP
+  e navegador), como exigem a LGPD e o GDPR. Esta base é o começo da futura área restrita de clientes:
+  marque como <em>cliente</em> quem já fechou projeto.
+</p>
+
+{% if leads %}
+<ul class="lead-list">
+  {% for lead in leads %}
+  <li class="lead-card">
+    <div class="lead-top">
+      <div class="case-cell">
+        <strong>{{ lead.name }}</strong>
+        <span>
+          <a href="mailto:{{ lead.email }}">{{ lead.email }}</a>
+          {% if lead.whatsapp %} ·︎ <a href="https://wa.me/{{ lead.whatsapp | replace('+','') | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener">{{ lead.whatsapp }}</a>{% endif %}
+        </span>
+      </div>
+      <div class="badges">
+        {% if lead.status == 'cliente' %}<span class="badge pub">cliente</span>
+        {% elif lead.status == 'contatado' %}<span class="badge feat">contatado</span>
+        {% else %}<span class="badge draft">novo</span>{% endif %}
+        {% if lead.notified %}<span class="badge ig-ok" title="E-mail enviado">✉︎ ok</span>
+        {% else %}<span class="badge" title="E-mail não enviado">✉︎ pendente</span>{% endif %}
+        <span class="badge">{{ lead.lang | upper }}</span>
+      </div>
+      <time class="lead-time">{{ lead.created_at | local | strftime_('%d/%m/%Y %H:%M') }}</time>
+    </div>
+
+    <p class="lead-msg">{{ lead.message }}</p>
+
+    <details class="lead-consent">
+      <summary>Consentimento e origem</summary>
+      <p>{{ lead.consent_text }}</p>
+      <p class="dim">
+        Aceito em {{ lead.consent_at | local | strftime_('%d/%m/%Y %H:%M') if lead.consent_at }} ·︎
+        IP {{ lead.ip or '—' }} ·︎ {{ lead.user_agent[:120] or '—' }}
+      </p>
+    </details>
+
+    <div class="lead-actions">
+      {% for st, label in [('novo','Novo'), ('contatado','Contatado'), ('cliente','Cliente')] %}
+      {% if lead.status != st %}
+      <form method="post" action="/admin/leads/{{ lead.id }}/status">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="status" value="{{ st }}">
+        <button class="btn ghost" type="submit">{{ label }}</button>
+      </form>
+      {% endif %}
+      {% endfor %}
+      <a class="btn ghost" href="mailto:{{ lead.email }}">Responder</a>
+      <form method="post" action="/admin/leads/{{ lead.id }}/delete" onsubmit="return confirm('Excluir este lead? A ação não pode ser desfeita.')">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn danger" type="submit">Excluir</button>
+      </form>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="empty"><p>Nenhum lead ainda. Eles aparecem aqui assim que alguém enviar o formulário de contato.</p></div>
+{% endif %}
+{% endblock %}

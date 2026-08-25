@@ -1,0 +1,87 @@
+{# ============================================================
+   Admita — esteira de admissão (Task 4 do Plano 2, §6.1 da spec).
+   Estende `lab/_base_demo.html` (miolo é território da marca Admita).
+
+   Contexto (montado por `app/lab/admita.py::montar_contexto`, injetado
+   pela rota GET /lab/admita em `app/lab/rotas.py`): etapas, etapa_label,
+   etapa_icone, candidatos (dict etapa -> lista), contagens, total_ativos,
+   sidebar (contadores agregados), auditoria/auditoria_total/auditoria_mais,
+   cargos (dropdown do modal), empresa_rh, max_registros, registros_usados.
+
+   O miolo de verdade (`#admita-shell`, sidebar + quadro + trilha) vive em
+   `_shell.html` — TODA rota de mutação (mover/aprovar/checklist/nova
+   candidatura) devolve só esse fragmento, que `admita.js` troca dentro de
+   `#admita-app` sem recarregar a página (padrão do repo, mesma ideia do
+   fragment-swap do Nodal). O modal "Nova candidatura" e o toast de erro
+   ficam FORA do fragmento trocado — sobrevivem ao swap sem perder o
+   focus-trap.
+   ============================================================ #}
+{% extends "lab/_base_demo.html" %}
+
+{% block demo_titulo %}Admita ·︎ Esteira de admissão ·︎ Lab de Demos ·︎ {{ site_name }}{% endblock %}
+{% block demo_descricao %}Esteira de admissão para RH que você usa agora, sem cadastro: mova o candidato pelas etapas, confira documentos, aprove pelo RH e pelo gestor, marque entrevista no calendário e acompanhe a trilha de auditoria.{% endblock %}
+
+{% block demo_conteudo %}
+<div class="admita-app" id="admita-app" data-max-registros="{{ max_registros }}"
+     data-usuario="{{ usuario_rh }}" data-email="{{ usuario_rh_email }}">
+  {% include "lab/admita/_shell.html" %}
+</div>
+
+<div class="admita-modal-fundo" id="admita-modal-novo" hidden>
+  <form class="admita-modal" id="admita-form-novo" aria-labelledby="admita-modal-titulo" novalidate>
+    {# Cabeçalho do modal como manchete: faixa própria, ícone e um fio que
+       separa o convite do formulário. Antes era só um título solto em cima
+       dos campos, e a caixa começava sem hierarquia nenhuma. #}
+    <header class="admita-modal-topo">
+      <span class="admita-modal-ic">
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-usuario"/></svg>
+      </span>
+      <div>
+        <h2 id="admita-modal-titulo">Nova candidatura</h2>
+        <p class="admita-modal-sub">Cadastre um candidato fictício e veja a esteira reagir na hora.</p>
+      </div>
+    </header>
+
+    <label class="admita-campo">
+      <span>Nome do candidato</span>
+      <input type="text" name="nome" id="admita-campo-nome" maxlength="200" required
+             autocomplete="off" placeholder="Ex.: Marina Alves Torres">
+    </label>
+
+    <label class="admita-campo">
+      <span>Cargo</span>
+      <select name="cargo" id="admita-campo-cargo" required>
+        <option value="" disabled selected>Selecione um cargo</option>
+        {% for cargo in cargos %}
+        <option value="{{ cargo.nome }}">{{ cargo.nome }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <p class="admita-modal-erro" id="admita-modal-erro" role="alert" hidden></p>
+
+    <div class="admita-modal-acoes">
+      <button type="button" class="botao botao-secundario" data-fechar-modal-novo>
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-recusa"/></svg>
+        Cancelar
+      </button>
+      <button type="submit" class="botao botao-primario" id="admita-form-novo-salvar">
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-check"/></svg>
+        Salvar
+      </button>
+    </div>
+  </form>
+</div>
+
+{% include "lab/admita/_beta.html" %}
+
+{% include "lab/admita/_entrada.html" %}
+
+{% include "lab/admita/_config.html" %}
+
+<div class="admita-toast" id="admita-toast" role="status" aria-live="polite" hidden></div>
+{% endblock %}
+
+{% block demo_scripts %}
+<script src="/static/lab/admita.js?v={{ asset_v }}" defer></script>
+{% endblock %}

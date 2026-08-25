@@ -1,0 +1,99 @@
+{% extends "admin/base.html" %}
+{% block title %}Categorias{% endblock %}
+{% block content %}
+{% import "admin/_ico.html" as ico %}
+{% set q = request.query_params %}
+<header class="panel-head">
+  <h1>Categorias <small>{{ categories|length }} no portfólio</small></h1>
+  <a class="btn primary" href="#nova">{{ ico.i('mais') }} Nova categoria</a>
+</header>
+
+{% include "admin/_cases_nav.html" %}
+
+{% if q.get('salva') %}<div class="flash ok">{{ ico.i('checar') }} Categoria salva.</div>{% endif %}
+{% if q.get('apagada') %}<div class="flash ok">{{ ico.i('checar') }} Categoria excluída. Os cases dela ficaram sem categoria.</div>{% endif %}
+{% if sem_categoria %}
+<div class="flash">{{ ico.i('alerta') }} {{ sem_categoria }} case{{ 's' if sem_categoria != 1 }} sem categoria: fica de fora dos filtros do portfólio.
+  <a class="linklike" href="/admin/cases/lista?cat=_sem">Ver na lista</a>.</div>
+{% endif %}
+
+<div class="cat-grid">
+  <section>
+    {#
+      A ordem não é digitada: quem tem mais trabalho aparece primeiro, empate no
+      alfabeto. O número à esquerda é a posição no portfólio, e a barra mostra o
+      tamanho de cada categoria contra a maior — dá para ver de longe onde o
+      trabalho está concentrado e o que ainda é promessa.
+    #}
+    <ul class="cat-lista">
+      {% for c in categories %}
+      {% set n = numeros[c.id] %}
+      <li class="cat-item {{ 'eh-sites' if c.kind == 'sites' }}">
+        <span class="cat-pos mono-label">{{ loop.index }}º</span>
+
+        <form method="post" action="/admin/cases/categorias/salvar" class="cat-form">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="id" value="{{ c.id }}">
+          {# o tipo viaja escondido: só a categoria de sites é diferente, e isso
+             não é uma escolha a se fazer em cada uma das outras #}
+          <input type="hidden" name="kind" value="{{ c.kind }}">
+          <input class="cat-nome" name="name_pt" value="{{ c.name_pt }}" required
+                 aria-label="Nome da categoria">
+          <button class="btn sm cat-salvar" type="submit" title="Salvar alteração">
+            {{ ico.i('salvar') }} <span>Salvar</span></button>
+        </form>
+
+        <div class="cat-medida">
+          <span class="cat-barra"><i style="width: {{ ((n.total / topo * 100) if topo else 0) | round(1) }}%"></i></span>
+          <span class="cat-conta" title="Cases nesta categoria">{{ n.total }}</span>
+        </div>
+
+        <div class="cat-numeros mono-label">
+          <span>{{ ico.i('olho') }}{{ n.publicados }} no ar</span>
+          {% if n.rascunhos %}<span class="dim">{{ ico.i('lapis') }}{{ n.rascunhos }} rascunho{{ 's' if n.rascunhos != 1 }}</span>{% endif %}
+          <span class="dim">{{ ico.i('barras') }}{{ n.vistos }} acesso{{ 's' if n.vistos != 1 }}</span>
+          <span class="cat-en dim" title="Nome usado na versão em inglês do site">
+            {{ ico.i('globo') }}{{ c.name_en or c.name_pt }}</span>
+          {% if c.kind == 'sites' %}
+          <span class="badge cat-marca">sites ·︎ sem página de case</span>
+          {% endif %}
+        </div>
+
+        <div class="cat-acoes">
+          {% if n.total %}
+          <a class="btn ghost sm" href="/admin/cases/lista?cat={{ c.slug }}">{{ ico.i('imagem') }} Ver cases</a>
+          {% else %}
+          <form method="post" action="/admin/cases/categorias/{{ c.id }}/excluir"
+                onsubmit='return confirm({{ ("Excluir a categoria " ~ c.name_pt ~ "?") | tojson }})'>
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <button class="btn ghost sm danger" type="submit">{{ ico.i('lixeira') }} Excluir</button>
+          </form>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <aside class="camp-box cat-nova" id="nova">
+    <span class="box-h">{{ ico.i('mais') }} Nova categoria</span>
+    <form method="post" action="/admin/cases/categorias/salvar">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <label>Nome<input name="name_pt" required placeholder="Embalagem" autocomplete="off"></label>
+      <button class="btn primary wide" type="submit">{{ ico.i('mais') }} Criar categoria</button>
+    </form>
+
+    <ul class="cat-regras">
+      <li>{{ ico.i('globo') }}<span>O nome em inglês sai sozinho de uma tabela no código.
+        O que ela não conhece continua em português nos dois idiomas.</span></li>
+      <li>{{ ico.i('ordenar') }}<span>A ordem no portfólio é calculada: mais cases primeiro,
+        empate resolvido pelo alfabeto. Não há número para preencher.</span></li>
+      <li>{{ ico.i('imagem') }}<span>Toda categoria nova é comum: cada case dela vira uma página no site.
+        <b>Sites</b> é a única diferente, e já existe — nela o clique vai direto ao endereço
+        do cliente e o card mostra a prévia capturada de lá.</span></li>
+      <li>{{ ico.i('lixeira') }}<span>Só dá para excluir categoria vazia. Com cases dentro,
+        mova ou arquive antes.</span></li>
+    </ul>
+  </aside>
+</div>
+{% endblock %}

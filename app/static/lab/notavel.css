@@ -1,0 +1,73 @@
+/* ============================================================
+   Notável — Financeiro, emissão de NF. Source Serif 4 (display) +
+   IBM Plex Sans (UI) + IBM Plex Mono (só em nº da NF/CNPJ), petróleo
+   #1F6F6B + âmbar #E0A526, ícones Lucide. Hex e pesos EXATOS das Global
+   Constraints do Plano 2 e da prancha aprovada (.b-notavel). Só tokens —
+   layout/utilitários vêm de lab-base.css.
+   ============================================================ */
+
+.lab-demo.demo-notavel {
+  /* --------------------------------------------------------- tipografia --
+     Source Serif 4 600/700 nos títulos; IBM Plex Sans 400/600 na UI;
+     IBM Plex Mono 400/600 SÓ onde precisão é identidade (nº da NF, CNPJ,
+     valores tabulares — ver --marca-fonte-mono abaixo). */
+  --marca-fonte-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --marca-fonte-ui: "IBM Plex Sans", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --marca-fonte-mono: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  /* Fonte-documento: a NF em tela reaproveita a mesma serifa do título
+     (Source Serif 4) para o cabeçalho do documento — não existe uma
+     terceira família só para isso, ao contrário da Caderneta. */
+  --marca-fonte-documento: var(--marca-fonte-display);
+
+  /* -------------------------------------------------------------- cores --
+     Petróleo (#1F6F6B, AA 5.9) foge do azul genérico do setor; âmbar
+     (#E0A526, AA 8.1) é o segundo tom da marca (acento no "n.º" do
+     wordmark). Positivo/negativo são os semânticos do extrato. */
+  --marca-fundo: #F7F9FB;
+  --marca-superficie: #FFFFFF;
+  --marca-superficie-realce: #F2F6F8;
+  --marca-texto: #101828;
+  --marca-texto-suave: #66717E;
+  --marca-borda: #E4E9EE;
+
+  --marca-primaria: #1F6F6B;
+  --marca-primaria-contraste: #FFFFFF;
+  --marca-secundaria: #E0A526;
+  --marca-secundaria-contraste: #101828;
+
+  --marca-positivo: #0E7C3F;
+  --marca-positivo-fundo: #E7F3EC;
+  --marca-alerta: #8A6414;
+  --marca-alerta-fundo: #FBF1DC;
+  --marca-negativo: #DC2626;
+  --marca-negativo-fundo: #FDECEC;
+
+  /* Cartão de IA usa o petróleo bem diluído — a mesma superfície do ícone
+     "nota"/"receita" do feed de conciliação da prancha. */
+  --marca-superficie-ia: #DCEBEA;
+  --marca-borda-ia: #C6DEDC;
+
+  --marca-barra-fundo: #F2F6F8;
+  --marca-faixa-fundo: #101828;
+  --marca-faixa-texto: #F7F9FB;
+  --marca-faixa-cta: #E0A526;
+  --marca-faixa-cta-contraste: #101828;
+}
+
+/* Ícones do feed de conciliação: 1 cor fixa por categoria (kit item 8),
+   nas 3 famílias de conteúdo que a prancha já nomeia (receita/nota/tarifa). */
+.lab-demo.demo-notavel .icone-caixa.categoria-receita { background: #E7F3EC; color: var(--marca-positivo); }
+.lab-demo.demo-notavel .icone-caixa.categoria-nota { background: #DCEBEA; color: var(--marca-primaria); }
+.lab-demo.demo-notavel .icone-caixa.categoria-tarifa { background: #FBF1DC; color: var(--marca-alerta); }
+
+/* Números tabulares (saldo, nº da NF, CNPJ) na Mono — identidade citada na
+   prancha ("engenharia no dado"). */
+.lab-demo.demo-notavel .num-documento {
+  font-family: var(--marca-fonte-mono);
+  font-weight: 600;
+}
+
+.lab-demo.demo-notavel .lab-faixa-tagline {
+  font-weight: 700;
+  color: #F7F9FB;
+}

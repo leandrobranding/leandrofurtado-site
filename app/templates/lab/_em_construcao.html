@@ -1,0 +1,23 @@
+{# ============================================================
+   Conteúdo mínimo compartilhado pelas três rotas de entrada das demos
+   (Admita/Notável/Caderneta) enquanto as telas completas não chegam
+   (Plano 2, Tasks 4-9). Estende `_base_demo.html` (Task 1, não tocado por
+   esta task) e só preenche o bloco `demo_conteudo` — genérico o bastante
+   para servir às três marcas: o texto não cita nome de demo, o `_base_demo`
+   já cuida disso na barra/faixa/tagline/CSS via a variável `demo`.
+
+   Usa só classes utilitárias que já existem em `lab-base.css` (Task 1):
+   `.pill` para o selo "em construção" e a tipografia padrão do `.lab-demo`
+   para o parágrafo — nenhuma classe nova, nenhum CSS novo desta task.
+   ============================================================ #}
+{% extends "lab/_base_demo.html" %}
+{% block demo_conteudo %}
+<section class="lab-em-construcao">
+  <span class="pill pill-neutra">Em construção interna</span>
+  <p>
+    Esta tela ainda está sendo construída por dentro. As telas completas
+    desta demo chegam em breve, com a experiência de ponta a ponta que ela
+    foi desenhada para mostrar.
+  </p>
+</section>
+{% endblock %}

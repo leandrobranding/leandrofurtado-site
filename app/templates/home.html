@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% block pageid %}home{% endblock %}
+
+{% block content %}
+{% from "_bits.html" import tag_site, cat_link, moldura_site, trilho_marcas, cli_link, selos_programas with context %}
+<section class="hero">
+  <canvas id="glbg" aria-hidden="true"></canvas>
+  <canvas id="glhero" aria-hidden="true"></canvas>
+
+  {#
+    Trilho do Nodal, redesenhado na rodada 2 (19/08, item 5): a faixa colorida
+    de largura cheia virou uma fita diagonal discreta, presa no canto superior
+    direito — abaixo do cabeçalho (que é `position:fixed` com z-index maior e
+    sempre desenha por cima) e sangrando o canto do `.hero`, que é
+    `position:relative; overflow:clip` e corta o excesso sozinho. Sem cor —
+    só ink/bg da casa — e sem link: /nodal não existe em produção. O texto
+    real (para leitor de tela) continua fora do track decorativo.
+  #}
+  {#
+    Adendo do Leandro (19/08, ainda na rodada 2): copy nova em loop infinito
+    e movimento mais rápido (harmônico, sem frenesi — ver --dur do
+    .nodal-ribbon-track em main.css).
+  #}
+  <div class="nodal-ribbon" aria-hidden="true">
+    <p class="nodal-ribbon-sr">
+      {{ 'Em breve: Nodal, um acervo de aprendizado para criativos.' if lang == 'pt'
+         else 'Coming soon: Nodal, a learning collection for creatives.' }}
+    </p>
+    <div class="nodal-ribbon-strip">
+      <div class="nodal-ribbon-track">
+        {% for _ in range(2) %}
+        <span class="nodal-ribbon-item">
+          {{ nodalmark('nodal-ribbon-mark') }}
+          <b>Nodal</b>
+          <i>{{ 'acervo de aprendizado para criativos - em breve!' if lang == 'pt' else 'a learning collection for creatives - coming soon!' }}</i>
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-inner">
+    <p class="hero-kicker mono-label" data-reveal><i>✳︎</i> leandrofurtado.com.br // {{ t('welcome_kicker') }}</p>
+    <h1 class="hero-title display" data-hero-title>
+      {% if lang == 'en' %}<span class="hl">AI</span> <span class="hl">Engineering</span><br><span class="hl ol">&</span> <span class="hl ol">Art</span> <span class="hl ol">Direction.</span>{% else %}<span class="hl">Engenharia</span> <span class="hl">de</span> <span class="hl">IA</span><br><span class="hl ol">e</span> <span class="hl ol">Direção</span> <span class="hl ol">de</span> <span class="hl ol">Arte.</span>{% endif %}
+    </h1>
+    <div class="hero-base">
+      <p class="hero-sub" data-reveal>{{ profile['highlight_' ~ lang] or profile.highlight_pt }}</p>
+      <div class="scroll-cue mono-label" data-reveal aria-hidden="true">{{ t('scroll') }}<i></i></div>
+    </div>
+  </div>
+  {% if clients %}
+  <div class="hero-clients" data-reveal>
+    <span class="mono-label">{{ t('clients_brands') }}</span>
+    {{ trilho_marcas(clients, primeira_dobra=True) }}
+  </div>
+  {% endif %}
+</section>
+
+{% if featured %}
+<section class="fwork">
+  <p class="fwork-intro serif" data-split>
+    {{ ('Concebo e executo o que o mercado divide entre três ou quatro profissionais, agora com IA generativa no fluxo.') if lang == 'pt' else ('I conceive and execute what the market splits across three or four professionals, now with generative AI in the workflow.') }}
+  </p>
+  <div class="fwork-grid">
+    <aside class="fwork-rail">
+      <div class="fwork-rail-inner">
+        <span class="mono-label"><i>✳︎</i> {{ t('selected_work') }}</span>
+        <div class="fwork-titles">
+          {% for case in featured %}
+          <a class="fwork-title serif {% if loop.first %}is-active{% endif %}" data-fw-title="{{ loop.index0 }}"
+             href="{{ destino(case) }}"
+             {% if eh_site(case) %}target="_blank" rel="noopener noreferrer"{% endif %}>{{ f(case, 'title') }}</a>
+          {% endfor %}
+        </div>
+        <div class="fwork-metas">
+          {% for case in featured %}
+          <div class="fwork-meta mono-label {% if loop.first %}is-active{% endif %}" data-fw-meta="{{ loop.index0 }}">
+            {{ selos_programas(case) }}
+            {{ cli_link(case) }}
+            {% if case.category %} ·︎ {{ cat_link(case.category) }}{% endif %}
+            {% if case.year %} ·︎ {{ case.year }}{% endif %}
+            {% if eh_site(case) %}{{ tag_site(case) }}{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <a class="btn-underline mono-label" href="{{ lp('/portfolio') }}">{{ t('see_all_work') }} ({{ total_cases }})</a>
+      </div>
+    </aside>
+    <div class="fwork-media">
+      {% for case in featured %}
+      {#
+        Site em destaque não devia acontecer (o painel bloqueia e a home filtra),
+        mas se acontecer o card mostra a captura do site na moldura de navegador
+        e o clique vai para o endereço real. Antes procurava `cover_image` num
+        registro que só tem `site_shot`, e o resultado era um retângulo vazio.
+      #}
+      <a class="fwork-card {{ 'site-card' if eh_site(case) }}" data-fw-card="{{ loop.index0 }}"
+         data-cursor-chip="{{ t('see_site') if eh_site(case) else t('view_case') }}"
+         href="{{ destino(case) }}"
+         {% if eh_site(case) %}target="_blank" rel="noopener noreferrer"{% endif %}
+         aria-label="{{ f(case, 'title') }}{% if eh_site(case) %} — {{ t('open_site') }}{% endif %}">
+        {% if eh_site(case) %}
+        {{ moldura_site(case, lazy=loop.index0 > 1) }}
+        {% else %}
+        <figure>
+          {% if case.cover_image %}<img src="/media/{{ case.cover_image }}"
+               {% if srcset(case.cover_image) %}srcset="{{ srcset(case.cover_image) }}" sizes="(max-width: 960px) 100vw, 52vw"{% endif %}
+               alt="{{ alt_de('', f(case, 'title'), case.client) }}" {% if loop.index0 > 1 %}loading="lazy"{% endif %}>{% endif %}
+          {% if case.cover_video %}<video muted loop playsinline preload="none" src="/media/{{ case.cover_video }}"></video>{% endif %}
+        </figure>
+        {% endif %}
+        <span class="fwork-card-caption mono-label">{{ f(case, "title") }}{% if case.client %} ·︎ {{ case.client }}{% endif %}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{#
+  Mosaico de capas (Rodada 3, item 11, 19/08, pedido do dono já com uma
+  correção dele mesmo: "~20 colunas e UMA LINHA, viajei falando duas
+  linhas") — fita densa de capas de TODOS os cases publicados (repete em
+  loop se houver menos de 20), gradiente radial por cima (o centro é
+  palco, as bordas esmaecem) e um botão central "ver todos os cases (x)",
+  x vindo do servidor (mosaic_covers()/total_cases em app/routers/public.py
+  — ver testes de contagem e mutação lá).
+
+  Acessibilidade: o mosaico é decoração de navegação, não uma galeria — os
+  ladrilhos não têm link próprio (só o botão leva a algum lugar), e com
+  capas repetindo em loop pra preencher a fita, 20 alts (a maioria
+  duplicada) só criaria ruído sem informação nova pro leitor de tela.
+  Por isso `.cm-grid` inteiro é aria-hidden e as imagens têm alt="" —
+  o botão é o único elemento navegável/anunciado desta seção, com o
+  texto (e a contagem real) carregando o significado sozinho.
+
+  Mobile: só o botão. As imagens saem do fluxo por inteiro (display:none),
+  não só ficam invisíveis — sem baixar 20 imagens que ninguém vai ver.
+#}
+{% if mosaic_covers %}
+<section class="case-mosaic">
+  <div class="cm-grid" aria-hidden="true">
+    {% for cover in mosaic_covers %}
+    <div class="cm-tile"><img src="/media/{{ cover }}"
+         {% if srcset(cover) %}srcset="{{ srcset(cover) }}" sizes="5vw"{% endif %}
+         alt="" loading="lazy" decoding="async"></div>
+    {% endfor %}
+  </div>
+  <div class="cm-fade" aria-hidden="true"></div>
+  <a class="cm-cta cta-pill big" href="{{ lp('/portfolio') }}">
+    {{ 'Ver todos os cases' if lang == 'pt' else 'See all cases' }} <em>({{ total_cases }})</em>
+  </a>
+</section>
+{% endif %}
+
+{#
+  Rodada 3, item 7 (19/08): o trilho todo — cabeçalho incluso — só existe
+  com 6+ posts completos (ver get_ig_feed em app/routers/public.py). Menos
+  que isso, `ig_feed` chega vazio da rota e a seção inteira some: nada de
+  cabeçalho "Instagram" order-topo com uma grade capenga ou ausente embaixo.
+#}
+{% if ig_feed %}
+<section class="ig-feed">
+  <header class="ig-head" data-reveal>
+    <span class="ig-title display" data-drift="left">
+      <svg class="ig-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
+      Instagram
+    </span>
+    <a class="ig-handle display" data-drift="right" href="{{ site.social_instagram }}" target="_blank" rel="noopener">@leandrobranding ↗︎</a>
+  </header>
+  <div class="ig-grid">
+    {% for post in ig_feed %}
+    <a class="ig-tile" href="{{ post.link }}" target="_blank" rel="noopener" aria-label="Instagram">
+      <img src="{{ post.img }}" alt="Post @leandrobranding" loading="lazy">
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if li_posts %}
+<section class="li-feed">
+  <header class="ig-head" data-reveal>
+    <span class="ig-title display" data-drift="left">
+      <svg class="ig-title-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 8.6H3.2V21h3.2V8.6zM4.8 7.2a1.9 1.9 0 1 0 0-3.8 1.9 1.9 0 0 0 0 3.8zM21 14.2c0-3.1-1.7-4.6-3.9-4.6-1.8 0-2.6 1-3.1 1.7V8.6h-3.2V21H14v-6.6c0-1.5.7-2.4 2-2.4 1.2 0 1.8.8 1.8 2.4V21H21v-6.8z"/></svg>
+      LinkedIn
+    </span>
+    {% if site.social_linkedin %}
+    <a class="ig-handle display" data-drift="right" href="{{ site.social_linkedin }}" target="_blank" rel="noopener">/leandrofurtad ↗︎</a>
+    {% endif %}
+  </header>
+  <div class="li-grid">
+    {% for post in li_posts %}
+    <a class="li-card" href="{{ post.url }}" target="_blank" rel="noopener">
+      <span class="li-num mono-label">{{ '%02d' % loop.index }}</span>
+      {% if post.tag %}<span class="li-tag mono-label">{{ post.tag }}</span>{% endif %}
+      <p class="li-summary">{{ post.summary }}</p>
+      <span class="li-more mono-label">{{ t('read_more') }} <em>↗︎</em></span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{#
+  ============================================================
+  TRILHO DO LAB (lançamento, 21/08)
+  Depois do LinkedIn e antes da barra animada: quem rolou a home inteira
+  já viu o trabalho de direção de arte, e é aqui que a conversa vira
+  "ele também constrói o sistema". Quatro colunas: uma que apresenta o
+  Lab e três que são os sistemas, na mesma gramática da vitrine (ícone de
+  app, nome, o que faz, estado). O fundo tem textura própria de propósito,
+  para a faixa destacar do resto da home em vez de virar mais uma seção.
+  ============================================================
+#}
+<section class="lab-trilho" aria-labelledby="lab-trilho-titulo">
+  <div class="lab-trilho-textura" aria-hidden="true"></div>
+
+  <div class="lab-trilho-grade">
+    <div class="lab-trilho-intro" data-reveal>
+      <span class="lab-trilho-selo mono-label">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M12 2 22 12 12 22 2 12 12 2Zm0 5.2L7.2 12 12 16.8 16.8 12 12 7.2Z"/></svg>
+        Lab &#x2F;&#x2F; Apps
+      </span>
+      <span class="lab-trilho-subselo">Sistemas de demonstração</span>
+      <h2 id="lab-trilho-titulo" class="lab-trilho-titulo display">Dev, sim!</h2>
+      <p class="lab-trilho-texto">
+        3 sistemas SaaS completos. Isso mesmo. Feitos do zero, com marca,
+        interface e código do mesmo par de mãos que assina este site.
+        O de RH já está no ar. Bora conferir?
+      </p>
+      <a class="lab-trilho-cta" href="{{ lp('/lab') }}">
+        Entrar no Lab <em aria-hidden="true">→︎</em>
+      </a>
+    </div>
+
+    {% for sistema in [
+      ('admita', 'Admita', 'Admissão sem papelada, do currículo ao crachá.', 'ativo', '/lab/admita'),
+      ('notavel', 'Notável', 'Nota fiscal, caixa e conciliação no mesmo lugar.', 'obra', ''),
+      ('caderneta', 'Caderneta', 'Diário de classe, notas e boletim sem planilha.', 'obra', ''),
+    ] %}
+    {% set slug, nome, resumo, estado, destino = sistema %}
+    {% if destino %}
+    <a class="lab-trilho-card lab-trilho-card-{{ slug }}" href="{{ destino }}" data-reveal>
+    {% else %}
+    <div class="lab-trilho-card lab-trilho-card-{{ slug }} lab-trilho-card-obra" data-reveal>
+    {% endif %}
+      <span class="lab-trilho-ic lab-trilho-ic-{{ slug }}">
+        {% if slug == 'admita' %}
+          {% with id='trilho', simbolo=True, classe='lab-trilho-glifo' %}{% include 'lab/admita/_marca.html' %}{% endwith %}
+        {% else %}
+          <img src="/static/lab/img/simbolo-{{ slug }}.svg?v={{ asset_v }}" alt="" class="lab-trilho-glifo-img">
+        {% endif %}
+      </span>
+      <strong class="lab-trilho-nome">{{ nome }}</strong>
+      <span class="lab-trilho-resumo">{{ resumo }}</span>
+      <span class="lab-trilho-estado lab-trilho-estado-{{ estado }}">
+        <i aria-hidden="true"></i>{{ 'sistema ativo' if estado == 'ativo' else 'em desenvolvimento' }}
+      </span>
+    {% if destino %}</a>{% else %}</div>{% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+{#
+  Barra animada editável no admin (item 8, 19/08): as palavras vêm de
+  SiteSetting (`marquee_words_pt`/`marquee_words_en`, uma por linha — ver
+  Configurações → Geral), no mesmo padrão de textarea da casa. Sem nada
+  salvo ainda (banco novo antes do primeiro seed rodar, por exemplo), cai
+  numa lista de reserva igual à que sempre esteve fixa aqui, então a faixa
+  nunca fica vazia.
+#}
+{% set _mw_bruto = (site.marquee_words_en if lang == 'en' else site.marquee_words_pt) if site is defined and site else '' %}
+{% set marquee_words = (_mw_bruto.split('\n') | map('trim') | select | list) if _mw_bruto else
+  (['Key Visual', 'Branding', 'Campaigns', 'UI Design', 'Motion', 'Photography', 'Social Media', 'Web', 'Creative AI'] if lang == 'en' else
+   ['Key Visual', 'Branding', 'Campanhas', 'UI Design', 'Motion', 'Fotografia', 'Social Media', 'Web', 'IA Criativa']) %}
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    {% for _ in range(2) %}{% for palavra in marquee_words %}<span>{{ palavra }}</span><i>✦︎</i>{% endfor %}{% endfor %}
+  </div>
+</div>
+{% endblock %}

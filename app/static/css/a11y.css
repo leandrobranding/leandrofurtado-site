@@ -1,0 +1,528 @@
+/* ==========================================================================
+   Barra de acessibilidade.
+
+   Arquivo separado do main.css de propósito: a página de construção, a página
+   de descadastro e o site inteiro carregam a barra, mas só o site carrega o
+   main.css. Aqui não se depende de nada de lá além das variáveis de tema, e
+   há um fallback para quando nem isso existe.
+   ========================================================================== */
+
+.a11y, .a11y-pular, .a11y-filtros {
+  /* iOS 26 (Liquid Glass): a página renderiza atrás do relógio/Dynamic Island
+     e da pílula de endereço. --a11y-h é o único valor de que todo o resto do
+     arquivo (e de main.css) deriva os deslocamentos do topo — somando a safe
+     area aqui, uma vez, propaga para .a11y-bar, .site-header, .wip, os
+     scroll-margin e .project-layout (main.css) sem precisar tocar em cada um.
+     Onde não há notch, env() cai no fallback 0px e nada muda. */
+  --a11y-h: calc(32px + env(safe-area-inset-top, 0px));
+  --a11y-ink: var(--ink, #f4f2ed);
+  --a11y-bg: var(--bg, #0d0d0d);
+  --a11y-line: var(--line, #242422);
+  --a11y-muted: var(--muted, #8d8b86);
+  --a11y-face: var(--sans, "Montserrat", system-ui, sans-serif);
+  --a11y-disp: var(--display, "Space Grotesk", system-ui, sans-serif);
+  --a11y-ease: var(--ease, cubic-bezier(.62,.05,.01,.99));
+  /* mesma margem do resto do site (`--pad`, definida em main.css): a barra
+     tinha um clamp() próprio parecido mas com o mínimo diferente (12px
+     contra 20px), então no celular ela ficava uns pixels fora do prumo dos
+     itens do cabeçalho e do conteúdo logo abaixo — "parece que estão fora
+     da margem" (Leandro, 19/08, item 7). `var(--pad, …)` usa a variável real
+     quando main.css está carregado (sempre, nas páginas que têm esta barra)
+     e cai no mesmo valor como reserva se um dia isso não for verdade. */
+  --a11y-pad: var(--pad, clamp(20px, 3.4vw, 56px));
+}
+:root { --a11y-h: calc(32px + env(safe-area-inset-top, 0px)); }
+.a11y-filtros { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+/* o cabeçalho do site é fixo no topo: cede o lugar da barra. O cabeçalho do
+   Nodal (Tarefa 11) reaproveita a MESMA classe `.site-header` (regra do
+   Leandro de 18/08: mesma estrutura, só os links mudam) — então já herda
+   esta regra de graça, sem precisar de uma cópia com outro seletor. */
+.site-header { top: var(--a11y-h); }
+
+/* A página de construção ocupa exatamente uma tela e não pode ganhar rolagem.
+   O espaço da barra entra como padding, não como margem: margem de topo do
+   primeiro filho colapsa para fora do body e o documento fica a altura da
+   barra mais alto que a janela, criando uma barra de rolagem de 32px. Com
+   box-sizing: border-box (que o site já usa em tudo) o padding entra dentro
+   do min-height e o total continua sendo uma tela cheia. */
+.wip { padding-top: var(--a11y-h); }
+/* No mobile a coluna da esquerda vale uma tela cheia, e a newsletter só
+   aparece ao rolar. Ela precisa descontar a barra também, senão a dica de
+   rolagem no pé da coluna nasce logo abaixo da dobra. */
+@media (max-width: 900px) {
+  .wip-left { min-height: calc(100vh - var(--a11y-h)); }
+  @supports (height: 100dvh) { .wip-left { min-height: calc(100dvh - var(--a11y-h)); } }
+}
+
+/* ---------- pular para o conteúdo: só existe para o teclado ---------- */
+.a11y-pular {
+  position: fixed; top: 6px; left: 50%; transform: translate(-50%, -160%);
+  z-index: 10090; background: var(--a11y-ink); color: var(--a11y-bg);
+  font: 600 12px/1 var(--a11y-face); letter-spacing: .04em;
+  padding: 12px 18px; border-radius: 999px; text-decoration: none;
+  transition: transform .25s var(--a11y-ease);
+}
+.a11y-pular:focus { transform: translate(-50%, 0); outline: 2px solid var(--a11y-bg); outline-offset: -5px; }
+
+/* ---------- a barra ---------- */
+.a11y-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9100;
+  /* height já inclui a safe area (--a11y-h, acima). padding-top empurra o
+     conteúdo (.a11y-bar-in, height:100%, box-sizing:border-box herdado do
+     reset global) para a faixa de baixo, que sobra com exatamente 32px/30px
+     — a altura "de sempre". A faixa de cima (padding) some sozinha quando
+     env() cai no fallback 0px: nada muda fora de iOS com notch/Dynamic
+     Island. */
+  /* Altura simples, opaca, ancorada no topo. Nada de camada composta com
+     parte fora da tela: no Safari do iOS isso vira pixel velho que não
+     repinta ao rolar. A faixa da safe area continua somada em `--a11y-h`
+     e vale 0 onde não há entalhe. */
+  height: var(--a11y-h);
+  padding-top: env(safe-area-inset-top, 0px);
+  background: var(--a11y-bg);
+  border-bottom: 1px solid color-mix(in srgb, var(--a11y-line) 60%, transparent);
+}
+/* Sem color-mix, ou sem desfoque, a barra fica sólida. Translúcida sem o
+   desfoque por trás não é discrição, é texto da página aparecendo por dentro
+   da barra — foi o que pareceu quebrado no Safari do iPhone. */
+@supports not (background: color-mix(in srgb, red 50%, transparent)) {
+  .a11y-bar { background: #0d0d0d; }
+  :root[data-theme="light"] .a11y-bar { background: #f2f0eb; }
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .a11y-bar { background: var(--a11y-bg); }
+}
+/* No celular a barra é a única coisa fixa no topo e o conteúdo passa por baixo
+   dela o tempo todo. Ali ela é sólida: qualquer transparência vira dúvida. */
+@media (max-width: 900px) {
+  .a11y-bar { background: var(--a11y-bg); }
+}
+
+.a11y-bar-in {
+  height: 100%; display: flex; align-items: center; gap: 14px;
+  padding: 0 var(--a11y-pad);
+  /* rede de segurança: a barra nunca rola nem empurra a página, aconteça o que
+     acontecer com o comprimento dos rótulos em outro idioma */
+  overflow: hidden;
+}
+.a11y-bar-in > .a11y-kbd { margin-left: auto; }
+.a11y-trigger { flex: none; }
+
+.a11y-trigger, .a11y-quick > button {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: none; border: 0; cursor: pointer; padding: 0;
+  color: color-mix(in srgb, var(--a11y-ink) 62%, transparent);
+  font: 500 9.5px/1 var(--a11y-face); letter-spacing: .17em; text-transform: uppercase;
+  transition: color .25s, opacity .25s;
+}
+.a11y-trigger:hover, .a11y-quick > button:hover,
+.a11y-trigger:focus-visible, .a11y-quick > button:focus-visible { color: var(--a11y-ink); }
+.a11y-ic-main { width: 14px; height: 14px; flex: none; }
+
+.a11y-quick { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.a11y-quick::before {
+  content: ""; flex: none; width: 1px; height: 12px; background: var(--a11y-line);
+}
+.a11y-quick > button { flex: none; white-space: nowrap; }
+.a11y-quick > button[aria-pressed="true"] { color: var(--a11y-ink); }
+.a11y-quick > button[aria-pressed="true"] span { border-bottom: 1px solid currentColor; padding-bottom: 2px; }
+
+.a11y-kbd {
+  flex: none; white-space: nowrap;
+  font: 500 9px/1 var(--a11y-face); letter-spacing: .17em;
+  color: color-mix(in srgb, var(--a11y-ink) 32%, transparent);
+}
+/* o lembrete do atalho é decoração: some primeiro. Os atalhos diretos saem no
+   ponto em que a página de construção vira uma coluna só. */
+@media (max-width: 1040px) { .a11y-kbd { display: none; } }
+@media (max-width: 900px)  { .a11y-quick { display: none; } }
+
+/* ---------- o painel ---------- */
+.a11y-painel {
+  position: fixed; top: 0; right: 0; z-index: 10080;
+  width: min(430px, 100vw); height: 100vh; height: 100dvh;
+  /* mesma lógica da barra (.a11y-bar, acima): o painel também nasce em
+     top:0 e abre por cima dela, então herda o mesmo risco de o cabeçalho
+     (título + botão de fechar) ficar atrás do relógio/Dynamic Island. Como
+     aqui a altura total já é 100vh/100dvh (não um valor fixo como --a11y-h),
+     basta um padding-top: o fundo (já sólido, var(--a11y-bg)) cobre a faixa
+     de cima e o flex column (header/corpo/rodapé) só perde essa fatia da
+     área útil — o corpo já rola, então não há conteúdo cortado. */
+  padding-top: env(safe-area-inset-top, 0px);
+  display: flex; flex-direction: column;
+  background: var(--a11y-bg); border-left: 1px solid var(--a11y-line);
+  transform: translateX(101%); transition: transform .5s var(--a11y-ease);
+  box-shadow: -30px 0 80px rgba(0, 0, 0, .45);
+}
+.a11y-painel[hidden] { display: flex; }        /* hidden só marca o estado inicial */
+.a11y-painel.aberto { transform: none; }
+.a11y-veu {
+  position: fixed; inset: 0; z-index: 10070; background: rgba(0, 0, 0, .5);
+  opacity: 0; visibility: hidden; transition: opacity .4s, visibility .4s;
+}
+.a11y-veu.aberto { opacity: 1; visibility: visible; }
+
+.a11y-p-head {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 22px 22px 18px; border-bottom: 1px solid var(--a11y-line);
+}
+.a11y-p-head h2 {
+  font: 600 19px/1.1 var(--a11y-disp); text-transform: uppercase;
+  letter-spacing: -.02em; color: var(--a11y-ink); margin: 0 0 6px;
+}
+.a11y-p-head p { margin: 0; font: 400 11.5px/1.55 var(--a11y-face); color: var(--a11y-muted); max-width: 30ch; }
+.a11y-x {
+  margin-left: auto; flex: none; width: 32px; height: 32px; border-radius: 50%;
+  display: grid; place-items: center; cursor: pointer;
+  background: none; border: 1px solid var(--a11y-line); color: var(--a11y-ink);
+  transition: background .25s, transform .25s;
+}
+.a11y-x:hover { background: color-mix(in srgb, var(--a11y-ink) 10%, transparent); transform: rotate(90deg); }
+.a11y-x svg { width: 15px; height: 15px; }
+
+/* mesma máscara em degradê do resto do site (ver .fade-edge-y em main.css) —
+   cópia própria porque este arquivo não depende de main.css (ele também
+   carrega sozinho, ex.: página de construção). O corpo do painel rola bastante
+   (12 recursos); sem o esmaecimento nas pontas o topo/rodapé da lista cortava
+   seco e parecia conteúdo vazado (Leandro, 19/08, item 7). */
+.a11y-p-corpo {
+  flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 4px 22px 22px;
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 12px, #000 calc(100% - 12px), transparent);
+}
+.a11y-grupo { padding: 18px 0; border-bottom: 1px solid var(--a11y-line); }
+.a11y-grupo:last-child { border-bottom: 0; }
+.a11y-grupo > h3 {
+  margin: 0 0 12px; font: 500 9px/1 var(--a11y-face);
+  letter-spacing: .22em; text-transform: uppercase; color: var(--a11y-muted);
+}
+
+/* ---------- item liga/desliga ---------- */
+.a11y-item {
+  width: 100%; display: flex; align-items: center; gap: 13px; text-align: left;
+  padding: 11px 12px; margin-bottom: 7px; cursor: pointer;
+  background: none; border: 1px solid var(--a11y-line); border-radius: 8px;
+  color: var(--a11y-ink); transition: border-color .25s, background .25s;
+}
+.a11y-item:hover { border-color: color-mix(in srgb, var(--a11y-ink) 40%, transparent); }
+.a11y-item[aria-pressed="true"] { background: color-mix(in srgb, var(--a11y-ink) 7%, transparent); border-color: var(--a11y-ink); }
+.a11y-item-ic { flex: none; width: 22px; height: 22px; color: var(--a11y-ink); opacity: .82; }
+.a11y-item-ic svg { width: 100%; height: 100%; display: block; }
+.a11y-item-txt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.a11y-item-txt b { font: 600 13px/1.25 var(--a11y-face); }
+.a11y-item-txt em { font: 400 10.5px/1.4 var(--a11y-face); font-style: normal; color: var(--a11y-muted); }
+
+.a11y-chave {
+  margin-left: auto; flex: none; width: 34px; height: 19px; border-radius: 999px;
+  border: 1px solid var(--a11y-line); position: relative; transition: background .3s, border-color .3s;
+}
+.a11y-chave::after {
+  content: ""; position: absolute; top: 50%; left: 3px; width: 11px; height: 11px;
+  border-radius: 50%; background: var(--a11y-muted); transform: translateY(-50%);
+  transition: transform .3s var(--a11y-ease), background .3s;
+}
+.a11y-item[aria-pressed="true"] .a11y-chave { border-color: var(--a11y-ink); }
+.a11y-item[aria-pressed="true"] .a11y-chave::after { transform: translate(15px, -50%); background: var(--a11y-ink); }
+
+/* ---------- passos (fonte, entrelinha, letras, velocidade) ---------- */
+.a11y-passo {
+  display: grid; grid-template-columns: 1fr auto auto auto; align-items: center;
+  gap: 10px; padding: 9px 0;
+}
+.a11y-passo-nome {
+  font: 500 12px/1.3 var(--a11y-face); color: var(--a11y-ink);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.a11y-passo-nome em {
+  font: 400 9.5px/1 var(--a11y-face); font-style: normal;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--a11y-muted);
+}
+.a11y-passo > button {
+  width: 27px; height: 27px; flex: none; cursor: pointer; border-radius: 50%;
+  background: none; border: 1px solid var(--a11y-line); color: var(--a11y-ink);
+  font: 400 15px/1 var(--a11y-face); display: grid; place-items: center;
+  transition: background .25s, border-color .25s;
+}
+.a11y-passo > button:hover:not(:disabled) { background: color-mix(in srgb, var(--a11y-ink) 12%, transparent); }
+.a11y-passo > button:disabled { opacity: .3; cursor: default; }
+.a11y-pontos { display: flex; gap: 4px; }
+.a11y-pontos i { width: 5px; height: 5px; border-radius: 50%; background: var(--a11y-line); transition: background .25s; }
+.a11y-pontos i.on { background: var(--a11y-ink); }
+
+/* ---------- opções em linha ---------- */
+.a11y-opcoes { padding: 9px 0; }
+.a11y-opcoes > div { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.a11y-opcoes button {
+  cursor: pointer; padding: 7px 12px; border-radius: 999px;
+  background: none; border: 1px solid var(--a11y-line); color: var(--a11y-muted);
+  font: 500 10.5px/1 var(--a11y-face); transition: color .25s, border-color .25s, background .25s;
+}
+.a11y-opcoes button:hover { color: var(--a11y-ink); }
+.a11y-opcoes button[aria-checked="true"] {
+  color: var(--a11y-bg); background: var(--a11y-ink); border-color: var(--a11y-ink);
+}
+
+.a11y-nota { margin: 8px 0 0; font: 400 10px/1.55 var(--a11y-face); color: var(--a11y-muted); opacity: .85; }
+
+/* ---------- blocos que abrem sob um item ---------- */
+.a11y-sub {
+  padding: 12px; margin: -3px 0 10px; border-radius: 8px;
+  border: 1px solid var(--a11y-line);
+  background: color-mix(in srgb, var(--a11y-ink) 4%, transparent);
+}
+.a11y-sub[hidden] { display: none; }
+
+.a11y-abas { display: flex; gap: 5px; margin-bottom: 10px; }
+.a11y-abas button {
+  flex: 1; cursor: pointer; padding: 7px 4px; border-radius: 6px; background: none;
+  border: 1px solid var(--a11y-line); color: var(--a11y-muted);
+  font: 500 10px/1 var(--a11y-face); transition: color .25s, background .25s;
+}
+.a11y-abas button[aria-selected="true"] { color: var(--a11y-bg); background: var(--a11y-ink); border-color: var(--a11y-ink); }
+
+.a11y-mapa {
+  list-style: none; margin: 0; padding: 0; max-height: 260px; overflow-y: auto;
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 10px, #000 calc(100% - 10px), transparent);
+  mask-image: linear-gradient(180deg, transparent, #000 10px, #000 calc(100% - 10px), transparent);
+}
+.a11y-mapa li { border-bottom: 1px solid color-mix(in srgb, var(--a11y-line) 70%, transparent); }
+.a11y-mapa li:last-child { border-bottom: 0; }
+.a11y-mapa button {
+  width: 100%; text-align: left; cursor: pointer; background: none; border: 0;
+  padding: 8px 2px; color: var(--a11y-ink);
+  font: 400 11.5px/1.4 var(--a11y-face);
+  display: flex; align-items: baseline; gap: 8px;
+  transition: color .2s, padding-left .2s;
+}
+.a11y-mapa button:hover { padding-left: 6px; color: var(--a11y-ink); }
+.a11y-mapa button small {
+  flex: none; font: 500 8.5px/1 var(--a11y-face); letter-spacing: .12em;
+  text-transform: uppercase; color: var(--a11y-muted);
+  border: 1px solid var(--a11y-line); border-radius: 3px; padding: 3px 4px;
+}
+.a11y-mapa button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.a11y-mapa .vazio { padding: 10px 2px; color: var(--a11y-muted); font: 400 11px/1.5 var(--a11y-face); }
+
+.a11y-p-pe {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 22px; border-top: 1px solid var(--a11y-line);
+}
+.a11y-reset {
+  cursor: pointer; padding: 9px 15px; border-radius: 999px; background: none;
+  border: 1px solid var(--a11y-line); color: var(--a11y-ink);
+  font: 500 10.5px/1 var(--a11y-face); transition: background .25s;
+}
+.a11y-reset:hover { background: color-mix(in srgb, var(--a11y-ink) 12%, transparent); }
+.a11y-marca {
+  margin-left: auto; font: 500 8.5px/1 var(--a11y-face);
+  letter-spacing: .18em; color: var(--a11y-muted); opacity: .5;
+}
+
+/* ==========================================================================
+   Efeitos sobre o site
+   ========================================================================== */
+
+/* ---------- entrelinha e espaço entre letras ----------
+   A própria barra fica fora da regra. Ela é o controle: se mudasse junto,
+   quem está ajustando perderia a referência do que é o normal. Excluir na
+   origem é mais confiável que tentar desfazer depois com revert. */
+:root[data-a11y-linhas] :is(p, li, dd, dt, figcaption, blockquote, td, th, label,
+                            summary, h1, h2, h3, h4, h5, h6):not(.a11y *):not([vw] *) {
+  line-height: var(--a11y-lh) !important;
+}
+:root[data-a11y-linhas="1"] { --a11y-lh: 1.7; }
+:root[data-a11y-linhas="2"] { --a11y-lh: 2.1; }
+:root[data-a11y-linhas="3"] { --a11y-lh: 2.6; }
+
+:root[data-a11y-letras] :is(p, li, dd, dt, figcaption, blockquote, td, th, label, summary,
+                            a, span, b, strong, em, button):not(.a11y *):not([vw] *) {
+  letter-spacing: var(--a11y-ls) !important;
+}
+:root[data-a11y-letras="1"] { --a11y-ls: .06em; }
+:root[data-a11y-letras="2"] { --a11y-ls: .12em; }
+:root[data-a11y-letras="3"] { --a11y-ls: .2em; }
+
+/* ---------- destaque de links ---------- */
+:root[data-a11y-links] :is(a, button, [role="button"], summary):not(.a11y *):not(.a11y-pular) {
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+  text-decoration-thickness: 2px !important;
+  outline: 1px dashed color-mix(in srgb, currentColor 55%, transparent);
+  outline-offset: 2px;
+}
+:root[data-a11y-links] a[target="_blank"]:not(.a11y *)::after { content: " ↗︎"; }
+
+/* ---------- contraste ---------- */
+:root[data-a11y-contraste="1"] {
+  --bg: #000; --bg-2: #000; --ink: #fff; --muted: #e9e9e9; --line: #fff;
+  --a11y-bg: #000; --a11y-ink: #fff; --a11y-line: #fff; --a11y-muted: #e9e9e9;
+}
+:root[data-a11y-contraste="1"] body { background: #000; }
+:root[data-a11y-contraste="1"] .a11y-bar { background: #000; border-bottom-color: #fff; }
+/* fundo animado e textura só atrapalham quando o pedido é contraste */
+:root[data-a11y-contraste="1"] :is(#glbg, #glhero, .grain, .noise) { display: none !important; }
+
+/* Fundo claro: o JS liga o tema claro do site por baixo (que já sabe virar os
+   logotipos e ajustar as texturas) e aqui só se empurra para preto e branco
+   puros. Antes isto era filter: invert(), que punha as fotos em negativo e
+   fazia logotipo branco sumir no fundo branco. */
+:root[data-a11y-contraste="2"] {
+  --bg: #fff; --bg-2: #fff; --ink: #000; --muted: #111; --line: #000;
+  --a11y-bg: #fff; --a11y-ink: #000; --a11y-line: #000; --a11y-muted: #111;
+  color-scheme: light;
+}
+/* Só as variáveis. Forçar `color: #000` em tudo parecia mais seguro e era o
+   contrário: botão que já tem fundo escuro (o "Iniciar projeto") ficava preto
+   sobre preto. Os componentes do site leem estes tokens e se viram sozinhos,
+   invertendo o texto quando o fundo é escuro. */
+:root[data-a11y-contraste="2"] body { background: #fff; }
+/* fundo animado e textura não têm papel nenhum quando o pedido é contraste */
+:root[data-a11y-contraste="2"] :is(#glbg, #glhero, .grain, .noise) { display: none !important; }
+
+/* ---------- filtros de cor ----------
+   Inversão, saturação e daltonismo entram como um filtro só, escrito pelo JS
+   direto no <html>. Nunca no <body>: ali o filtro criaria bloco de contenção e
+   todo position:fixed passaria a rolar junto com a página.
+   Na inversão, as imagens são invertidas de novo para não virarem negativo. */
+
+/* ---------- foco de teclado reforçado ---------- */
+:root[data-a11y-teclado] :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--a11y-ink) !important;
+  outline-offset: 3px !important;
+  border-radius: 3px;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--a11y-bg) 80%, transparent) !important;
+}
+:root[data-a11y-teclado] :target { scroll-margin-top: calc(var(--a11y-h) + 80px); }
+
+/* ---------- alvo apontado pela estrutura da página ---------- */
+.a11y-apontado {
+  animation: a11y-pisca 1.8s var(--a11y-ease) 2;
+  scroll-margin-top: calc(var(--a11y-h) + 90px);
+}
+@keyframes a11y-pisca {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  30%      { box-shadow: 0 0 0 4px var(--a11y-ink); }
+}
+
+/* ---------- lupa de conteúdo ---------- */
+.a11y-lupa {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10060;
+  padding: 16px clamp(14px, 3vw, 40px);
+  background: color-mix(in srgb, var(--a11y-bg) 94%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--a11y-line);
+  transform: translateY(101%); transition: transform .35s var(--a11y-ease);
+  pointer-events: none;
+}
+.a11y-lupa.on { transform: none; }
+.a11y-lupa span {
+  display: block; max-width: 1100px; margin: 0 auto;
+  font: 500 clamp(19px, 2.4vw, 30px)/1.35 var(--a11y-face);
+  color: var(--a11y-ink);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* ---------- verbete ---------- */
+.a11y-verbete {
+  position: fixed; z-index: 10085; width: min(340px, calc(100vw - 24px));
+  padding: 15px 16px; border-radius: 10px;
+  background: var(--a11y-bg); border: 1px solid var(--a11y-ink);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .5);
+  opacity: 0; transform: translateY(6px); transition: opacity .25s, transform .25s;
+}
+.a11y-verbete.on { opacity: 1; transform: none; }
+.a11y-verbete[hidden] { display: none; }
+.a11y-v-topo { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.a11y-v-topo strong { font: 600 16px/1.2 var(--a11y-disp); color: var(--a11y-ink); text-transform: uppercase; letter-spacing: -.01em; }
+.a11y-v-topo i { font: 400 10px/1 var(--a11y-face); font-style: normal; color: var(--a11y-muted); }
+.a11y-v-topo button {
+  margin-left: auto; cursor: pointer; background: none; border: 1px solid var(--a11y-line);
+  color: var(--a11y-ink); border-radius: 50%; width: 24px; height: 24px; display: grid; place-items: center;
+}
+.a11y-verbete ol { margin: 6px 0 0; padding-left: 16px; }
+.a11y-verbete li { font: 400 11.5px/1.6 var(--a11y-face); color: var(--a11y-ink); margin-bottom: 3px; }
+.a11y-v-sin { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--a11y-line); }
+.a11y-v-sin b {
+  display: block; font: 500 8.5px/1 var(--a11y-face); letter-spacing: .18em;
+  text-transform: uppercase; color: var(--a11y-muted); margin-bottom: 6px;
+}
+.a11y-v-sin span { display: inline-block; font: 400 11px/1 var(--a11y-face); color: var(--a11y-ink);
+                   border: 1px solid var(--a11y-line); border-radius: 999px; padding: 5px 9px; margin: 0 4px 4px 0; }
+.a11y-v-fonte { margin: 9px 0 0; font: 400 9px/1.4 var(--a11y-face); color: var(--a11y-muted); opacity: .75; }
+.a11y-v-vazio { font: 400 11.5px/1.5 var(--a11y-face); color: var(--a11y-muted); margin: 4px 0 0; }
+
+/* dois cliques abrem verbete: avisa que a palavra é clicável */
+:root[data-a11y-dic] body { cursor: help; }
+
+/* ---------- o painel do VLibras ---------- */
+[data-a11y-vw][hidden] { display: none; }
+div[vw] { z-index: 10050 !important; }
+
+/* ---------- respeito a quem pediu menos movimento ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .a11y-painel, .a11y-lupa, .a11y-verbete, .a11y-pular, .a11y-x { transition-duration: .01ms; }
+  .a11y-apontado { animation: none; outline: 3px solid var(--a11y-ink); }
+}
+
+/* ---------- telas pequenas ---------- */
+@media (max-width: 620px) {
+  .a11y { --a11y-h: calc(30px + env(safe-area-inset-top, 0px)); }
+  :root { --a11y-h: calc(30px + env(safe-area-inset-top, 0px)); }
+  .a11y-painel { width: 100vw; border-left: 0; }
+  .a11y-lupa span { -webkit-line-clamp: 2; }
+}
+
+/* ---------- impressão: nada disso vai para o papel ---------- */
+@media print {
+  .a11y, .a11y-bar, .a11y-painel, .a11y-lupa, .a11y-verbete, .a11y-pular, div[vw] { display: none !important; }
+  .site-header { top: 0; }
+}
+
+/* ---------- lista de atalhos, sempre visível ---------- */
+.a11y-atalhos { margin-top: 4px; }
+.a11y-atalhos-h {
+  display: block; margin-bottom: 10px; font: 500 9px/1 var(--a11y-face);
+  letter-spacing: .2em; text-transform: uppercase; color: var(--a11y-muted);
+}
+.a11y-atalhos dl {
+  margin: 0; display: grid; grid-template-columns: auto 1fr;
+  gap: 8px 12px; align-items: baseline;
+}
+.a11y-atalhos dt { display: flex; gap: 4px; flex-wrap: wrap; }
+.a11y-atalhos dd { margin: 0; font: 400 11px/1.4 var(--a11y-face); color: var(--a11y-ink); }
+.a11y-atalhos kbd {
+  font: 500 9.5px/1 var(--a11y-face); color: var(--a11y-ink);
+  border: 1px solid var(--a11y-line); border-radius: 4px;
+  padding: 5px 6px; white-space: nowrap;
+  box-shadow: 0 1px 0 var(--a11y-line);
+}
+
+/* ---------- idioma na barra, só no celular ---------- */
+.a11y-lang { display: none; }
+.a11y-lang a {
+  color: color-mix(in srgb, var(--a11y-ink) 55%, transparent); text-decoration: none;
+  font: 500 9.5px/1 var(--a11y-face); letter-spacing: .17em;
+  padding: 4px 2px; transition: color .25s;
+}
+.a11y-lang a.on, .a11y-lang a:hover { color: var(--a11y-ink); }
+.a11y-lang i { font-style: normal; opacity: .3; margin: 0 3px; }
+
+@media (max-width: 900px) {
+  /* aqui os atalhos diretos já saíram; o idioma ocupa o lugar deles, colado à
+     direita, e o rodapé da página de construção ganha uma linha de volta */
+  .a11y-lang { display: inline-flex; align-items: center; margin-left: auto; }
+}
+
+/* ==========================================================================
+   Aparelho de toque: o que é de teclado sai de cena.
+
+   A escolha é por (hover: none) e (pointer: coarse), não por largura. Uma
+   janela estreita no computador continua tendo teclado; um celular não passa a
+   ter porque foi virado de lado. Oferecer "navegação por teclado" a quem está
+   com o dedo na tela é ocupar espaço com uma promessa que não serve.
+   ========================================================================== */
+@media (hover: none) and (pointer: coarse) {
+  .a11y-item[data-a11y-alterna="teclado"],
+  .a11y-atalhos { display: none; }
+}

@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+{% block pageid %}about{% endblock %}
+{#
+  O cargo vinha do perfil e levava o título a 74 caracteres, cortando no
+  Google (medido em 22/08/2026). Fixo e curto: nome, especialidade e cidade,
+  que é o que alguém digita. O cargo completo continua no corpo da página e
+  no `jobTitle` do JSON-LD.
+#}
+{% block title %}{{ 'About Leandro Furtado ·︎ Art Direction and AI in Brazil' if lang == 'en' else 'Sobre Leandro Furtado ·︎ Direção de Arte e IA em Curitiba' }}{% endblock %}
+{# 184 caracteres viravam ~155 no SERP e o "PDF" sumia — justamente a razão
+   de alguém clicar aqui. O cargo saiu porque já está no título. #}
+{% block description %}{{
+  'Trajetória, experiência, prêmios e certificações de Leandro Furtado, diretor de arte e engenheiro de IA em Curitiba. Currículo completo em PDF.'
+  if lang == 'pt' else
+  'Career, experience, awards and certifications of Leandro Furtado, art director and AI engineer in Curitiba, Brazil. Full résumé as PDF.'
+}}{% endblock %}
+{% block ogtype %}profile{% endblock %}
+{% block ogimage %}{{ (base_url ~ '/media/' ~ profile.cover) if profile.cover else ((base_url ~ '/media/' ~ profile.photo) if profile.photo else (base_url ~ '/static/img/og-default.png')) }}{% endblock %}
+
+{% block jsonld_extra %},
+    {
+      "@type": "ProfilePage",
+      "mainEntity": {"@id": "{{ base_url }}/#person"},
+      "url": "{{ base_url }}{{ lp('/about') }}",
+      "inLanguage": "{{ 'en' if lang == 'en' else 'pt-BR' }}"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "{{ 'Início' if lang == 'pt' else 'Home' }}", "item": "{{ base_url }}{{ lp('/') }}"},
+        {"@type": "ListItem", "position": 2, "name": "{{ t('about') }}", "item": "{{ base_url }}{{ lp('/about') }}"}
+      ]
+    }{% endblock %}
+
+{% macro sk_icon(name) %}
+{% set n = name | lower %}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+{%- if 'direção de arte' in n or 'direção de criação' in n %}<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>
+{%- elif 'branding' in n or 'identidade' in n %}<path d="M12 2.5 21.5 12 12 21.5 2.5 12z"/><path d="M12 7.5 16.5 12 12 16.5 7.5 12z"/>
+{%- elif 'key visual' in n or 'imagem' in n %}<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 15 5-5 5 5 3-3 5 5"/><circle cx="9" cy="9" r="1.4" fill="currentColor" stroke="none"/>
+{%- elif 'campanha' in n %}<path d="M3 11v2l12 4V7L3 11z"/><path d="M15 8.5a4 4 0 0 1 0 7M18 6a8 8 0 0 1 0 12"/>
+{%- elif 'live' in n %}<path d="M13 2 4 14h6l-1 8 9-12h-6z"/>
+{%- elif 'go-to-market' in n %}<path d="M12 15c-2 0-3-1-3-3 0-4 3-9 3-9s3 5 3 9c0 2-1 3-3 3z"/><path d="M9 14l-3 3 2 4M15 14l3 3-2 4"/>
+{%- elif 'lideran' in n or 'equipe' in n %}<circle cx="9" cy="8" r="3"/><path d="M3.5 20c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M16 15.2c2.6.3 4.5 2 4.5 4.8"/>
+{%- elif 'ui/ux' in n or 'ui design' in n %}<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/>
+{%- elif 'landing' in n %}<rect x="4" y="2.5" width="16" height="19" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/>
+{%- elif 'social' in n %}<circle cx="6" cy="12" r="2.6"/><circle cx="17.5" cy="5.5" r="2.6"/><circle cx="17.5" cy="18.5" r="2.6"/><path d="m8.4 10.7 6.8-3.9M8.4 13.3l6.8 3.9"/>
+{%- elif 'editorial' in n %}<path d="M4 4h7v16H4zM13 4h7v16h-7z"/><path d="M6.5 8h2M15.5 8h2M15.5 12h2"/>
+{%- elif 'fotografia' in n %}<rect x="3" y="7" width="18" height="13" rx="2"/><path d="m8.5 7 1.5-2.5h4L15.5 7"/><circle cx="12" cy="13.5" r="3.4"/>
+{%- elif 'motion' in n %}<circle cx="12" cy="12" r="9"/><path d="m10 8.5 5.5 3.5-5.5 3.5z" fill="currentColor" stroke="none"/>
+{%- elif 'vídeo' in n or 'video' in n %}<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/>
+{%- elif 'wordpress' in n %}<circle cx="12" cy="12" r="9"/><path d="M3.5 9.5h4M9.7 9.5 12 17l2.3-7.5M16.3 9.5 18 15"/>
+{%- elif 'html' in n or 'desenvolvimento web' in n %}<path d="m8 8-5 4 5 4M16 8l5 4-5 4M13.5 5l-3 14"/>
+{%- elif 'python' in n %}<path d="M4 17.5 10 12 4 6.5M12 19.5h8"/>
+{%- elif 'css aplicado' in n %}<path d="M8 4c-2 0-2 2-2 3.5S6 11 4 12c2 1 2 3 2 4.5S6 20 8 20M16 4c2 0 2 2 2 3.5s0 3.5 2 4.5c-2 1-2 3-2 4.5s0 3.5-2 3.5"/>
+{%- elif 'brainstorm' in n %}<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.8.6 1.5 1.3 1.5 2.1h4c0-.8.7-1.5 1.5-2.1A6 6 0 0 0 12 3z"/>
+{%- elif 'sistema' in n %}<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/><path d="M11 7h5a1 1 0 0 1 1 1v5M13 17H8a1 1 0 0 1-1-1v-5"/>
+{%- elif 'organização' in n or 'engenharia de código' in n %}<circle cx="6" cy="5" r="2.4"/><circle cx="6" cy="19" r="2.4"/><circle cx="18" cy="9" r="2.4"/><path d="M6 7.4v9.2M6 12c6 0 6-3 12-3"/>
+{%- elif 'claude' in n or 'ia' == n[:2] or 'difusão' in n or 'geração de imagem' in n %}<path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.2"/>
+{%- elif 'prompt' in n %}<rect x="3" y="4" width="18" height="16" rx="2"/><path d="m7 9 3 3-3 3M13 15h4"/>
+{%- elif 'fluxo' in n %}<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M7.8 7.8 10.5 16M16.2 7.8 13.5 16"/>
+{%- else %}<circle cx="12" cy="12" r="2.6" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="8"/>
+{%- endif %}
+</svg>
+{% endmacro %}
+
+{% block content %}
+<section class="page-head about-head">
+  <p class="hero-kicker mono-label" data-reveal><i>✳︎</i> {{ profile['title_' ~ lang] or profile.title_pt }} ·︎ {{ profile['location_' ~ lang] or profile.location_pt }}</p>
+  <div class="about-id">
+    <figure class="about-photo" data-reveal>
+      <img src="{{ ('/media/' ~ profile.photo) if profile.photo else '/static/img/avatar-placeholder.webp' }}"
+           alt="Leandro Furtado" width="800" height="800">
+    </figure>
+    <div class="about-id-main">
+      <h1 class="page-title display" data-hero-title>Leandro Furtado</h1>
+      <div class="about-actions" data-reveal>
+        {% if site.social_linkedin %}<a class="act-icon" href="{{ site.social_linkedin }}" target="_blank" rel="noopener" aria-label="LinkedIn">{{ social_icon('linkedin') }}</a>{% endif %}
+        {% if site.social_instagram %}<a class="act-icon" href="{{ site.social_instagram }}" target="_blank" rel="noopener" aria-label="Instagram">{{ social_icon('instagram') }}</a>{% endif %}
+        {% if site.social_whatsapp %}<a class="act-icon" href="{{ site.social_whatsapp }}" target="_blank" rel="noopener" aria-label="WhatsApp">{{ social_icon('whatsapp') }}</a>{% endif %}
+        <a class="act-icon" href="mailto:{{ profile.email }}" aria-label="E-mail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m2 7 10 6L22 7"/></svg></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="about-intro">
+  <div class="editable-wrap">
+    <p class="fwork-intro serif" data-split>{{ profile['highlight_' ~ lang] or profile.highlight_pt }}</p>
+    {% if is_admin %}<button class="edit-btn" data-edit="highlight_{{ lang }}" aria-label="editar">✎︎</button>{% endif %}
+  </div>
+
+  {% set summary = profile['summary_' ~ lang] or profile.summary_pt %}
+  {% set sents = summary.split('. ') %}
+  {% set third = ((sents | length) / 3) | round(0, 'ceil') | int %}
+  {% set p1 = sents[:third] | join('. ') %}
+  {% set p2 = sents[third:third * 2] | join('. ') %}
+  {% set p3 = sents[third * 2:] | join('. ') %}
+  <div class="editable-wrap about-story-wrap">
+    {% if is_admin %}<button class="edit-btn" data-edit="summary_{{ lang }}" aria-label="editar">✎︎</button>{% endif %}
+    <div class="about-story">
+      <div class="story-block prose" data-reveal>
+        <p>{{ p1 }}{% if not p1.endswith('.') %}.{% endif %}</p>
+        <a class="btn-underline mono-label story-jump" href="#experiencia">{{ 'Ver experiência' if lang == 'pt' else 'See experience' }} ↓︎</a>
+      </div>
+      <figure class="story-img bleed-right"><img
+        src="{{ ('/media/' ~ profile.about_img_1) if profile.about_img_1 else '/static/img/about-1.webp' }}"
+        alt="{{ 'Imagem ilustrativa da trajetória profissional' if lang == 'pt' else 'Illustrative image of the professional journey' }}"
+        loading="lazy" data-parallax></figure>
+      <figure class="story-img bleed-left"><img
+        src="{{ ('/media/' ~ profile.about_img_2) if profile.about_img_2 else '/static/img/about-2.webp' }}"
+        alt="{{ 'Imagem ilustrativa da direção de arte' if lang == 'pt' else 'Illustrative image of art direction' }}"
+        loading="lazy" data-parallax></figure>
+      <div class="story-block prose" data-reveal>
+        <p>{{ p2 }}{% if p2 and not p2.endswith('.') %}.{% endif %}</p>
+        <a class="btn-underline mono-label story-jump" href="#certificacoes">{{ 'Ver certificações' if lang == 'pt' else 'See certifications' }} ↓︎</a>
+      </div>
+      <div class="story-block story-wide prose" data-reveal><p>{{ p3 }}</p></div>
+    </div>
+  </div>
+  {% if is_admin %}
+  <script type="application/json" id="profile-fields">{{ {
+    ('highlight_' ~ lang): profile['highlight_' ~ lang] or profile.highlight_pt,
+    ('summary_' ~ lang): summary,
+  } | tojson }}</script>
+  {% endif %}
+</section>
+
+{% if profile.experience %}
+<section class="cv-section xp-h" id="experiencia">
+  <div class="xp-h-head">
+    <h2 class="section-label mono-label" data-reveal>{{ t('experience') }}</h2>
+    <span class="mono-label xp-h-hint" aria-hidden="true">{{ 'Role para navegar' if lang == 'pt' else 'Scroll to navigate' }} →︎</span>
+  </div>
+  <div class="tlh">
+    <span class="tlh-line" aria-hidden="true"><i></i></span>
+    <div class="tlh-track">
+      {% for xp in profile.experience %}
+      <article class="tlh-card">
+        <span class="tlh-dot" aria-hidden="true"></span>
+        <span class="tlh-num mono-label">{{ '%02d' % loop.index }}</span>
+        <span class="tl-period mono-label">{{ xp['period_' ~ lang] or xp.period }}</span>
+        <h3>{{ xp.company }}</h3>
+        <p class="xp-role">{{ xp['role_' ~ lang] or xp.role_pt }}</p>
+        {% if xp['desc_' ~ lang] or xp.desc_pt %}<p class="xp-desc">{{ xp['desc_' ~ lang] or xp.desc_pt }}</p>{% endif %}
+        {% if xp.tags %}
+        <div class="xp-tags-row tlh-tags">
+          {% for tag in xp.tags %}<em class="xp-tag">{{ tag }}</em>{% endfor %}
+        </div>
+        {% endif %}
+        {#
+          O currículo dizia onde ele esteve e o portfólio dizia o que ele fez, e as
+          duas páginas nunca se falavam. Aqui a casa vira caminho: quem lê a
+          passagem por uma agência clica e vê o trabalho que saiu de lá.
+        #}
+        {% set feitos = cases_da_casa(xp.company) %}
+        {% if feitos %}
+        <a class="xp-cases mono-label" href="{{ lp('/portfolio') }}?agencia={{ xp.company | slug }}">
+          <b>{{ feitos }}</b>
+          {{ (('case' if feitos == 1 else 'cases') if lang == 'pt' else ('case' if feitos == 1 else 'cases')) }}
+          {{ 'aqui' if lang == 'pt' else 'here' }} <em>&rarr;</em>
+        </a>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{#
+  Formação acadêmica (item novo do dono, 19/08, com os dados reais do
+  LinkedIn) — harmônica com a timeline de experiência: mesma régua tipográfica
+  (período em mono-label, título em display), mas lista simples empilhada,
+  não o scroll horizontal pinado da experiência — só 2 entradas não pedem
+  esse mecanismo. Entra entre experiência e habilidades, ordem comum de
+  currículo sênior (experiência primeiro).
+#}
+{% if profile.education %}
+<section class="cv-section edu-section" id="formacao">
+  <h2 class="section-label mono-label" data-reveal>{{ t('education') }}</h2>
+  <div class="edu-list">
+    {% for edu in profile.education %}
+    <div class="edu-item" data-reveal>
+      <span class="edu-period mono-label">{{ edu['period_' ~ lang] or edu.period }}</span>
+      <div class="edu-body">
+        <h3>{{ edu['institution_' ~ lang] or edu.institution_pt }}</h3>
+        <p>{{ edu['course_' ~ lang] or edu.course_pt }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if profile.skills %}
+<section class="cv-section">
+  <h2 class="section-label mono-label" data-reveal>{{ t('skills') }}</h2>
+  <div class="skills-grid">
+    {% for group in profile.skills %}
+    <div class="skill-group" data-reveal>
+      <h3>{{ group['group_' ~ lang] or group.group_pt }}</h3>
+      <div class="tags-cloud">
+        {% for item in group['items'] %}<span class="tag-ic">{{ sk_icon(item) }}{{ item }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{#
+  Prêmios e certificações em abas (Leandro, 19/08, adendo à rodada 2: "fica
+  melhor diagramado"; substitui o item 2 original de igualar alturas — com
+  abas cada seção tem seu próprio espaço, a harmonia vem do container
+  comum, não de forçar as duas colunas na mesma régua).
+
+  CSS puro, sem JavaScript: dois <input type="radio"> escondidos, ligados
+  aos rótulos por `for`/`id`, e `:checked ~` decide o que aparece. Funciona
+  com o JS desligado (é HTML+CSS, não depende de nenhum script) e é
+  navegável por teclado nativamente (setas trocam de aba dentro do grupo,
+  Tab entra e sai) — o mesmo padrão de acessibilidade que um <select>.
+  Sem CSS nenhum (caso extremo), os dois blocos aparecem empilhados na
+  ordem do HTML, que é exatamente o "degradar para as duas seções
+  empilhadas" pedido.
+#}
+<section class="cv-section cert-tabs" id="certificacoes">
+  <input type="radio" name="cert-tab" id="cert-tab-premios" class="tabs-radio" checked>
+  <input type="radio" name="cert-tab" id="cert-tab-certs" class="tabs-radio">
+  <div class="tabs-nav" data-reveal>
+    <label class="tabs-btn" for="cert-tab-premios">{{ t('awards') }}</label>
+    <label class="tabs-btn" for="cert-tab-certs">{{ t('certs') }}</label>
+  </div>
+  {% if profile.awards %}
+  {#
+    Galeria de fotos por prêmio (item novo, 19/08 — conserto pré-fechamento).
+    Cada prêmio mostra a PRÓPRIA galeria (profile.awards[].images, editável no
+    admin) — não mais só o primeiro com 4 fotos fixas.
+
+    Retrocompatibilidade: enquanto nenhum prêmio tiver foto nenhuma enviada
+    (site recém-lançado, dono ainda não subiu nada), o primeiro prêmio segue
+    mostrando as 4 estáticas de sempre (/static/img/award/award-1..4.webp) —
+    produção não pode regredir visualmente antes de o dono subir as dele.
+    Assim que QUALQUER prêmio ganhar uma foto de verdade, o estático some de
+    vez (mesmo do primeiro, se for ele quem ficou sem foto própria) — cada
+    prêmio passa a mostrar só a galeria que é dele, e prêmio sem fotos
+    própria simplesmente não mostra galeria nenhuma.
+  #}
+  {% set premios_com_fotos = [] %}
+  {% for a in profile.awards %}{% if a.images %}{% set _ = premios_com_fotos.append(a) %}{% endif %}{% endfor %}
+  <div class="tabs-panel" data-panel="cert-tab-premios">
+    {% for award in profile.awards %}
+    <div class="award award-ic" data-reveal>
+      <svg class="award-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v6a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/></svg>
+      <div class="award-body">
+        <strong>{{ award['title_' ~ lang] or award.title_pt }}</strong>
+        <span>{{ award.year }}</span>
+        {% if award['desc_' ~ lang] or award.desc_pt %}<p>{{ award['desc_' ~ lang] or award.desc_pt }}</p>{% endif %}
+        {% if award.images %}
+        <div class="award-gallery">
+          {% for img in award.images %}
+          <button class="award-thumb" type="button" data-img="/media/{{ img }}" aria-label="{{ 'Ver imagem do prêmio' if lang == 'pt' else 'View award image' }}">
+            <img src="/media/{{ img }}" alt="{{ award['title_' ~ lang] or award.title_pt }} {{ loop.index }}" loading="lazy">
+          </button>
+          {% endfor %}
+        </div>
+        {% elif loop.first and not premios_com_fotos %}
+        <div class="award-gallery">
+          {% for n in range(1, 5) %}
+          <button class="award-thumb" type="button" data-img="/static/img/award/award-{{ n }}.webp" aria-label="{{ 'Ver imagem do case' if lang == 'pt' else 'View case image' }}">
+            <img src="/static/img/award/award-{{ n }}.webp" alt="Case Top de Marketing {{ n }}" loading="lazy">
+          </button>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if profile.certs %}
+  <div class="tabs-panel" data-panel="cert-tab-certs">
+    {% set org_names = {'Anthropic': 'Anthropic', 'FGV': 'Fundação Getúlio Vargas - FGV', 'Google': 'Google'} %}
+    {% set orgs = [] %}
+    {% for cert in profile.certs %}{% if cert.org not in orgs %}{% set _ = orgs.append(cert.org) %}{% endif %}{% endfor %}
+    <div class="cert-groups">
+      {% for org in orgs %}
+      {% set logo = certifier_logo(org) %}
+      <div class="cert-org" data-reveal>
+        {#
+          Item 12 (19/08, ajuste do dono): sai a linha decorativa ao lado do
+          nome da empresa; entra a logo quando existir um SVG monocromático
+          em static/img/certifiers/ (ver certifier_logo() em app/main.py —
+          nenhum foi desenhado para este pacote, nenhum existia). Sem logo,
+          o nome limpo é o fallback.
+        #}
+        <h3 class="cert-org-name mono-label">
+          {% if logo %}<img class="cert-org-logo" src="{{ logo }}" alt="{{ org_names.get(org, org) }}">
+          {% else %}{{ org_names.get(org, org) }}{% endif %}
+        </h3>
+        <div class="cert-grid">
+          {% for cert in profile.certs if cert.org == org %}
+          {#
+            Item 3+13 (19/08): "[ícone] Nome da credencial" à esquerda, ano à
+            direita, numa linha só. No hover/foco o ano some e "ver
+            credencial" entra na mesma posição — só quando a credencial tem
+            URL cadastrada (Link de validação, no admin); sem URL, o box
+            não promete um link que não existe e o ano fica parado.
+          #}
+          <button class="cert-card{{ ' has-cred-link' if cert.url else '' }}" type="button"
+                  aria-label="{{ ('Ver credencial: ' ~ cert.title) if lang == 'pt' else ('View credential: ' ~ cert.title) }}"
+                  data-title="{{ cert.title }}" data-org="{{ org_names.get(cert.org, cert.org) }}" data-year="{{ cert.year }}"
+                  data-code="{{ cert.code or '' }}" data-url="{{ cert.url or '' }}">
+            <svg class="cert-badge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="9" r="6"/><path d="m12 6.5.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2L9.1 8.6l2-.3z" fill="currentColor" stroke="none"/><path d="m8.5 14-1.5 7 5-3 5 3-1.5-7"/></svg>
+            <span class="cert-info">
+              <strong>{{ cert.title }}</strong>
+              <span class="cert-meta mono-label">
+                {% if cert.year %}<span class="cert-year">{{ cert.year }}</span>{% endif %}
+                {% if cert.url %}<span class="cert-viewlink">{{ 'ver credencial' if lang == 'pt' else 'view credential' }}</span>{% endif %}
+              </span>
+            </span>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+{% if clients %}
+<section class="brands" aria-label="{{ t('unique_brands') }}">
+  <header class="section-head brands-head" data-reveal>
+    <span class="mono-label"><i>✳︎</i> {{ t('unique_brands') }}</span>
+    <a class="btn-underline mono-label" href="{{ lp('/clientes') }}">{{ t('see_all') }} →︎</a>
+  </header>
+  <div class="brands-grid">
+    {# O recorte (6 ou 12, nunca linha incompleta) já vem pronto de
+       _marcas_para_grade_sobre em app/routers/public.py — ver item 3,
+       19/08. #}
+    {% for client in clients if client.logo %}
+    <a class="brand-cell" href="{{ lp('/cliente/' ~ client.slug) }}"
+       data-reveal aria-label="{{ client.name }}">
+      {% if client.logo %}
+      <img class="client-logo {{ 'chapa' if client.chapa }}" style="--escala: {{ client.escala | default(1) }}" src="{{ client.logo }}" alt="{{ client.name }}" loading="lazy">
+      {% else %}
+      <span class="client-wordmark display">{{ client.name }}</span>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{#
+  Rodada 3, item 4 (19/08): a área de download foi redesenhada — sai o
+  botão DOCX (morreu por decisão do dono: "pdf é universal", ver
+  app/services/resume.py), entra uma divisória e dois campos distintos,
+  centralizados na tela: (a) baixar o currículo com a escolha de idioma
+  explícita — dois botões "Português"/"English" no padrão da casa, cada
+  um levando a /cv/download.pdf?lang=pt|en — e (b) entrar em contato.
+#}
+<section class="about-cta">
+  <div class="about-cta-block" data-reveal>
+    <p class="mono-label about-cta-label"><i>✳︎</i> {{ 'Baixar currículo' if lang == 'pt' else 'Download résumé' }}</p>
+    <div class="about-cta-langs">
+      <a class="cta-pill outline" data-dl="PDF" download target="_blank" rel="noopener" href="{{ lp('/cv/download.pdf') }}?lang=pt">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" style="width:1.1em;height:1.1em"><path d="M12 3v11M8 10l4 4 4-4M4 20h16"/></svg>
+        Português
+      </a>
+      <a class="cta-pill outline" data-dl="PDF" download target="_blank" rel="noopener" href="{{ lp('/cv/download.pdf') }}?lang=en">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true" style="width:1.1em;height:1.1em"><path d="M12 3v11M8 10l4 4 4-4M4 20h16"/></svg>
+        English
+      </a>
+    </div>
+    <p class="mono-label dim about-cta-stamp">{{ 'Currículo atualizado em' if lang == 'pt' else 'Résumé updated on' }} {{ today }}</p>
+  </div>
+
+  <div class="about-cta-divider" aria-hidden="true"></div>
+
+  <div class="about-cta-block" data-reveal>
+    <p class="mono-label about-cta-label"><i>✳︎</i> {{ 'Prefere conversar direto?' if lang == 'pt' else 'Prefer to talk directly?' }}</p>
+    <a class="cta-pill big" href="{{ lp('/contato') }}">{{ t('get_in_touch') }} →︎</a>
+  </div>
+</section>
+
+<dialog class="lightbox" id="lightbox">
+  <button class="mm-close lightbox-close" type="button" aria-label="fechar">✕︎</button>
+  <button class="lb-arrow lb-prev" type="button" aria-label="{{ 'anterior' if lang == 'pt' else 'previous' }}">←︎</button>
+  <img src="" alt="Case Top de Marketing ADVB/PR">
+  <button class="lb-arrow lb-next" type="button" aria-label="{{ 'próxima' if lang == 'pt' else 'next' }}">→︎</button>
+  <span class="lb-count mono-label">1 / 4</span>
+</dialog>
+
+<dialog class="cert-modal" id="certModal">
+  <div class="cert-modal-card">
+    <button class="mm-close cert-modal-close" type="button" aria-label="fechar">✕︎</button>
+    <div class="cert-paper">
+      <svg viewBox="0 0 100 100" class="cert-paper-mark" aria-hidden="true">
+        <polygon fill="currentColor" points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+        <polygon fill="currentColor" points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+        <polygon fill="currentColor" points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+      </svg>
+      <span class="mono-label">{{ 'Certificação' if lang == 'pt' else 'Certification' }}</span>
+      <strong class="cert-paper-title display" data-slot="title"></strong>
+      <span class="cert-paper-org" data-slot="org"></span>
+    </div>
+    <div class="cert-meta">
+      <div data-slot-wrap="code"><span class="mono-label">{{ 'Código da credencial' if lang == 'pt' else 'Credential code' }}</span><code data-slot="code"></code></div>
+      <a class="cta-pill" data-slot="link" href="#" target="_blank" rel="noopener">{{ 'Validar credencial' if lang == 'pt' else 'Validate credential' }} ↗︎</a>
+      <p class="mono-label cert-nolink" data-slot="nolink" hidden>{{ 'Validação disponível no LinkedIn' if lang == 'pt' else 'Validation available on LinkedIn' }}</p>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="dl-modal" id="dlModal" aria-label="{{ 'Baixando currículo' if lang == 'pt' else 'Downloading résumé' }}">
+  <div class="dlm-stage">
+    <svg viewBox="0 0 100 100" class="dlm-mark" aria-hidden="true">
+      <polygon class="dlm-poly" points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+      <polygon class="dlm-poly" points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+      <polygon class="dlm-poly" points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+    </svg>
+    <p class="dlm-msg display">
+      {{ 'Realizando o download do currículo do profissional que você vai contratar' if lang == 'pt'
+         else 'Downloading the résumé of the professional you are about to hire' }}
+    </p>
+    <div class="dlm-bar"><span></span></div>
+    <p class="dlm-meta mono-label"><em data-dlm-pct>0</em>% ·︎ <span data-dlm-fmt>PDF</span></p>
+  </div>
+</dialog>
+
+{% if is_admin %}
+<dialog class="edit-modal" id="editModal">
+  <form method="dialog" class="edit-modal-card">
+    <div class="tip-toast-head">
+      <span class="mono-label"><i>✳︎</i> <strong>{{ 'Editar conteúdo' if lang == 'pt' else 'Edit content' }}</strong></span>
+      <button class="tip-close" value="cancel" aria-label="fechar">✕︎</button>
+    </div>
+    <textarea id="editField" rows="8"></textarea>
+    <button class="cta-pill big" id="editSave" value="save" type="button">{{ 'Salvar' if lang == 'pt' else 'Save' }}</button>
+  </form>
+</dialog>
+<script>window.LF_CSRF = "{{ request.session.get('csrf', '') }}";</script>
+{% endif %}
+{% endblock %}

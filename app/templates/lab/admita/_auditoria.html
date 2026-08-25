@@ -1,0 +1,65 @@
+{# ============================================================
+   Trilha de auditoria (§6.1: "quem, quando, o quê" em linguagem de RH).
+   Lida como uma central de notificações: cada evento é um cartão que pode
+   ser deslizado para o lado para sair da vista, no gesto do iOS.
+
+   Limpar aqui é SÓ visual. Trilha de auditoria que apaga sozinha não é
+   trilha de auditoria, e o painel de configurações promete o contrário
+   ("bloquear edição de registro antigo"). O que sai da tela volta no
+   próximo carregamento, e o rodapé do painel diz isso.
+   ============================================================ #}
+<div class="admita-painel-cabecalho admita-trilha-topo">
+  <button type="button" class="admita-fechar" data-fechar-auditoria aria-label="Fechar trilha de auditoria">
+    <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5 12.5 12.5M12.5 3.5 3.5 12.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+  </button>
+  <span class="admita-trilha-ic">
+    <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-auditoria"/></svg>
+  </span>
+  <h2>Trilha de auditoria</h2>
+  <p data-auditoria-contagem>{{ auditoria_total }} evento{{ 's' if auditoria_total != 1 else '' }} registrado{{ 's' if auditoria_total != 1 else '' }}</p>
+</div>
+
+<div class="admita-auditoria-acoes">
+  <button type="button" class="admita-chip-limpar" data-auditoria-limpar>
+    <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-checagem"/></svg>
+    Limpar ações
+  </button>
+  <button type="button" class="admita-chip-limpar admita-chip-limpar-tudo" data-auditoria-limpar-tudo>
+    <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-recusa"/></svg>
+    Limpar todas
+  </button>
+</div>
+
+<ul class="admita-auditoria-lista">
+  {% for entrada in auditoria %}
+  <li class="admita-evento" data-evento>
+    <span class="admita-evento-arquivar" aria-hidden="true">
+      <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-checagem"/></svg>
+    </span>
+    <div class="admita-evento-corpo">
+      <span class="admita-evento-ic">
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-auditoria"/></svg>
+      </span>
+      <div class="admita-evento-texto">
+        <p class="admita-evento-acao">{{ entrada.acao }}</p>
+        <p class="admita-evento-meta">{{ entrada.quem }} ·︎ {{ entrada.quando.strftime('%d/%m às %H:%M') }}</p>
+      </div>
+    </div>
+  </li>
+  {% else %}
+  <li class="admita-auditoria-vazia">Nenhum evento registrado ainda.</li>
+  {% endfor %}
+</ul>
+
+<p class="admita-auditoria-vazio-aviso" data-auditoria-vazio hidden>
+  Nada por aqui. Os eventos voltam no próximo carregamento: uma trilha de
+  auditoria não se apaga de verdade.
+</p>
+
+<p class="admita-auditoria-mais" data-auditoria-mais data-anteriores="{{ auditoria_mais }}"{{ " hidden" if auditoria_mais == 0 else "" }}>e mais {{ auditoria_mais }} evento{{ 's' if auditoria_mais != 1 else '' }} anterior{{ 'es' if auditoria_mais != 1 else '' }}.</p>
+
+<div class="admita-auditoria-marca" aria-hidden="true">
+  {% with id='aud', tom='claro', classe='admita-auditoria-lockup' %}
+    {% include 'lab/admita/_marca.html' %}
+  {% endwith %}
+</div>

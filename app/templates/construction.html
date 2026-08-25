@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="{{ 'pt-BR' if lang == 'pt' else 'en' }}" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{# `viewport-fit=cover` SAIU daqui (21/08). Era ele que mandava o Safari do
+   iPhone estender a página para debaixo da barra de status e da pílula de
+   endereço, criando a faixa onde o conteúdo aparecia por trás da barra fixa
+   de acessibilidade. Sem ele o Safari entrega a viewport já recortada e a
+   faixa deixa de existir. Os `env(safe-area-inset-*)` do CSS passam a valer
+   0 e continuam inofensivos. Só volte a usar `cover` se algum dia houver um
+   elemento que PRECISE pintar até a borda física da tela. #}
+<title>{{ t('wip_title') }} — {{ site_name }}</title>
+<meta name="description" content="{{ t('wip_meta_desc') }}">
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="{{ base_url }}{{ '/en/' if lang == 'en' else '/' }}">
+<link rel="alternate" hreflang="pt-BR" href="{{ base_url }}/">
+<link rel="alternate" hreflang="en" href="{{ base_url }}/en/">
+<link rel="alternate" hreflang="x-default" href="{{ base_url }}/">
+
+{# Compartilhamento: sem isto, mandar o link no WhatsApp mostra texto sem imagem #}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{{ site_name }}">
+<meta property="og:locale" content="{{ 'pt_BR' if lang == 'pt' else 'en_US' }}">
+<meta property="og:url" content="{{ base_url }}{{ '/en/' if lang == 'en' else '/' }}">
+<meta property="og:title" content="{{ t('wip_title') }} — {{ site_name }}">
+<meta property="og:description" content="{{ t('wip_meta_desc') }}">
+<meta property="og:image" content="{{ base_url }}/static/img/og-construcao.png">
+<meta property="og:image:secure_url" content="{{ base_url }}/static/img/og-construcao.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Leandro Furtado: site em construção, 85% pronto">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ t('wip_title') }} — {{ site_name }}">
+<meta name="twitter:description" content="{{ t('wip_meta_desc') }}">
+<meta name="twitter:image" content="{{ base_url }}/static/img/og-construcao.png">
+<meta name="theme-color" content="#0d0d0d">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProfilePage",
+  "url": "{{ base_url }}/",
+  "mainEntity": {
+    "@type": "Person",
+    "name": "Leandro Furtado",
+    "jobTitle": "{{ 'Engenheiro de IA e Diretor de Arte Sênior' if lang == 'pt' else 'AI Engineer and Senior Art Director' }}",
+    "url": "{{ base_url }}",
+    "address": {"@type": "PostalAddress", "addressLocality": "Curitiba",
+                "addressRegion": "PR", "addressCountry": "BR"},
+    "sameAs": [
+      {% set redes = [site.social_linkedin, site.social_instagram] %}
+      {% for r in redes if r %}"{{ r }}"{% if not loop.last %}, {% endif %}{% endfor %}
+    ]
+  }
+}
+</script>
+<link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+<link rel="preload" href="/static/fonts/SpaceGrotesk.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/static/fonts/Montserrat.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/css/main.css?v={{ asset_v }}">
+{# a11y.css veio de dentro do body (_a11y.html): aqui os dois CSS baixam em
+   paralelo, sem re-descoberta tardia. #}
+<link rel="stylesheet" href="/static/css/a11y.css?v={{ asset_v }}">
+<style>
+/* A página de construção é autônoma: não herda nav nem rodapé do site. */
+.wip { min-height: 100vh; min-height: 100svh; display: grid; grid-template-columns: 1fr 1fr; }
+/* as duas colunas centram do mesmo jeito: no eixo vertical e no horizontal */
+.wip > * {
+  padding: clamp(28px, 4vw, 64px);
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center; text-align: center;
+}
+.wip-left { position: relative; }
+.wip-right { background: var(--bg-2); border-left: 1px solid var(--line); }
+
+/* dica de rolagem: só no mobile, onde a segunda coluna fica abaixo da dobra */
+.wip-scroll { display: none; }
+/* o conteúdo tem largura própria, para não esticar em tela larga */
+.wip-inner { width: 100%; max-width: 470px; display: flex; flex-direction: column; align-items: center; }
+/* a esquerda é um pouco mais larga para o subtítulo caber numa linha */
+.wip-left .wip-inner { max-width: 540px; }
+
+/* --- motion da marca: mesmo traço da intro do site, em loop infinito --- */
+.wip-markwrap { position: relative; display: inline-grid; place-items: center; padding: 16px;
+                cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.wip-markwrap:hover .wip-frame { stroke: var(--ink); }
+.wip-markwrap:focus-visible { outline: 1px solid var(--ink); outline-offset: 6px; border-radius: 4px; }
+.wip-frame { transition: stroke .3s; }
+.wip-frame {
+  position: absolute; inset: 0; fill: none; stroke: var(--line); stroke-width: 1;
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: wip-trace 6s var(--ease) infinite;
+}
+.wip-mark { width: clamp(104px, 12vw, 150px); height: auto; display: block; overflow: visible; }
+.wip-poly {
+  fill: var(--ink); fill-opacity: 0;
+  stroke: var(--ink); stroke-width: 1.4;
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: wip-draw 6s var(--ease) infinite, wip-fill 6s ease infinite;
+}
+.wip-poly:nth-child(1) { animation-delay: .15s, .15s; }
+.wip-poly:nth-child(2) { animation-delay: .3s,  .3s;  }
+.wip-poly:nth-child(3) { animation-delay: .45s, .45s; }
+
+/* desenha o contorno, segura, apaga e recomeça */
+@keyframes wip-draw {
+  0%   { stroke-dashoffset: 1; }
+  18%  { stroke-dashoffset: 0; }
+  78%  { stroke-dashoffset: 0; }
+  92%  { stroke-dashoffset: -1; }
+  100% { stroke-dashoffset: -1; }
+}
+@keyframes wip-fill {
+  0%, 20% { fill-opacity: 0; }
+  32%     { fill-opacity: 1; }
+  74%     { fill-opacity: 1; }
+  84%     { fill-opacity: 0; }
+  100%    { fill-opacity: 0; }
+}
+@keyframes wip-trace {
+  0%   { stroke-dashoffset: 1; }
+  22%  { stroke-dashoffset: 0; }
+  80%  { stroke-dashoffset: 0; }
+  94%  { stroke-dashoffset: -1; }
+  100% { stroke-dashoffset: -1; }
+}
+
+.wip-eyebrow { display: inline-flex; align-items: center; gap: 9px; color: var(--muted);
+               font-size: 10px; letter-spacing: .2em; text-transform: uppercase; }
+.wip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ink);
+           animation: wip-pulse 1.8s ease-in-out infinite; }
+@keyframes wip-pulse { 0%, 100% { opacity: .25; transform: scale(.8); } 50% { opacity: 1; transform: scale(1); } }
+
+.wip-title { font-family: var(--display); font-weight: 600; text-transform: uppercase;
+             letter-spacing: -.03em; line-height: 1.02; font-size: clamp(27px, 3.2vw, 44px);
+             margin: clamp(20px, 3vh, 30px) 0 12px; text-wrap: balance; }
+.wip-role { color: var(--ink); font-size: clamp(13px, 1.15vw, 15px); line-height: 1.5;
+            font-weight: 500; margin-bottom: 14px; text-wrap: balance; }
+.wip-text { color: var(--muted); font-size: clamp(13px, 1.25vw, 15px); line-height: 1.75; max-width: 44ch; }
+
+/* --- barra de progresso --- */
+.wip-prog { margin-top: clamp(22px, 3.4vh, 32px); width: 100%; max-width: 380px; }
+.wip-prog-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.wip-prog-pct { font-family: var(--display); font-weight: 600; font-size: clamp(22px, 2.6vw, 32px);
+                letter-spacing: -.02em; line-height: 1; }
+.wip-prog-label { color: var(--muted); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; }
+.wip-prog-bar { height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.wip-prog-bar i { display: block; height: 100%; width: 0; background: var(--ink);
+                  animation: wip-prog 1.6s var(--ease) .4s forwards; }
+@keyframes wip-prog { to { width: var(--pct); } }
+
+.wip-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+               margin-top: clamp(20px, 3vh, 28px); width: 100%; }
+.wip-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+           border: 1px solid var(--line); border-radius: 999px; padding: 13px 22px;
+           color: var(--ink); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+           font-family: inherit; background: transparent; cursor: pointer;
+           transition: background .3s, color .3s, border-color .3s, transform .3s var(--ease); }
+.wip-btn svg { width: 16px; height: 16px; }
+.wip-btn:hover { background: var(--ink); color: var(--bg); border-color: var(--ink); transform: translateY(-2px); }
+
+/* meta do rodapé: parte da composição centralizada, não uma barra colada embaixo */
+/* O respiro é apertado de propósito: com quatro linhas empilhadas, o que
+   sobrava antes virava rolagem de 18px numa página que precisa caber em uma
+   tela exata. */
+.wip-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+            gap: 5px 16px; width: 100%; margin-top: clamp(18px, 2.6vh, 26px);
+            padding-top: clamp(14px, 2vh, 18px); border-top: 1px solid var(--line);
+            color: var(--muted); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; }
+/* Cada item ocupa a linha inteira: flex-basis 100% em vez de separadores. A
+   quebra deixa de depender do comprimento do nome da cidade. */
+.wip-foot > * { flex: 0 0 100%; display: inline-flex; align-items: center;
+                justify-content: center; gap: 8px; }
+.wip-clock { font-variant-numeric: tabular-nums; letter-spacing: .1em; white-space: nowrap; }
+.wip-lang a { color: var(--muted); transition: color .25s; }
+.wip-lang a:hover, .wip-lang a.on { color: var(--ink); }
+.wip-sep { opacity: .35; }
+
+/* --- newsletter, tudo centralizado --- */
+.wip-nl { max-width: 400px; width: 100%; }
+/* mesmo peso tipográfico do título da esquerda, para as colunas se equilibrarem */
+.wip-nl h2 { font-family: var(--display); font-weight: 600; text-transform: uppercase;
+             letter-spacing: -.03em; line-height: 1.05; font-size: clamp(24px, 2.5vw, 34px);
+             margin-bottom: 14px; text-wrap: balance; }
+.wip-nl > p { color: var(--muted); font-size: clamp(13px, 1.25vw, 15px); line-height: 1.75;
+              margin: 0 auto clamp(24px, 3.4vh, 32px); max-width: 34ch; }
+.wip-nl-form { display: flex; flex-direction: column; gap: 18px; align-items: center; }
+.wip-nl-form input[type="email"] {
+  background: transparent; border: 0; border-bottom: 1px solid var(--line);
+  color: var(--ink); font: 16px/1.4 var(--body); padding: 12px 0; width: 100%;
+  text-align: center; transition: border-color .3s;
+}
+.wip-nl-form input[type="email"]::placeholder { color: var(--muted); opacity: .5; }
+.wip-nl-form input[type="email"]:focus { outline: none; border-bottom-color: var(--ink); }
+.wip-nl-form .wip-btn { width: 100%; }
+
+.wip-consent { display: flex; align-items: flex-start; gap: 11px; cursor: pointer; text-align: left; }
+.wip-consent input { position: absolute; opacity: 0; width: 0; height: 0; }
+.wip-check { width: 19px; height: 19px; flex: none; margin-top: 1px; border: 1px solid var(--line);
+             border-radius: 5px; display: grid; place-items: center; color: transparent;
+             transition: background .25s, border-color .25s, color .25s; }
+.wip-check svg { width: 12px; height: 12px; }
+.wip-consent input:checked + .wip-check { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.wip-consent input:focus-visible + .wip-check { border-color: var(--ink); }
+.wip-consent span:last-child { color: var(--muted); font-size: 12px; line-height: 1.6; }
+
+.wip-ok { border: 1px solid var(--ink); border-radius: var(--radius); padding: 20px 22px; }
+.wip-ok strong { font-family: var(--display); font-weight: 600; text-transform: uppercase; display: block; margin-bottom: 6px; }
+.wip-ok span { color: var(--muted); font-size: 13px; line-height: 1.6; }
+.wip-err { border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px;
+           color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+.hp { position: absolute; left: -9999px; opacity: 0; }
+
+/* ---------- responsivo ---------- */
+
+/* telas baixas (notebook 13", janela reduzida, paisagem no celular):
+   a altura fixa deixaria de caber, então o grid solta e a página rola */
+@media (max-height: 700px) and (min-width: 901px) {
+  .wip { min-height: 0; }
+  .wip > * { padding-top: clamp(30px, 6vh, 52px); padding-bottom: clamp(30px, 6vh, 52px); }
+  .wip-mark { width: clamp(84px, 9vw, 108px); }
+}
+
+/* tablet: colunas mais apertadas pedem tipografia menor antes de empilhar */
+@media (max-width: 1100px) and (min-width: 901px) {
+  .wip-inner { max-width: 400px; }
+  .wip-text { max-width: 38ch; }
+}
+
+/* empilha */
+/* Tela baixa (notebook de 13", janela sem tela cheia): a página continua tendo
+   que caber em uma tela exata, e com o rodapé em quatro linhas o que sobrava
+   virava rolagem. Aqui o respiro encolhe em vez de a página crescer. */
+@media (min-width: 901px) and (max-height: 820px) {
+  .wip > * { padding-top: clamp(18px, 3vh, 40px); padding-bottom: clamp(18px, 3vh, 40px); }
+  .wip-mark { width: clamp(84px, 9vw, 118px); }
+  .wip-title { margin: clamp(12px, 2vh, 22px) 0 8px; }
+  .wip-text { line-height: 1.62; }
+  .wip-prog { margin-top: clamp(14px, 2.2vh, 24px); }
+  .wip-actions { margin-top: clamp(13px, 2vh, 22px); }
+  .wip-foot { margin-top: clamp(12px, 2vh, 20px); padding-top: clamp(10px, 1.6vh, 16px); gap: 4px 16px; }
+}
+
+@media (max-width: 900px) {
+  .wip { grid-template-columns: 1fr; min-height: 0; }
+  .wip-right { border-left: 0; border-top: 1px solid var(--line); }
+  /* Respiro lateral maior: em 375px o conteúdo ficava a 22px da borda e lia
+     como colado. Sobe para 28px, e o texto encolhe um pouco para compensar a
+     largura perdida — senão cada parágrafo ganharia uma linha e a coluna
+     cresceria justamente onde não há folga. */
+  .wip > * { padding: clamp(34px, 7vw, 64px) clamp(28px, 7.5vw, 48px); min-height: auto; }
+  .wip-mark { width: clamp(64px, min(23vw, 10.4vh), 122px); }
+  /* a moldura em volta da marca também encolhe: 16px de folga em cada lado
+     numa tela de 690px são 32px que o parágrafo não tem */
+  .wip-markwrap { padding: clamp(8px, 1.4vh, 16px); }
+
+  /* Tipografia um ponto menor no celular. Não é economia de espaço por
+     economia: é o que devolve a folga que o respiro lateral consumiu. */
+  /*
+    Ritmo vertical: uma medida só, proporcional à altura da tela, e todos os
+    espaços derivados dela. Antes cada elemento tinha o seu próprio clamp e
+    havia degraus de compressão por faixa de altura — o resultado era que um
+    iPhone com as barras do Safari abertas caía no degrau mais apertado e a
+    composição inteira ficava espremida, enquanto outro tamanho ficava frouxa.
+    Com uma proporção só, o conjunto respira igual em qualquer altura: encolhe
+    junto, cresce junto, e a relação entre as partes nunca muda.
+  */
+  .wip-left { --r: clamp(13px, 2.65vh, 28px); }
+  .wip-title { font-size: clamp(23px, 7vw, 34px);
+               margin: calc(var(--r) * 1.15) 0 calc(var(--r) * .5); }
+  .wip-role  { font-size: clamp(12.5px, 3.7vw, 15px); margin-bottom: calc(var(--r) * .62); }
+  .wip-text  { font-size: clamp(12.5px, 3.6vw, 14.5px); line-height: 1.7; }
+  .wip-prog-pct { font-size: clamp(20px, 5.6vw, 28px); }
+  .wip-prog { margin-top: calc(var(--r) * 1.25); }
+  .wip-actions { margin-top: calc(var(--r) * 1); }
+  .wip-foot { font-size: 9.5px; gap: calc(var(--r) * .28) 14px;
+              margin-top: calc(var(--r) * 1.05); padding-top: calc(var(--r) * .8); }
+  .wip-scroll { margin-top: calc(var(--r) * .95); }
+
+  /* dois botões lado a lado, sempre. auto-fit resolve o caso de só um existir */
+  .wip-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 10px; }
+  .wip-actions .wip-btn { width: 100%; padding: 13px 10px; white-space: nowrap; }
+
+  /* a esquerda ocupa a tela inteira: a newsletter só aparece ao rolar.
+     dvh acompanha a barra do navegador, então preenche exatamente o visível;
+     vh fica de reserva para quem não suporta a unidade. */
+  .wip-left { min-height: 100vh; min-height: 100dvh; }
+  /* a coluna da newsletter tem pouco conteúdo: altura de tela cheia com o mesmo
+     respiro da esquerda deixava um vazio enorme em cima e embaixo */
+  .wip-right { min-height: auto; padding-top: clamp(34px, 7vw, 52px);
+               padding-bottom: clamp(38px, 8vw, 58px); }
+
+  /* A dica de rolagem entra no fluxo, como quarta linha depois do relógio, em
+     vez de flutuar colada no rodapé da tela. Assim a sequência lida é uma só:
+     em construção, cidade, dia e hora, role para explorar. */
+  .wip-scroll {
+    display: flex; flex-direction: column; align-items: center; gap: 9px;
+    position: static; transform: none; margin-top: clamp(16px, 2.5vh, 24px);
+    color: var(--muted); font-size: 9px; letter-spacing: .2em; text-transform: uppercase;
+    text-decoration: none;
+  }
+  /* PT/EN some daqui: no celular ele vive na barra de acessibilidade, que fica
+     sempre à mão no topo. Repetir ocuparia mais uma linha por nada. */
+  .wip-lang { display: none; }
+  /* A barra de baixo do Safari fica por cima do conteúdo, e a dica de rolagem,
+     que é o último item, sumia atrás dela. O env() reserva a altura dessa
+     barra em quem tem (iPhone), e o mínimo cobre o resto. */
+  .wip-left { padding-bottom: max(clamp(24px, 5vw, 40px), env(safe-area-inset-bottom, 0px) + 22px); }
+  .wip-scroll i {
+    /* o trilho da dica também segue o ritmo: altura fixa era o último ponto
+       que não encolhia junto e comia a folga em tela baixa */
+    display: block; width: 1px; height: calc(var(--r) * 1.45); background: var(--line);
+    position: relative; overflow: hidden;
+  }
+  /* o ponto desce pelo trilho, some e recomeça */
+  .wip-scroll i::after {
+    content: ""; position: absolute; left: -1px; width: 3px; height: 3px;
+    border-radius: 50%; background: var(--ink);
+    animation: wip-scrolldot 1.9s cubic-bezier(.5, 0, .3, 1) infinite;
+  }
+  @keyframes wip-scrolldot {
+    0%   { top: -4px; opacity: 0; }
+    18%  { opacity: 1; }
+    72%  { opacity: 1; }
+    100% { top: 34px; opacity: 0; }
+  }
+  .wip-scroll span { animation: wip-scrolltxt 1.9s ease-in-out infinite; }
+  @keyframes wip-scrolltxt { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+}
+
+/* celular */
+/* Celular. Um ponto menor que antes: a folga que isso devolve é o que permite
+   o respiro lateral maior sem empurrar a dica de rolagem para fora da tela. */
+/* Só o que é de largura mora aqui. O espaçamento vertical vem do ritmo acima:
+   duplicar a regra em duas faixas era o que criava as brigas de especificidade
+   e os saltos de composição entre um tamanho de tela e o seguinte. */
+@media (max-width: 600px) {
+  .wip-role { font-size: 13.5px; }
+  .wip-text { font-size: 13px; }
+}
+
+/* celular deitado: sem altura de tela cheia, senão nada cabe e a rolagem fica longa */
+@media (max-width: 900px) and (max-height: 520px) {
+  .wip-left, .wip-right { min-height: 0; }
+  .wip-left { padding-bottom: 30px; }
+  .wip > * { padding-top: 30px; padding-bottom: 30px; }
+  .wip-mark { width: 74px; }
+  .wip-title, .wip-nl h2 { margin-top: 16px; font-size: clamp(22px, 4.6vw, 30px); }
+  .wip-text { max-width: 60ch; }
+  .wip-scroll { display: none; }
+}
+
+/* Celular pequeno: os botões continuam lado a lado, só encolhem para caber.
+   O respiro lateral era 18px, que colava o conteúdo na borda; 22px devolve a
+   margem sem tirar largura suficiente para quebrar a dupla de botões. */
+@media (max-width: 400px) {
+  .wip > * { padding-left: 26px; padding-right: 26px; }
+  /* Sem tamanho fixo para a marca e o título: a fórmula proporcional lá em
+     cima já considera largura e altura juntas. Fixar aqui era o que fazia a
+     marca ficar grande demais num celular baixo e estourar a composição. */
+  .wip-title { font-size: clamp(21px, 6.6vw, 26px); }
+  .wip-actions { gap: 8px; }
+  .wip-actions .wip-btn { padding: 12px 6px; font-size: 10px; letter-spacing: .1em; gap: 7px; }
+  .wip-actions .wip-btn svg { width: 14px; height: 14px; }
+  .wip-consent span:last-child { font-size: 11.5px; }
+}
+
+/* tela muito larga: o conteúdo respira mas não estica */
+@media (min-width: 1800px) {
+  .wip-inner { max-width: 540px; }
+  .wip-mark { width: 168px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wip-poly, .wip-frame { animation: none; stroke-dashoffset: 0; fill-opacity: 1; }
+  .wip-dot { animation: none; }
+  .wip-prog-bar i { animation: none; width: var(--pct); }
+}
+</style>
+</head>
+<body>
+
+{% include "_a11y.html" %}
+<main class="wip" id="main">
+
+  <section class="wip-left">
+    <div class="wip-inner">
+      <a class="wip-markwrap" href="{{ lp('/') }}"
+         aria-label="{{ 'Recarregar a página' if lang == 'pt' else 'Reload the page' }}">
+        <svg class="wip-frame" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <rect x="0.5" y="0.5" width="99" height="99" pathLength="1"/>
+        </svg>
+        <svg class="wip-mark" viewBox="0 0 100 100" role="img" aria-label="Leandro Furtado">
+          <polygon class="wip-poly" pathLength="1" points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+          <polygon class="wip-poly" pathLength="1" points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+          <polygon class="wip-poly" pathLength="1" points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+        </svg>
+      </a>
+
+      <h1 class="wip-title">{{ t('wip_title') }}</h1>
+      <p class="wip-role">{{ t('wip_role') }}</p>
+      <p class="wip-text">{{ t('wip_text') }}</p>
+
+      <div class="wip-prog" style="--pct: {{ progresso }}%">
+        <div class="wip-prog-head">
+          <span class="wip-prog-pct">{{ progresso }}%</span>
+          <span class="wip-prog-label">{{ t('wip_progress') }}</span>
+        </div>
+        <div class="wip-prog-bar" role="progressbar" aria-valuenow="{{ progresso }}"
+             aria-valuemin="0" aria-valuemax="100" aria-label="{{ t('wip_progress') }}"><i></i></div>
+      </div>
+
+      <div class="wip-actions">
+        {% if site.social_linkedin %}
+        <a class="wip-btn" href="{{ site.social_linkedin }}" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 8.6H3.2V21h3.2V8.6zM4.8 7.2a1.9 1.9 0 1 0 0-3.8 1.9 1.9 0 0 0 0 3.8zM21 14.2c0-3.1-1.7-4.6-3.9-4.6-1.8 0-2.6 1-3.1 1.7V8.6h-3.2V21H14v-6.6c0-1.5.7-2.4 2-2.4 1.2 0 1.8.8 1.8 2.4V21H21v-6.8z"/></svg>
+          LinkedIn
+        </a>
+        {% endif %}
+        {% if site.social_whatsapp %}
+        <a class="wip-btn" href="{{ site.social_whatsapp }}" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a9.9 9.9 0 0 0-8.5 15l-1.4 5 5.2-1.4A9.9 9.9 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-3-.2-.3A8 8 0 1 1 12 20zm4.5-5.8c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.1-.2 0-.4.1-.5l.4-.5c.1-.2.1-.3 0-.5l-.7-1.7c-.2-.4-.4-.4-.5-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4 5 5 0 0 0 2.3.5 2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .2-1.2c0-.1-.2-.2-.4-.3z"/></svg>
+          WhatsApp
+        </a>
+        {% endif %}
+      </div>
+
+      {#
+        Uma informação por linha. Antes era tudo numa fita separada por pontos,
+        que dependia do comprimento do nome da cidade para não quebrar no lugar
+        errado. Cada item ocupa a largura toda e a quebra deixa de ser sorte.
+      #}
+      <div class="wip-foot">
+        <span class="wip-eyebrow"><i class="wip-dot" aria-hidden="true"></i> {{ t('wip_eyebrow') }}</span>
+
+        <span class="wip-onde">
+          {% if visitante is defined and visitante and visitante.cidade %}
+          {{ t('you_are_in') }} {{ visitante.cidade }}{% if visitante.pais %}, {{ visitante.pais }}{% endif %}
+          {% else %}{{ t('somewhere') }}{% endif %}
+        </span>
+
+        <span class="wip-clock" data-clock
+              aria-label="{{ 'Data e hora onde você está' if lang == 'pt' else 'Date and time where you are' }}">--</span>
+
+        {# No celular o PT/EN vive na barra de acessibilidade, que já está
+           sempre à mão no topo. Repetir aqui só ocuparia mais uma linha. #}
+        <span class="wip-lang">
+          <a href="/" class="{{ 'on' if lang == 'pt' }}">PT</a>
+          <span class="wip-sep" aria-hidden="true">/</span>
+          <a href="/en/" class="{{ 'on' if lang == 'en' }}">EN</a>
+        </span>
+      </div>
+    </div>
+
+    <a class="wip-scroll" href="#assine">
+      <span>{{ t('scroll') }}</span>
+      <i aria-hidden="true"></i>
+    </a>
+  </section>
+
+  <aside class="wip-right" id="assine">
+    <div class="wip-nl wip-inner">
+      {% set nl = request.query_params.get('nl') %}
+      {% if nl %}
+      <div class="wip-ok">
+        <span class="cts-markwrap ok-mark">
+          <svg viewBox="0 0 100 100" class="cts-mark" aria-hidden="true">
+            <polygon points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+            <polygon points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+            <polygon points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+          </svg>
+          <i class="cts-check" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+          </i>
+        </span>
+        <strong>{{ t('nl_ja') if nl == 'ja' else t('nl_ok') }}</strong>
+        <span>{{ t('nl_ja_text') if nl == 'ja' else t('nl_ok_text') }}</span>
+        <em>{{ t('nl_ja_bye') if nl == 'ja' else t('nl_ok_bye') }}</em>
+      </div>
+      {% else %}
+      <h2>{{ t('wip_nl_title') }}</h2>
+      <p>{{ t('wip_nl_desc') }}</p>
+
+      {% if request.query_params.get('nl_consent') %}
+      <div class="wip-err">{{ t('wip_consent_req') }}</div>
+      {% elif request.query_params.get('nl_invalido') %}
+      <div class="wip-err">{{ t('nl_invalido') }}</div>
+      {% endif %}
+
+      <form class="wip-nl-form" method="post" action="{{ lp('/newsletter') }}"
+            data-nl-form
+            data-steps='["{{ t("nl_sending_1") }}","{{ t("nl_sending_2") }}","{{ t("nl_sending_3") }}"]'
+            data-done="{{ t('nl_sending_done') }}"
+            data-ja="{{ t('nl_ja') }}"
+            data-ja-text="{{ t('nl_ja_text') }}"
+            data-ja-bye="{{ t('nl_ja_bye') }}">
+        <input type="text" name="website" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true">
+        <input type="hidden" name="t" value="{{ carimbo_anti_spam() }}">
+        <input type="email" name="email" required maxlength="200" autocomplete="email"
+               placeholder="{{ t('nl_placeholder') }}" aria-label="{{ t('nl_placeholder') }}">
+
+        <label class="wip-consent">
+          <input type="checkbox" name="consent" value="on" required>
+          <span class="wip-check" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+          </span>
+          <span>{{ t('wip_consent') }}</span>
+        </label>
+
+        <button class="wip-btn" type="submit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+          {{ t('nl_btn') }}
+        </button>
+      </form>
+
+      <!-- estado de envio: mesmo box, mesma linguagem da página de contato -->
+      <div class="ct-sending" data-nl-sending hidden aria-live="polite">
+        <div class="cts-stage">
+          <span class="cts-markwrap">
+            <svg viewBox="0 0 100 100" class="cts-mark" aria-hidden="true">
+              <polygon class="cts-poly" points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+              <polygon class="cts-poly" points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+              <polygon class="cts-poly" points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+            </svg>
+            <i class="cts-check" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>
+            </i>
+          </span>
+          <svg class="cts-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
+          <p class="cts-step display" data-cts-step>{{ t('nl_sending_1') }}</p>
+          <div class="cts-bar"><span></span></div>
+          <div class="cts-thanks" data-cts-thanks hidden>
+            <p data-cts-texto>{{ t('nl_ok_text') }}</p>
+            <p class="cts-bye" data-cts-bye>{{ t('nl_ok_bye') }}</p>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </aside>
+
+</main>
+
+<script>
+/* Envio da newsletter com o mesmo motion da página de contato: o formulário dá lugar
+   à animação, que roda 3 segundos reais enquanto o cadastro acontece de verdade.
+   Vai inline porque esta página não carrega o main.js. */
+(function () {
+  var form = document.querySelector("[data-nl-form]");
+  var caixa = document.querySelector("[data-nl-sending]");
+  if (!form || !caixa) return;
+
+  var passoEl = caixa.querySelector("[data-cts-step]");
+  var obrigadoEl = caixa.querySelector("[data-cts-thanks]");
+  var barra = caixa.querySelector(".cts-bar span");
+  var passos = [];
+  try { passos = JSON.parse(form.dataset.steps || "[]"); } catch (e) { passos = []; }
+  var textoFim = form.dataset.done || "";
+  var enviando = false;
+
+  form.addEventListener("submit", function (e) {
+    if (enviando) { e.preventDefault(); return; }
+    if (!form.reportValidity()) return;   // o browser aponta o campo que falta
+    e.preventDefault();
+    enviando = true;
+
+    form.hidden = true;
+    caixa.hidden = false;
+    caixa.classList.add("on");
+    barra.style.width = "0%";
+
+    var inicio = performance.now();
+    var TOTAL = 3000;
+    var idx = 0;
+    var tPasso = setInterval(function () {
+      idx = Math.min(idx + 1, passos.length - 1);
+      if (passos[idx]) passoEl.textContent = passos[idx];
+    }, TOTAL / Math.max(passos.length, 1));
+    var tBarra = setInterval(function () {
+      var p = Math.min((performance.now() - inicio) / TOTAL, 1) * 100;
+      barra.style.width = p.toFixed(1) + "%";
+    }, 60);
+
+    var ok = true;
+    var jaCadastrado = false;
+    var res_url = "";
+    fetch(form.action, {
+      method: "POST",
+      body: new FormData(form),
+      headers: { "X-Requested-With": "fetch" },
+      redirect: "follow",
+    }).then(function (res) {
+      ok = res.ok && res.url.indexOf("nl_consent=1") === -1
+                  && res.url.indexOf("nl_invalido=1") === -1;
+      jaCadastrado = res.url.indexOf("nl=ja") !== -1;
+      res_url = res.url;
+    }).catch(function () {
+      ok = false;
+    }).then(function () {
+      /* espera o tempo cheio mesmo se o servidor responder antes */
+      var resto = Math.max(0, TOTAL - (performance.now() - inicio));
+      setTimeout(function () {
+        clearInterval(tPasso);
+        clearInterval(tBarra);
+        barra.style.width = "100%";
+        caixa.classList.add("done");
+        if (jaCadastrado) {
+          passoEl.textContent = form.dataset.ja;
+          caixa.querySelector("[data-cts-texto]").textContent = form.dataset.jaText;
+          caixa.querySelector("[data-cts-bye]").textContent = form.dataset.jaBye;
+        } else {
+          passoEl.textContent = ok ? textoFim : (passos[0] || "");
+        }
+        obrigadoEl.hidden = !ok;
+        /* A confirmação já está na tela, dentro da animação. Recarregar em ?nl=1
+           mostraria a mesma mensagem de novo, então a volta é para a página limpa:
+           a pessoa lê uma vez e o formulário volta pronto para outro cadastro.
+           O ?nl=1 continua existindo para quem estiver sem JavaScript. */
+        setTimeout(function () {
+          var base = form.action.indexOf("/en/") !== -1 ? "/en/" : "/";
+          location.href = ok ? base
+            : base + (res_url.indexOf("nl_invalido") !== -1 ? "?nl_invalido=1" : "?nl_consent=1");
+        }, 5000);
+      }, resto);
+    });
+  });
+})();
+
+/* Relógio de Curitiba, o mesmo do rodapé do site, com o dia junto.
+   Vai inline porque esta página não carrega o main.js. */
+(function () {
+  var el = document.querySelector("[data-clock]");
+  if (!el) return;
+  var loc = document.documentElement.lang.indexOf("pt") === 0 ? "pt-BR" : "en-US";
+  /* Sem fuso fixo: o relógio é o de quem está lendo. Era São Paulo, e deixou
+     de fazer sentido quando a linha ao lado passou a dizer a cidade dela. */
+  function tick() {
+    var agora = new Date();
+    var dia = agora.toLocaleDateString(loc, {
+      weekday: "short", day: "2-digit", month: "short",
+    });
+    var hora = agora.toLocaleTimeString(loc, {
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      timeZoneName: "shortOffset",
+    });
+    /* pt-BR devolve "seg., 10 de ago." — os pontos das abreviações saem todos */
+    el.textContent = dia.replace(/\./g, "") + ", " + hora;
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+<script src="/static/js/assinatura.js?v={{ asset_v }}" defer></script>
+</body>
+</html>

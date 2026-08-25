@@ -1,0 +1,136 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ 'Editar campanha' if camp else 'Nova campanha' }}{% endblock %}
+{% block content %}
+{% set q = request.query_params %}
+<header class="panel-head">
+  <h1>{{ 'Campanha' if camp else 'Nova campanha' }}
+    {% if camp and camp.status == 'enviado' %}<small>enviada em {{ camp.sent_at | local | strftime_('%d/%m/%Y %H:%M') if camp.sent_at }}</small>{% endif %}
+  </h1>
+  <div class="head-actions">
+    {% if camp %}<a class="btn ghost" href="/admin/newsletter/{{ camp.id }}/preview" target="_blank" rel="noopener">Ver e-mail ↗︎</a>{% endif %}
+    <a class="btn ghost" href="/admin/newsletter">Voltar</a>
+  </div>
+</header>
+
+{% if q.get('enviado') %}<div class="flash ok">Campanha enviada para {{ q.get('enviado') }} contato(s).</div>{% endif %}
+{% if q.get('teste') %}<div class="flash ok">E-mail de teste enviado. Confira a caixa de entrada.</div>{% endif %}
+{% if q.get('erro') %}<div class="flash err">{{ q.get('erro') }}</div>{% endif %}
+{% if not smtp_ok %}
+<div class="flash err">SMTP não configurado. <a class="linklike" href="/admin/settings">Configurar agora</a>.</div>
+{% endif %}
+
+<form class="camp-form" method="post" action="/admin/newsletter/save" enctype="multipart/form-data">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  {% if camp %}<input type="hidden" name="id" value="{{ camp.id }}">{% endif %}
+
+  <div class="camp-grid">
+    <div class="camp-col">
+      <label class="fld">
+        <span>Assunto <i>*</i></span>
+        <input type="text" name="subject" required maxlength="200" value="{{ camp.subject if camp else '' }}"
+               placeholder="O que aparece na caixa de entrada">
+      </label>
+
+      <label class="fld">
+        <span>Prévia <small class="dim">linha cinza ao lado do assunto</small></span>
+        <input type="text" name="preheader" maxlength="200" value="{{ camp.preheader if camp else '' }}"
+               placeholder="Uma frase que dá vontade de abrir">
+      </label>
+
+      <label class="fld">
+        <span>Conteúdo <i>*</i> <small class="dim">Markdown: **negrito**, ## título, - lista, [texto](link). Use &gt; no início da linha para virar bloco de destaque</small></span>
+        <textarea name="body" rows="16" required
+                  placeholder="Escreva aqui. Use ## para títulos, - para listas, [texto](link) para links e &gt; para destacar um trecho em caixa.">{{ camp.body if camp else '' }}</textarea>
+      </label>
+
+      <div class="fld-row">
+        <label class="fld">
+          <span>Texto do botão</span>
+          <input type="text" name="cta_label" maxlength="80" value="{{ camp.cta_label if camp else '' }}"
+                 placeholder="Ver o case">
+        </label>
+        <label class="fld">
+          <span>Link do botão</span>
+          <input type="url" name="cta_url" maxlength="400" value="{{ camp.cta_url if camp else '' }}"
+                 placeholder="https://leandrofurtado.com.br/portfolio">
+        </label>
+      </div>
+    </div>
+
+    <aside class="camp-side">
+      <div class="camp-box">
+        <span class="box-h">Público</span>
+        {% for key, label in audiences.items() %}
+        <label class="radio-line">
+          <input type="radio" name="audience" value="{{ key }}"
+                 {% if (camp and camp.audience == key) or (not camp and key == 'todos') %}checked{% endif %}>
+          <span>{{ label }}</span>
+          <b>{{ counts[key] }}</b>
+        </label>
+        {% endfor %}
+        <p class="hint">
+          Leads só entram se tiverem dado o aceite no formulário. É o que a LGPD exige para
+          comunicação de marketing.
+        </p>
+      </div>
+
+      <div class="camp-box">
+        <span class="box-h">Boas-vindas</span>
+        <label class="check-line">
+          <input type="checkbox" name="is_welcome" {% if camp and camp.is_welcome %}checked{% endif %}>
+          Enviar esta campanha automaticamente
+        </label>
+        <p class="hint">
+          Quem assinar a newsletter recebe esta campanha na hora, sem você fazer nada. O
+          cabeçalho dela sai como <em>Newsletter / Boas-vindas</em>. Só uma campanha pode
+          ocupar esse lugar: marcar esta desmarca a anterior.
+        </p>
+      </div>
+
+      <div class="camp-box">
+        <span class="box-h">Imagem do topo</span>
+        {% if camp and camp.image %}
+        <img class="camp-thumb" src="/media/{{ camp.image }}" alt="">
+        <label class="check-line"><input type="checkbox" name="remove_image" value="1"> Remover imagem</label>
+        {% endif %}
+        <input type="file" name="image" accept="image/*">
+        <p class="hint">Ideal 1200 x 630. Fica no cabeçalho do e-mail, acima do título.</p>
+      </div>
+
+      <button class="btn primary wide" type="submit">Salvar campanha</button>
+    </aside>
+  </div>
+</form>
+
+{% if camp %}
+<div class="camp-send">
+  <div class="camp-box">
+    <span class="box-h">Teste antes de disparar</span>
+    <form method="post" action="/admin/newsletter/{{ camp.id }}/enviar" class="send-row">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <input type="email" name="test_email" required placeholder="seu@email.com">
+      <button class="btn ghost" type="submit">Enviar teste</button>
+    </form>
+    <p class="hint">Salve a campanha antes: o teste usa a última versão salva.</p>
+  </div>
+
+  <div class="camp-box danger-box">
+    <span class="box-h">Disparar para {{ counts[camp.audience] }} contato(s)</span>
+    {% if preview %}
+    <p class="hint">
+      {% for r in preview %}{{ r.email }}{% if not loop.last %} ·︎ {% endif %}{% endfor %}
+      {% if counts[camp.audience] > preview | length %} e mais {{ counts[camp.audience] - (preview | length) }}{% endif %}
+    </p>
+    {% endif %}
+    <form method="post" action="/admin/newsletter/{{ camp.id }}/enviar"
+          onsubmit='return confirm({{ ("Disparar esta campanha para " ~ counts[camp.audience] ~ " contato(s)? Não dá para desfazer.") | tojson }})'>
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn primary wide" type="submit" {% if not smtp_ok %}disabled{% endif %}>
+        Enviar agora
+      </button>
+    </form>
+    {% if camp.error %}<p class="hint err-text">{{ camp.error }}</p>{% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

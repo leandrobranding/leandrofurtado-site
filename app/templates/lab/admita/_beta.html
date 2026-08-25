@@ -1,0 +1,57 @@
+{# ============================================================
+   O que abre quando alguém toca no selo "v. beta". É a única tela da demo
+   que fala de negócio, então ela não pode soar como anúncio: diz o que o
+   sistema é, quem fez, o que dá para fazer com ele e como falar comigo.
+   O símbolo fica em movimento contínuo, que é o que dá vida à caixa.
+   ============================================================ #}
+<div class="admita-modal-fundo" id="admita-modal-beta" hidden>
+  <section class="admita-modal admita-beta" aria-labelledby="admita-beta-titulo">
+    <button type="button" class="admita-agenda-x admita-beta-x" data-fechar-beta aria-label="Fechar">
+      <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5 12.5 12.5M12.5 3.5 3.5 12.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    </button>
+
+    <div class="admita-beta-palco" aria-hidden="true">
+      <span class="admita-beta-anel"></span>
+      <span class="admita-beta-pulso"></span>
+      {% with id='beta', simbolo=True, classe='admita-beta-simbolo' %}
+        {% include 'lab/admita/_marca.html' %}
+      {% endwith %}
+    </div>
+
+    <p class="admita-beta-selo">versão beta de demonstração</p>
+    <h2 id="admita-beta-titulo">Isto aqui é um sistema de verdade.</h2>
+
+    <div class="admita-beta-texto">
+      <p>
+        Tudo que você clicou nesta tela é código rodando agora: o candidato que
+        andou na esteira, o documento que você conferiu, a entrevista que você
+        marcou no calendário. Não é vídeo, não é protótipo clicável.
+      </p>
+      <p>
+        Quem construiu foi <strong>Leandro Furtado</strong>. A marca, a interface,
+        as regras e o código saíram do mesmo par de mãos, que é justamente o que
+        faz um sistema parecer inteiro em vez de remendado.
+      </p>
+      <p>
+        O Admita pode virar o sistema da sua empresa: com a sua marca, os seus
+        prazos, os seus documentos, os seus cargos e as suas pessoas. Instalado
+        no seu servidor ou hospedado por mim, do jeito que for melhor para você.
+      </p>
+      <p class="admita-beta-convite">
+        Me chame e me conte como funciona a sua admissão hoje. Eu te digo em
+        quanto tempo ela fica assim.
+      </p>
+    </div>
+
+    <a class="botao botao-primario admita-beta-cta" href="/contato?origem=lab-admita-beta">
+      <svg class="icone" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11v8h-11z M2.5 4.5 8 9l5.5-4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      Falar com o Leandro
+    </a>
+
+    <p class="admita-beta-legal">
+      Demonstração pública. Os dados desta tela são fictícios, ficam só na sua
+      sessão, não são compartilhados com ninguém e somem sozinhos em 24 horas.
+      Nenhuma senha é digitada, enviada ou guardada em nenhum momento.
+    </p>
+  </section>
+</div>

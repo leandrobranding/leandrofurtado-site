@@ -1,0 +1,29 @@
+{#
+  Faixa de copyright do site — parcial único, reusado tal e qual pelo
+  rodapé do site (base.html) e pela moldura do Lab (lab/vitrine.html,
+  lab/_base_demo.html), rodada de 20/08 (dono, verbatim: "o mesmo rodapé
+  copyright que tem no site inteiro"). MESMO texto, MESMA marcação, MESMO
+  CSS (`.footer-bottom`/`.mono-label` de app/static/css/main.css) nas
+  quatro páginas — nada de copyright novo pro Lab.
+
+  Nas 3 páginas do Lab, `.footer-bottom`/`.mono-label` não vêm de main.css
+  (as demos não carregam main.css, "Princípio do enxuto" da spec): os
+  MESMOS valores (padding, fonte, cor, borda) estão portados em
+  app/static/lab/lab-moldura.css — nunca reescritos, só copiados. A única
+  diferença permitida entre o site e o Lab é a ANCORAGEM: no site a faixa
+  segue o fluxo normal do rodapé; no Lab ela é a 3ª linha (auto) do grid
+  100dvh do shell, sempre fixa na base da tela.
+
+  Bug do dono, 20/08: dentro das demos a rota (`_tela_da_demo` em
+  app/lab/rotas.py) renderiza com `templates.TemplateResponse` direto —
+  contexto mínimo de propósito (Princípio do Enxuto), sem passar por
+  `render()`/`base_ctx()` do site, que é quem injeta `lang`. Com `lang`
+  indefinido, `lang == 'pt'` cai sempre no `else` (inglês). Correção:
+  `lang != 'en'` — o Lab é só português (decisão do dono, igual ao Nodal),
+  então QUALQUER coisa que não seja explicitamente "en" (indefinido
+  incluído) renderiza em português; a home /en do site, que sempre define
+  `lang = "en"` de verdade, continua intocada.
+#}
+<div class="footer-bottom">
+  <span class="mono-label">©︎ {{ 2026 }} Leandro Furtado ·︎ {{ 'Todos os direitos reservados' if lang != 'en' else 'All rights reserved' }} ·︎ {{ 'Desenvolvido puramente com' if lang != 'en' else 'Purely built with' }} Python & HTML5.</span>
+</div>

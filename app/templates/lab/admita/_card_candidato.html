@@ -1,0 +1,63 @@
+{# ============================================================
+   Card de candidato — célula-padrão do kit (avatar + nome + valor) mais
+   o DIFERENCIAL DA MARCA: chip de prazo por item pendente (§6.1). Setas
+   nos dois cantos: a esquerda SEMPRE aponta para a esquerda (reusa
+   `#i-seta-direita` espelhado por CSS — `.icone-esq { transform:
+   scaleX(-1) }` — em vez de duplicar o símbolo no sprite), a direita
+   aponta para a direita. Cada seta desabilita sozinha na ponta da esteira
+   (`disabled` do HTML, não só visual) — o bug do dono não pode voltar.
+   ============================================================ #}
+<article class="admita-card" data-candidato-id="{{ candidato.id }}" data-etapa="{{ candidato.etapa }}">
+  <button type="button" class="admita-card-seta admita-seta-esq" data-mover="anterior"
+          data-candidato-id="{{ candidato.id }}"
+          {{ 'disabled' if candidato.etapa == etapas[0] else '' }}
+          aria-label="Voltar {{ candidato.nome }} para a etapa anterior">
+    <svg class="icone icone-esq" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-seta-direita"/></svg>
+  </button>
+
+  <div class="admita-card-corpo">
+    <div class="celula admita-card-celula">
+      <span class="avatar {{ candidato.avatar_classe }}">{{ candidato.iniciais_nome }}</span>
+      <div class="celula-conteudo">
+        <span class="celula-nome">{{ candidato.nome }}</span>
+        <span class="celula-meta">{{ candidato.cargo }}</span>
+      </div>
+    </div>
+
+    {% if candidato.chip_prazo %}
+    <span class="pill admita-chip-prazo admita-chip-{{ candidato.chip_prazo.classe }}">
+      <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-relogio"/></svg>
+      {{ candidato.chip_prazo.texto }}
+    </span>
+    {% endif %}
+
+    <div class="admita-card-acoes">
+      {% if candidato.checklist_total > 0 %}
+      <button type="button" class="admita-card-botao" data-abrir-checklist="{{ candidato.id }}">
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-documentos"/></svg>
+        {{ candidato.checklist_conferidos }}/{{ candidato.checklist_total }} documentos
+      </button>
+      {% endif %}
+      {% if candidato.etapa == "aprovacao_rh" %}
+      <button type="button" class="admita-card-botao admita-card-botao-aprovar" data-aprovar="rh"
+              data-candidato-id="{{ candidato.id }}">
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-aprovacao"/></svg>
+        Aprovar RH
+      </button>
+      {% elif candidato.etapa == "aprovacao_gestor" %}
+      <button type="button" class="admita-card-botao admita-card-botao-aprovar" data-aprovar="gestor"
+              data-candidato-id="{{ candidato.id }}">
+        <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-aprovacao"/></svg>
+        Aprovar gestor
+      </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <button type="button" class="admita-card-seta admita-seta-dir" data-mover="proxima"
+          data-candidato-id="{{ candidato.id }}"
+          {{ 'disabled' if candidato.etapa == etapas[-1] else '' }}
+          aria-label="Avançar {{ candidato.nome }} para a próxima etapa">
+    <svg class="icone" aria-hidden="true"><use href="/static/lab/icones/admita.svg#i-seta-direita"/></svg>
+  </button>
+</article>

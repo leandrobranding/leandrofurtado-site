@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block pageid %}clients{% endblock %}
+{% block title %}{{ t('hall_title') }} ·︎ {{ site_name }}{% endblock %}
+{% block description %}{{ t('hall_desc') }}{% endblock %}
+{% block jsonld_extra %},
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "{{ 'Início' if lang == 'pt' else 'Home' }}", "item": "{{ base_url }}{{ lp('/') }}"},
+        {"@type": "ListItem", "position": 2, "name": "{{ t('hall_title') }}", "item": "{{ base_url }}{{ lp('/clientes') }}"}
+      ]
+    }{% endblock %}
+
+{% block content %}
+{#
+  A contagem sai de cima do título e vira um box na lateral: como número
+  sobrescrito ela disputava o espaço da tipografia e ninguém lia.
+#}
+<section class="page-head hall-head">
+  <div class="hall-titulo">
+    <p class="hero-kicker mono-label" data-reveal><i>✳︎</i> {{ t('unique_brands') }}</p>
+    <h1 class="page-title display" data-hero-title>{{ t('hall_title') }}</h1>
+  </div>
+  <div class="hall-conta" data-reveal>
+    <b>{{ clients | length }}</b>
+    <i>{{ ('marcas' if clients | length != 1 else 'marca') if lang == 'pt' else ('brands' if clients | length != 1 else 'brand') }}</i>
+  </div>
+</section>
+
+{% if clients %}
+{#
+  Preenchimento da última linha (item 2, 19/08 — pedido do dono: "fica
+  vazio, sem graça" com 4 células cruas sobrando no desktop). A Galeria de
+  Honra é a lista COMPLETA — diferente da grade do Sobre, nenhuma marca pode
+  ficar de fora — então o que fecha a linha é preenchimento, não corte.
+
+  `hall_fill`/`hall_fill_max` vêm prontos de preenchimento_grade_clientes()
+  em app/routers/public.py: uma célula de preenchimento por vaga que falta
+  para fechar a linha, calculada para CADA contagem de colunas que a grade
+  usa (6 no desktop, 4/3/2 em telas menores — os media queries de
+  .hall-grid em main.css). O <style> abaixo usa nth-of-type para mostrar,
+  em cada faixa de largura, só as células de preenchimento que aquela faixa
+  precisa — as demais ficam com display:none. Todo preenchimento é
+  <div>, nunca <a>, justamente para o nth-of-type contar certo (ele conta
+  por TAG, não por classe — misturar tags do mesmo tipo que os cartões reais
+  desalinharia a contagem).
+
+  A primeira célula de preenchimento (a que aparece sempre que sobra
+  alguma vaga, em qualquer faixa) é um convite discreto — nunca uma célula
+  vazia crua. As demais, quando sobra mais de uma vaga, repetem o padrão
+  gráfico da casa (mesma família visual das imagens decorativas do Sobre)
+  em vez de mais convites repetidos, que pareceria spam.
+#}
+{% if hall_fill_max > 0 %}
+<style>
+  @media (min-width: 1201px) { .hall-grid .brand-cell--filler:nth-of-type(n+{{ hall_fill[6] + 1 }}) { display: none; } }
+  @media (max-width: 1200px) and (min-width: 901px) { .hall-grid .brand-cell--filler:nth-of-type(n+{{ hall_fill[4] + 1 }}) { display: none; } }
+  @media (max-width: 900px) and (min-width: 561px) { .hall-grid .brand-cell--filler:nth-of-type(n+{{ hall_fill[3] + 1 }}) { display: none; } }
+  @media (max-width: 560px) { .hall-grid .brand-cell--filler:nth-of-type(n+{{ hall_fill[2] + 1 }}) { display: none; } }
+</style>
+{% endif %}
+<section class="hall">
+  <div class="brands-grid hall-grid">
+    {% for client in clients if client.logo %}
+    {#
+      Três faixas fixas na célula: marca no meio, nome sempre encostado embaixo
+      e a seta no canto. Como toda célula tem a mesma proporção, os nomes de uma
+      linha inteira ficam na mesma altura sem ninguém alinhar à mão.
+    #}
+    <a class="brand-cell has-cases" data-reveal href="{{ lp('/cliente/' ~ client.slug) }}"
+       title="{{ t('client_everything') }} {{ client.name }}">
+      <span class="bc-marca">
+        {% if client.logo %}
+        <img class="client-logo {{ 'chapa' if client.chapa }}" style="--escala: {{ client.escala | default(1) }}" src="{{ client.logo }}" alt="{{ client.name }}" loading="lazy">
+        {% else %}
+        <span class="client-wordmark display">{{ client.name }}</span>
+        {% endif %}
+      </span>
+      <span class="bc-nome mono-label">{{ client.name }}</span>
+      <span class="bc-seta" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8.5 7H17v8.5"/></svg>
+      </span>
+    </a>
+    {% endfor %}
+    {% for i in range(hall_fill_max) %}
+      {% if i == 0 %}
+      <div class="brand-cell brand-cell--filler brand-cell--convite" data-fill-index="1">
+        <a class="bc-convite-link" href="{{ lp('/contato') }}" aria-label="{{ t('hall_invite') }}">
+          <span class="bc-convite-texto mono-label">{{ t('hall_invite') }}</span>
+          <span class="bc-seta" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7"/><path d="M8.5 7H17v8.5"/></svg>
+          </span>
+        </a>
+      </div>
+      {% else %}
+      <div class="brand-cell brand-cell--filler {{ 'brand-cell--padrao-b' if i is even else 'brand-cell--padrao' }}"
+           data-fill-index="{{ i + 1 }}" aria-hidden="true"></div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="about-cta">
+  <a class="cta-pill big" data-reveal href="{{ lp('/contato') }}"><i>✳︎</i> {{ t('cta_band') }}</a>
+  <a class="cta-pill big outline" data-reveal href="{{ lp('/portfolio') }}">{{ t('see_all_work') }} →︎</a>
+</section>
+{% endblock %}

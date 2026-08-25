@@ -1,0 +1,459 @@
+{% extends "admin/base.html" %}
+{% block title %}{{ 'Editar case' if case else 'Novo case' }}{% endblock %}
+{% block content %}
+{% import "admin/_ico.html" as ico %}
+{% set q = request.query_params %}
+{% set eh_site = case and case.category and case.category.kind == 'sites' %}
+
+{% if q.get('salvo') %}<div class="flash ok">{{ ico.i('checar') }} Case salvo.</div>{% endif %}
+{% if q.get('erro') %}<div class="flash err">{{ q.get('erro') }}</div>{% endif %}
+
+{#
+  O editor do case é a própria página, montada de cima para baixo: título,
+  subtítulo, resumo e a sequência de blocos. Não há mais painéis separados —
+  o que era caixa virou uma linha de ajustes e uma barra de publicação, e o
+  que era formulário de SEO sumiu porque agora sai sozinho do que foi escrito.
+#}
+<form id="formCase" method="post" enctype="multipart/form-data" class="cf-editor"
+      action="{{ '/admin/cases/' ~ case.id if case else '/admin/cases/new' }}"
+      data-cats-sites="{{ cats_sites | join(',') }}">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+
+  {# ---------- barra de ações, sempre à vista ---------- #}
+  <div class="cf-acoes">
+    <div class="cf-acoes-esq mono-label">
+      {{ ico.i('imagem') }}
+      <span>{{ 'Editando' if case else 'Novo case' }}</span>
+      {% if case %}<b>{{ case.slug }}</b>{% endif %}
+      {% if case and case.archived %}<i class="cf-selo">arquivado</i>{% endif %}
+    </div>
+    <div class="cf-acoes-dir">
+      {% if case %}
+      <a class="cf-bt ver" target="_blank" rel="noopener"
+         href="{% if eh_site and case.site_url %}{{ case.site_url }}{% else %}/case/{{ case.slug }}{% endif %}">
+        {{ ico.i('olho') }} <span>Ver</span></a>
+      {% endif %}
+      <button class="cf-bt salvar" type="submit" name="acao" value="rascunho">
+        {{ ico.i('salvar') }} <span>Salvar</span></button>
+      <button class="cf-bt publicar" type="submit" name="acao" value="publicar">
+        {{ ico.i('foguete') }} <span>{{ 'Republicar' if case and case.published else 'Publicar' }}</span></button>
+    </div>
+  </div>
+
+  {# ---------- identificação, escrita como documento e não como formulário ---------- #}
+  <div class="cf-doc">
+    <input class="cf-titulo" name="title_pt" value="{{ case.title_pt if case }}" required
+           placeholder="Título do case" autocomplete="off" aria-label="Título">
+    <input class="cf-sub" name="subtitle_pt" value="{{ case.subtitle_pt if case }}"
+           placeholder="Uma linha que resume o trabalho" autocomplete="off" aria-label="Subtítulo">
+    <textarea class="cf-resumo" name="body_pt" rows="3" data-cf-comum
+              placeholder="O problema, a ideia e o resultado. Markdown funciona: **negrito**, ## subtítulo, - lista."
+              aria-label="Resumo">{{ case.body_pt if case }}</textarea>
+  </div>
+
+  {#
+    Ajustes em três faixas em vez de uma fila só. Com tudo na mesma linha, o
+    campo de tags ficava com 180px e o de IA era espremido no canto: cinco
+    controles de naturezas diferentes disputando a mesma régua. Agora cada
+    faixa responde a uma pergunta.
+  #}
+  <div class="cf-faixa">
+    <label class="cf-mini"><span>{{ ico.i('etiqueta') }} Categoria</span>
+      <select name="category_id" id="cfCategoria" required>
+        <option value="">Escolha</option>
+        {% for c in categories %}
+        <option value="{{ c.id }}" {% if case and case.category_id == c.id %}selected{% endif %}
+                data-kind="{{ c.kind }}">{{ c.name_pt }}{% if c.kind == 'sites' %} — site{% endif %}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="cf-mini"><span>{{ ico.i('pessoa') }} Cliente</span>
+      <select name="client_id" id="cfCliente">
+        <option value="">Sem cliente</option>
+        {% for c in clientes %}
+        <option value="{{ c.id }}" {% if case and case.client_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label class="cf-mini cf-estreito"><span>{{ ico.i('calendario') }} Ano</span>
+      <input name="year" value="{{ case.year if case }}" placeholder="2026" inputmode="numeric"></label>
+
+    <button type="button" class="cf-bt fino" id="cfNovoCliente">{{ ico.i('mais') }} <span>Cliente</span></button>
+  </div>
+
+  {#
+    Ferramentas do case. Aparece para todo case, site incluído: um site também é
+    feito de Photoshop, Figma da vida e IA. Cada marcado vira um selo com o
+    ícone oficial ao lado do case no portfólio e na página.
+  #}
+  <div class="cf-faixa">
+    <div class="cf-mini cf-cresce"><span>{{ ico.i('estrela') }} Ferramentas usadas</span>
+      <div class="cf-progs">
+        {% for slug, nome in programas_lista %}
+        <label class="cf-prog {{ 'on' if case and slug in (case.programas or '') }}" title="{{ nome }}">
+          <input type="checkbox" name="programas" value="{{ slug }}"
+                 {% if case and slug in (case.programas or '') %}checked{% endif %} hidden>
+          <img src="/static/img/programas/{{ slug }}.svg" alt="" width="22" height="22">
+          <span>{{ nome.replace('Adobe ', '') }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {#
+    Tags em faixa própria: são muitas por case e precisam da linha inteira.
+    Somem no case de site: tag serve à página do case, aos relacionados e ao
+    dado estruturado — e site não tem página própria, o clique vai direto ao
+    endereço do cliente. Campo que não alimenta nada é campo para ficar
+    preenchido errado sem ninguém notar.
+  #}
+  <div class="cf-faixa" data-cf-comum>
+    <label class="cf-mini cf-cresce"><span>{{ ico.i('hashtag') }} Tags</span>
+      <input name="tags" value="{{ tags_str }}"
+             placeholder="#ativacao #livemarketing #experienciademarca"></label>
+  </div>
+
+  {#
+    O que a página mostra. Uso de IA vira selo, e a ficha técnica pode
+    simplesmente não existir: nem todo trabalho tem crédito que valha a régua.
+
+    Os dois falam da página do case, então também somem no site: não há onde
+    desenhar o selo nem onde listar a ficha.
+  #}
+  <div class="cf-faixa cf-decisoes" data-cf-comum>
+    <div class="cf-mini cf-ia"><span>{{ ico.i('estrela') }} Inteligência artificial</span>
+      <div class="cf-ia-op">
+        {% for valor, rotulo in [('', 'Não informar'), ('nao', 'Sem utilização'), ('sim', 'Com utilização')] %}
+        <label class="cf-ia-bt {{ 'on' if (case.ia if case else '') == valor }} ia-{{ valor or 'vazio' }}">
+          <input type="radio" name="ia" value="{{ valor }}"
+                 {% if (case.ia if case else '') == valor %}checked{% endif %} hidden>
+          <i aria-hidden="true"></i>{{ rotulo }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="cf-mini cf-ficha-esc"><span>{{ ico.i('ficha') }} Ficha técnica</span>
+      <label class="cf-ia-bt {{ 'on ia-sim' if (case.ficha_on if case else True) }}" data-cf-ficha>
+        <input type="checkbox" name="ficha_on" value="1"
+               {% if (case.ficha_on if case else True) %}checked{% endif %} hidden>
+        <i aria-hidden="true"></i>
+        <span data-cf-ficha-txt>{{ 'Exibir na página' if (case.ficha_on if case else True) else 'Não exibir' }}</span>
+      </label>
+    </div>
+  </div>
+
+  {# cadastro rápido de cliente: quem está montando um case não devia sair da tela #}
+  <div class="cf-cliente-novo" id="cfClienteNovo" hidden>
+    <label class="cf-mini cf-cresce"><span>Nome do cliente novo</span>
+      <input name="cliente_novo" placeholder="Nome do cliente"></label>
+    <label class="cf-mini cf-cresce"><span>Site (opcional)</span>
+      <input name="cliente_novo_site" placeholder="https://"></label>
+    <p class="hint">Criado assim que você salvar.</p>
+  </div>
+
+  <p class="hint cf-dica" id="cfDica"></p>
+
+  {# ---------- o endereço, quando a categoria é do tipo sites ---------- #}
+  <div class="cf-site" data-cf-site hidden>
+    <label class="cf-mini cf-cresce"><span>{{ ico.i('globo') }} Endereço do site</span>
+      <input name="site_url" type="url" value="{{ case.site_url if case }}"
+             placeholder="https://cliente.com.br"></label>
+    {% if case %}
+    <label class="cf-pill"><input type="checkbox" name="recapturar" value="1">
+      {{ ico.i('imagem') }} <span>Capturar a prévia de novo</span></label>
+    {% endif %}
+    {#
+      Prévia enviada à mão.
+
+      Nem todo site se deixa fotografar: o do Assaí responde com a tela de
+      bloqueio do WAF e o da Coevo tem vídeo de fundo que ainda não pintou na
+      hora do clique. Nesses casos o robô entrega uma imagem — a errada, que é
+      pior que nenhuma, porque nada acusa o problema. Aqui a decisão volta para
+      quem olha.
+
+      O arquivo passa pelo mesmo tratamento de qualquer imagem do site: sai com
+      as versões de 480, 960, 1600 e 2400 em WebP, mais o cartão de
+      compartilhamento. Nada a fazer à mão depois.
+    #}
+    <div class="cf-previa">
+      <figure class="cf-shot">
+        {% if case and case.cover_image %}
+        <img src="/media/{{ case.cover_image }}" alt="">
+        <figcaption class="hint"><b>Prévia enviada por você.</b> É esta que aparece no
+          portfólio e no compartilhamento.</figcaption>
+        {% elif case and case.site_shot %}
+        <img src="/media/{{ case.site_shot }}" alt="">
+        <figcaption class="hint">Captura automática de
+          {{ case.site_shot_at | local | strftime_('%d/%m/%Y %H:%M') if case.site_shot_at }}.</figcaption>
+        {% else %}
+        <span class="cp-vazio">{{ ico.i('imagem') }} sem prévia</span>
+        {% endif %}
+      </figure>
+
+      <div class="cf-previa-lado">
+        <strong>Prévia do site</strong>
+        <p class="hint">O robô fotografa o endereço sozinho. Quando a captura sai errada,
+          envie a imagem certa aqui — ela passa na frente da automática. Ideal 1600 × 1000.</p>
+        <div class="cp-capa-bts">
+          <label class="cf-bt fino">{{ ico.i('upload') }}
+            <span>{% if case and case.cover_image %}Trocar{% else %}Enviar{% endif %} prévia</span>
+            <input type="file" name="site_previa" accept="image/*" hidden></label>
+          {% if case and case.cover_image %}
+          <label class="cf-pill"><input type="checkbox" name="previa_limpar" value="1">
+            {{ ico.i('imagem') }} <span>Voltar para a captura automática</span></label>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <p class="hint">Nesta categoria o case não tem página própria: o clique no portfólio vai
+      direto ao endereço, e a prévia é capturada de lá.</p>
+  </div>
+
+  {#
+    O compositor.
+
+    A página inteira vive num campo escondido em JSON e é gravada junto com o
+    resto: um Salvar só, sem estado pela metade. Arrastar, duplicar e excluir
+    mexem só na tela. O que precisa do servidor antes da hora é o arquivo (que
+    sobe na hora) e o link (que passa pelo provedor para virar prévia).
+  #}
+  <section class="cf-compositor" data-cf-comum data-compositor
+           data-case="{{ case.id if case else '' }}" data-csrf="{{ csrf }}">
+
+    {# A capa é bloco fixo: é a única imagem com função definida, o card do
+       portfólio. Quatro ações, e as duas de excluir só existem quando há o que
+       excluir — botão que não faz nada é botão que ensina a pessoa a duvidar
+       dos outros.
+
+       As exclusões são caixas de seleção, não botões que agem na hora: o
+       formulário é um Salvar só, e uma exclusão imediata apagaria arquivo antes
+       de o resto do formulário ser aceito. Marcar é intenção; o Salvar executa.
+       Sem JavaScript continua funcionando, porque é campo de formulário comum. #}
+    <div class="cp-capa" data-capa>
+      <div class="cp-capa-arte">
+        {% if case and case.cover_image and not capa_sumiu %}
+        <img src="/media/{{ case.cover_image }}" alt="" data-capa-img>
+        {% else %}
+        <img alt="" data-capa-img hidden>
+        <span class="cp-vazio" data-capa-vazio>
+          {% if capa_sumiu %}{{ ico.i('alerta') }} arquivo não encontrado
+          {% else %}{{ ico.i('imagem') }} sem capa{% endif %}
+        </span>
+        {% endif %}
+      </div>
+      <div class="cp-capa-lado">
+        <strong>Capa</strong>
+        <p class="hint">A imagem do card no portfólio e a que vai no compartilhamento.
+          Ideal 1600 × 1200.</p>
+
+        <div class="cp-capa-bts">
+          <label class="cf-bt fino">{{ ico.i('upload') }}
+            <span data-capa-rotulo>{{ 'Alterar' if case and case.cover_image else 'Enviar' }} capa</span>
+            <input type="file" name="cover_image" accept="image/*" hidden data-capa-arquivo></label>
+
+          <label class="cf-bt fino">{{ ico.i('video') }}
+            <span data-video-rotulo>{{ 'Alterar' if case and case.cover_video else 'Enviar' }} vídeo</span>
+            <input type="file" name="cover_video" accept="video/*" hidden data-video-arquivo></label>
+
+          {% if case and case.cover_image %}
+          <label class="cf-pill perigo">
+            <input type="checkbox" name="capa_limpar" value="1" data-capa-limpar>
+            {{ ico.i('lixeira') }} <span>Excluir capa</span></label>
+          {% endif %}
+
+          {% if case and case.cover_video %}
+          <label class="cf-pill perigo">
+            <input type="checkbox" name="video_limpar" value="1">
+            {{ ico.i('lixeira') }} <span>Excluir vídeo</span></label>
+          {% endif %}
+        </div>
+
+        {# preenchido pelo script ao escolher arquivo; sem JavaScript fica vazio
+           e o resto da tela não muda #}
+        <p class="hint cp-capa-info" data-capa-info hidden></p>
+
+        {% if case and case.cover_video %}
+        <p class="hint">Vídeo no hover: <code>{{ case.cover_video.rsplit('/', 1)[-1] }}</code></p>
+        {% endif %}
+      </div>
+    </div>
+
+    <header class="cp-topo">
+      <div>
+        <h2>{{ ico.i('galeria') }} A página do case</h2>
+        <p class="hint">Monte na ordem que a história pede. Arraste pela alça para
+          reordenar, ou solte arquivos em qualquer lugar desta área.</p>
+      </div>
+      <span class="cp-conta mono-label" data-cp-conta>0 blocos</span>
+    </header>
+
+    <div class="cp-paleta" role="group" aria-label="Adicionar bloco">
+      {% for chave, dados in catalogo.items() %}
+      <button type="button" class="cp-add" data-add="{{ chave }}" title="{{ dados[2] }}">
+        {{ ico.i(dados[1]) }}<span>{{ dados[0] }}</span>
+      </button>
+      {% endfor %}
+    </div>
+
+    <div class="cp-lista" data-cp-lista></div>
+
+    <div class="cp-solte" data-cp-solte>
+      {{ ico.i('upload') }}
+      <strong>Solte fotos, vídeos ou áudios aqui</strong>
+      <span>ou <button type="button" class="linklike" data-cp-escolher>escolha do computador</button>.
+        Cada arquivo vira um bloco no fim da página.</span>
+      <input type="file" multiple hidden data-cp-arquivos accept="image/*,video/*,audio/*">
+    </div>
+
+    {% if not case %}
+    <p class="hint cp-aviso">Salve o case uma vez para poder enviar arquivos. Os blocos de
+      texto, ficha, números, citação e hashtags já podem ser montados agora.</p>
+    {% endif %}
+
+    {# banco de desenhos: o compositor clona daqui em vez de carregar SVG no JS #}
+    <div class="cp-icones" hidden aria-hidden="true">
+      {% for n in ['arrasta','sobe-um','desce-um','copia','lixeira','recolher','elo','barras'] %}{{ ico.i(n) }}{% endfor %}
+    </div>
+
+    <input type="hidden" name="blocos" data-cp-json value="{{ blocos_json }}">
+    <script type="application/json" data-cp-inicial>{{ blocos_iniciais | tojson }}</script>
+  </section>
+
+  {# ---------- publicação: pílulas, não caixas ---------- #}
+  <div class="cf-publicar">
+    <label class="cf-pill"><input type="checkbox" name="published" {% if case and case.published %}checked{% endif %}>
+      {{ ico.i('olho') }} <span>No ar</span></label>
+    <label class="cf-pill" data-cf-comum><input type="checkbox" name="featured" {% if case and case.featured %}checked{% endif %}>
+      {{ ico.i('estrela') }} <span>Destaque na home</span></label>
+    <label class="cf-mini cf-estreito" data-cf-comum><span>{{ ico.i('ordenar') }} Ordem no destaque</span>
+      <input type="number" name="destaque_ordem" step="1"
+             value="{{ case.destaque_ordem if case else 999 }}"
+             title="Menor número aparece primeiro entre os destaques da home."></label>
+    <label class="cf-pill" data-cf-comum><input type="checkbox" name="ig_publish" {% if case and case.ig_publish %}checked{% endif %}>
+      {{ ico.i('instagram') }} <span>Publicar no Instagram junto</span></label>
+    <label class="cf-pill"><input type="checkbox" name="noindex" {% if case and case.noindex %}checked{% endif %}>
+      {{ ico.i('olho-off') }} <span>Fora do Google</span></label>
+
+    {% if case and case.archived %}
+    <p class="hint">Arquivado. Para voltar ao ar, desarquive na
+      <a class="linklike" href="/admin/cases/lista?estado=arquivados">lista</a>.</p>
+    {% endif %}
+    <p class="hint" data-cf-site>Site não entra no destaque da home nem no Instagram: o clique
+      vai direto para o endereço do cliente.</p>
+  </div>
+
+  {#
+    Google e compartilhamento, sem campo nenhum.
+
+    O título, a descrição e a imagem saem do próprio case ao salvar. Preencher
+    isso à mão era trabalho duplicado que, na prática, ficava vazio ou repetia
+    o que já estava escrito duas linhas acima.
+  #}
+  <div class="cf-google" data-cf-google>
+    <span class="mono-label dim">{{ ico.i('busca') }} Como aparece no Google e ao compartilhar
+      <i>·︎ preenchido sozinho ao salvar</i></span>
+    <div class="cf-serp">
+      <span class="cf-serp-url">leandrofurtado.com.br ›︎ case ›︎ <b data-serp-slug>{{ case.slug if case else '...' }}</b></span>
+      <strong class="cf-serp-titulo" data-serp-titulo>{{ case.seo_title or case.title_pt if case else 'Título do case' }}</strong>
+      <span class="cf-serp-desc" data-serp-desc>{{ case.seo_desc or case.subtitle_pt if case else 'A descrição sai do subtítulo, ou das primeiras palavras do resumo.' }}</span>
+    </div>
+  </div>
+</form>
+
+{% if case %}
+<div class="cf-perigo">
+  <form method="post" action="/admin/cases/{{ case.id }}/arquivar">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button class="cf-bt fino" type="submit">{{ ico.i('desarquivar' if case.archived else 'caixa') }} <span>{{ 'Desarquivar' if case.archived else 'Arquivar' }}</span></button>
+  </form>
+  <form method="post" action="/admin/cases/{{ case.id }}/duplicar">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button class="cf-bt fino" type="submit">{{ ico.i('copia') }} <span>Duplicar</span></button>
+  </form>
+  <form method="post" action="/admin/cases/{{ case.id }}/delete"
+        onsubmit='return confirm({{ ("Excluir " ~ case.title_pt ~ " de vez? Arquivar tira do ar sem apagar.") | tojson }})'>
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <button class="cf-bt fino perigo" type="submit">{{ ico.i('lixeira') }} <span>Excluir</span></button>
+  </form>
+</div>
+{% endif %}
+
+<script>
+/* A tela se ajusta ao tipo de trabalho: escolher "Sites" esconde resumo, capa,
+   compositor e Instagram e mostra o endereço; qualquer outra faz o inverso. */
+(function () {
+  var form = document.getElementById("formCase");
+  var sel = document.getElementById("cfCategoria");
+  var dica = document.getElementById("cfDica");
+  if (!form || !sel) return;
+
+  function ajustar() {
+    var op = sel.options[sel.selectedIndex];
+    var ehSite = op && op.getAttribute("data-kind") === "sites";
+    form.querySelectorAll("[data-cf-site]").forEach(function (el) { el.hidden = !ehSite; });
+    form.querySelectorAll("[data-cf-comum]").forEach(function (el) { el.hidden = ehSite; });
+    var url = form.querySelector("[name=site_url]");
+    if (url) url.required = ehSite;
+    dica.innerHTML = ehSite
+      ? "Este case não terá página própria. O clique vai direto ao endereço do cliente e a "
+        + "prévia é capturada de lá. <a class='linklike' href='/admin/cases/categorias'>Categorias</a>."
+      : "A categoria decide como o case aparece no portfólio. "
+        + "<a class='linklike' href='/admin/cases/categorias'>Gerenciar categorias</a>.";
+  }
+  sel.addEventListener("change", ajustar);
+  ajustar();
+
+  // pílulas de ferramenta: o checkbox é escondido, a classe conta o estado
+  form.querySelectorAll(".cf-prog input").forEach(function (cx) {
+    cx.addEventListener("change", function () {
+      cx.closest(".cf-prog").classList.toggle("on", cx.checked);
+    });
+  });
+
+  var botao = document.getElementById("cfNovoCliente");
+  var caixa = document.getElementById("cfClienteNovo");
+  if (botao && caixa) {
+    botao.addEventListener("click", function () {
+      caixa.hidden = !caixa.hidden;
+      if (!caixa.hidden) caixa.querySelector("input").focus();
+    });
+  }
+
+  /* "Publicar" é o mesmo formulário: marca o campo e envia, para não existir
+     um botão que promete publicar e uma caixinha que decide o contrário */
+  form.querySelector(".cf-bt.publicar").addEventListener("click", function () {
+    var caixa = form.querySelector("[name=published]");
+    if (caixa) caixa.checked = true;
+  });
+
+  /* prévia do Google ao vivo: o que vai ser gravado, aparecendo enquanto escreve */
+  var titulo = form.querySelector("[name=title_pt]");
+  var sub = form.querySelector("[name=subtitle_pt]");
+  var corpo = form.querySelector("[name=body_pt]");
+  var vt = document.querySelector("[data-serp-titulo]");
+  var vd = document.querySelector("[data-serp-desc]");
+  var vs = document.querySelector("[data-serp-slug]");
+  function serp() {
+    var t = (titulo.value || "").trim();
+    var d = (sub.value || "").trim() ||
+      (corpo && corpo.value || "").replace(/[#*_>\-]/g, " ").replace(/\s+/g, " ").trim().slice(0, 155);
+    vt.textContent = t || "Título do case";
+    vd.textContent = d || "A descrição sai do subtítulo, ou das primeiras palavras do resumo.";
+    if (vs && !vs.textContent.trim().length || vs.textContent === "...") {
+      vs.textContent = t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "...";
+    }
+    vt.classList.toggle("longo", t.length > 60);
+    vd.classList.toggle("longo", d.length > 155);
+  }
+  [titulo, sub, corpo].forEach(function (c) { if (c) c.addEventListener("input", serp); });
+  serp();
+})();
+</script>
+<script src="/static/js/compositor.js?v={{ asset_v }}" defer></script>
+{% endblock %}

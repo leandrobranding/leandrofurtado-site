@@ -1,0 +1,98 @@
+{% extends "admin/base.html" %}
+{% block title %}Contatos{% endblock %}
+{% block content %}
+<header class="panel-head">
+  <h1>Contatos <small>{{ total_leads }} lead{{ 's' if total_leads != 1 }} ·︎ {{ subs | length }} assinante{{ 's' if subs | length != 1 }}</small></h1>
+</header>
+
+{% include "admin/_nl_nav.html" %}
+
+<div class="abas">
+  <a href="?aba=leads" class="{% if aba == 'leads' %}on{% endif %}">Leads <b>{{ leads | length }}</b></a>
+  <a href="?aba=clientes" class="{% if aba == 'clientes' %}on{% endif %}">Clientes <b>{{ clientes | length }}</b></a>
+  <a href="?aba=assinantes" class="{% if aba == 'assinantes' %}on{% endif %}">Só newsletter <b>{{ so_newsletter | length }}</b></a>
+</div>
+
+{% macro linha_lead(l, aba_atual) %}
+<li class="ct-row">
+  <div class="ct-col ct-quem">
+    <strong>{{ l.name }}</strong>
+    <a href="mailto:{{ l.email }}">{{ l.email }}</a>
+  </div>
+  <div class="ct-col">
+    <span class="ct-rot">WhatsApp</span>
+    {% if l.whatsapp %}
+    <a href="https://wa.me/{{ l.whatsapp | replace('+','') | replace(' ','') | replace('-','') | replace('(','') | replace(')','') }}" target="_blank" rel="noopener">{{ l.whatsapp }}</a>
+    {% else %}<span class="dim">—</span>{% endif %}
+  </div>
+  <div class="ct-col">
+    <span class="ct-rot">Origem</span>
+    <span>{{ l.source }} ·︎ {{ l.lang | upper }}</span>
+  </div>
+  <div class="ct-col">
+    <span class="ct-rot">IP</span>
+    <span class="mono">{{ l.ip or '—' }}</span>
+  </div>
+  <div class="ct-col">
+    <span class="ct-rot">Entrou em</span>
+    <time>{{ l.created_at | local | strftime_('%d/%m/%Y %H:%M') }}</time>
+  </div>
+  <div class="ct-col ct-acoes">
+    <span class="ct-rot">Situação</span>
+    <div class="ct-btns">
+      {% for st, rotulo in [('novo','Novo'), ('contatado','Contatado'), ('cliente','Cliente')] %}
+      <form method="post" action="/admin/newsletter/leads/{{ l.id }}/status">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <input type="hidden" name="status" value="{{ st }}">
+        <input type="hidden" name="aba" value="{{ aba_atual }}">
+        <button class="ct-chip {% if l.status == st %}on{% endif %}" type="submit">{{ rotulo }}</button>
+      </form>
+      {% endfor %}
+    </div>
+  </div>
+  {% if l.message %}
+  <details class="ct-msg"><summary>Mensagem e consentimento</summary>
+    <p>{{ l.message }}</p>
+    <p class="dim">{{ l.consent_text }}</p>
+    <p class="dim">Aceito em {{ l.consent_at | local | strftime_('%d/%m/%Y %H:%M') if l.consent_at else '—' }} ·︎ {{ l.user_agent[:100] or '—' }}</p>
+  </details>
+  {% endif %}
+</li>
+{% endmacro %}
+
+{% if aba == 'leads' %}
+  <p class="hint">Quem preencheu o formulário de contato e ainda não virou cliente. Marcar como <em>Cliente</em> move para a outra aba.</p>
+  {% if leads %}<ul class="ct-list">{% for l in leads %}{{ linha_lead(l, 'leads') }}{% endfor %}</ul>
+  {% else %}<div class="empty"><p>Nenhum lead ainda. Eles aparecem aqui assim que alguém enviar o formulário.</p></div>{% endif %}
+
+{% elif aba == 'clientes' %}
+  <p class="hint">Leads marcados como cliente. É desta lista que sai o público "Somente clientes" nas campanhas.</p>
+  {% if clientes %}<ul class="ct-list">{% for l in clientes %}{{ linha_lead(l, 'clientes') }}{% endfor %}</ul>
+  {% else %}<div class="empty"><p>Nenhum cliente ainda. Marque um lead como cliente para ele aparecer aqui.</p></div>{% endif %}
+
+{% else %}
+  <p class="hint">
+    Quem assinou só a newsletter, sem passar pelo formulário de contato. Esses têm apenas
+    e-mail, porque o cadastro não pede mais nada.
+  </p>
+  {% if so_newsletter %}
+  <ul class="ct-list">
+    {% for s in so_newsletter %}
+    <li class="ct-row">
+      <div class="ct-col ct-quem"><a href="mailto:{{ s.email }}">{{ s.email }}</a></div>
+      <div class="ct-col"><span class="ct-rot">Aceite</span>{% if s.consent %}<span class="badge pub">registrado</span>{% else %}<span class="badge">antigo</span>{% endif %}</div>
+      <div class="ct-col"><span class="ct-rot">IP</span><span class="mono">{{ s.ip or '—' }}</span></div>
+      <div class="ct-col"><span class="ct-rot">Idioma</span><span>{{ (s.lang or 'pt') | upper }}</span></div>
+      <div class="ct-col"><span class="ct-rot">Assinou em</span><time>{{ s.created_at | local | strftime_('%d/%m/%Y %H:%M') }}</time></div>
+      <div class="ct-col ct-acoes">
+        <form method="post" action="/admin/newsletter/subs/{{ s.id }}/excluir" onsubmit='return confirm({{ ("Remover " ~ s.email ~ " da lista?") | tojson }})'>
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button class="btn danger" type="submit">Remover</button>
+        </form>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<div class="empty"><p>Ninguém assinou só a newsletter ainda.</p></div>{% endif %}
+{% endif %}
+{% endblock %}

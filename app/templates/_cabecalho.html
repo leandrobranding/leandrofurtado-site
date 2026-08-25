@@ -1,0 +1,84 @@
+{#
+  Cabeçalho do site — parcial único, reusado tal e qual pelo site inteiro
+  (base.html) e pela moldura do Lab (lab/vitrine.html, lab/_base_demo.html),
+  rodada de 20/08 (dono, verbatim: "Isso serve para o cabeçalho também, só
+  mudando a marca do lab: Minha marca | LAB"). MESMA marcação, MESMO CSS
+  (`.site-header`/`.brand`/`.site-nav`/`.nav-link` de app/static/css/
+  main.css), MESMA altura/espaçamento/comportamento em toda página — a
+  única diferença permitida é o parâmetro `moldura_lab` abaixo.
+
+  O site em produção não muda nada: `moldura_lab` ausente/False renderiza
+  bit a bit o mesmo `<header>` de sempre (PT/EN, "ver todo trabalho",
+  busca, hambúrguer).
+
+  Contexto opcional:
+    moldura_lab (bool) — True nas 3 páginas do Lab: troca PT/EN + busca +
+      "ver todo trabalho" + hambúrguer pela navegação das 3 demos + voltar
+      ao site (classes `.nav-link`, reaproveitadas do site — mesmo estado
+      ativo com "•︎" que o menu principal já usa), e acrescenta a logo do
+      Lab ("| LAB") ao lado da marca do Leandro, no padrão do badge do
+      Nodal: glifo 15px + wordmark 14px/600 + gap 8px, as MESMAS medidas
+      de `.foot-nodal-mark`/`.foot-nodal b`/`.foot-nodal { gap: 8px }` em
+      main.css (conferido na rodada de 20/08). CSS de
+      `.brand-lab-badge`/`.brand-lab-ic`/`.brand-lab-word`/`.brand-sep`/
+      `.lab-nav-voltar` (peças novas, sem equivalente no site) vive só em
+      app/static/lab/lab-moldura.css — nunca duplicado.
+    demo (str, opcional) — 'admita'|'notavel'|'caderneta' quando incluído
+      DENTRO de uma demo: marca o link correspondente como `.active`.
+#}
+<header class="site-header" id="top">
+  <a class="brand" href="{{ '/lab' if moldura_lab is defined and moldura_lab else lp('/') }}"
+     aria-label="{{ 'Lab de Demos, Leandro Furtado' if moldura_lab is defined and moldura_lab else 'Leandro Furtado, home' }}">
+    {#
+      Glifo do Leandro desenhado inline, sem chamar a macro `lfmark` de
+      base.html: este parcial precisa renderizar tanto de dentro de quem
+      estende base.html (vitrine) quanto de lab/_base_demo.html, que NÃO
+      estende (macros de base.html não ficam visíveis lá). Mesmo desenho,
+      byte a byte, do macro `lfmark` — ver app/templates/base.html.
+    #}
+    <svg viewBox="0 0 100 100" class="brand-mark" aria-hidden="true">
+      <polygon fill="currentColor" points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+      <polygon fill="currentColor" points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+      <polygon fill="currentColor" points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+    </svg>
+    <span class="brand-name">Leandro&nbsp;Furtado</span>
+    {% if moldura_lab is defined and moldura_lab %}
+    <span class="brand-sep" aria-hidden="true">|</span>
+    <span class="brand-lab-badge">
+      <svg viewBox="0 0 24 24" class="brand-lab-ic" aria-hidden="true">
+        <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"
+              d="M12 2 22 12 12 22 2 12 12 2Zm0 5.2L7.2 12 12 16.8 16.8 12 12 7.2Z"/>
+      </svg>
+      <span class="brand-lab-word">LAB</span>
+    </span>
+    {% endif %}
+  </a>
+  {% if moldura_lab is defined and moldura_lab %}
+  <nav class="site-nav" aria-label="demos do lab">
+    <a class="nav-link {{ 'active' if demo is defined and demo == 'admita' }}" href="/lab/admita">Admita</a>
+    {# Notável e Caderneta ainda não abriram: aparecem como aviso, não como
+       link, para ninguém cair numa tela vazia (decisão do dono no lançamento). #}
+    <span class="nav-link nav-link-breve" aria-disabled="true">Notável <i>em breve</i></span>
+    <span class="nav-link nav-link-breve" aria-disabled="true">Caderneta <i>em breve</i></span>
+    <a class="cta-pill cta-forte lab-nav-voltar" href="{{ '/' if pagina_lab_vitrine is defined and pagina_lab_vitrine else '/lab' }}"><svg class="lab-nav-x" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 3.5 12.5 12.5M12.5 3.5 3.5 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>{{ 'voltar ao site' if pagina_lab_vitrine is defined and pagina_lab_vitrine else 'fechar demonstração' }}</a>
+  </nav>
+  {% else %}
+  <nav class="site-nav" aria-label="principal">
+    <a class="lang-toggle" href="{{ ('/en' ~ (path if path != '/' else '')) if lang == 'pt' else path }}"
+       aria-label="{{ 'Mudar para inglês' if lang == 'pt' else 'Switch to Portuguese' }}">
+      <span class="{% if lang == 'pt' %}on{% endif %}">PT</span><i>/</i><span class="{% if lang == 'en' %}on{% endif %}">EN</span>
+    </a>
+    {#
+      O cabeçalho leva ao trabalho, não ao formulário. Quem chega quer ver o
+      portfólio primeiro; o convite para conversar já está no fim de toda
+      página, que é onde ele faz sentido.
+    #}
+    <a class="cta-pill cta-forte" href="{{ lp('/portfolio') }}">{{ t('see_all_work') }}</a>
+  </nav>
+  <button class="search-btn" type="button" aria-label="{{ t('search') }}" aria-expanded="false"
+          data-tip="{{ 'O que você procura hoje?' if lang == 'pt' else 'What are you looking for today?' }}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+  </button>
+  <button class="menu-btn" aria-label="{{ 'Abrir menu' if lang == 'pt' else 'Open menu' }}" aria-expanded="false"><span></span><span></span></button>
+  {% endif %}
+</header>

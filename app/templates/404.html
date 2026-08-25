@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block pageid %}notfound{% endblock %}
+{% block title %}404 ·︎ {{ site_name }}{% endblock %}
+{% block robots %}noindex{% endblock %}
+{% block jsonld %}{% endblock %}
+
+{% block content %}
+<section class="nf">
+  <h1 class="nf-code">404</h1>
+  <p class="nf-text">{{ t('not_found') }}</p>
+  <a class="cta-pill big" href="{{ lp('/') }}">{{ t('back_home') }} →︎</a>
+</section>
+{% endblock %}

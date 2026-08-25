@@ -1,0 +1,357 @@
+{#
+  Barra de acessibilidade. Incluída pelo base.html e, à mão, pela página de
+  construção, que não herda o base.
+
+  Os textos moram aqui e não no i18n.py de propósito: são rótulos de um único
+  componente, e mantê-los junto da marcação evita que a barra apareça pela
+  metade traduzida se um dia ela for copiada para outra página.
+#}
+{% set A = {
+  'titulo':        'Acessibilidade'                        if lang == 'pt' else 'Accessibility',
+  'abrir':         'Abrir recursos de acessibilidade'      if lang == 'pt' else 'Open accessibility tools',
+  'fechar':        'Fechar'                                if lang == 'pt' else 'Close',
+  'sub':           'Ajuste o site do jeito que você lê melhor. Fica salvo neste navegador.' if lang == 'pt' else 'Set the site up the way you read best. Saved in this browser.',
+  'g_libras':      'Língua de sinais'                      if lang == 'pt' else 'Sign language',
+  'g_leitura':     'Leitura'                               if lang == 'pt' else 'Reading',
+  'g_texto':       'Texto'                                 if lang == 'pt' else 'Text',
+  'g_cores':       'Cores'                                 if lang == 'pt' else 'Colour',
+  'g_nav':         'Navegação'                             if lang == 'pt' else 'Navigation',
+  'libras':        'Tradutor de Libras'                    if lang == 'pt' else 'Brazilian Sign Language',
+  'libras_sub':    'VLibras, o tradutor oficial do governo brasileiro' if lang == 'pt' else 'VLibras, the Brazilian government translator',
+  'libras_aviso':  'Carrega um avatar 3D de outro servidor (gov.br). A página recarrega uma vez.' if lang == 'pt' else 'Loads a 3D avatar from another server (gov.br). The page reloads once.',
+  'libras_carregando': 'Carregando o tradutor…'            if lang == 'pt' else 'Loading the translator…',
+  'dic':           'Sinônimos e significados'              if lang == 'pt' else 'Synonyms and meanings',
+  'dic_sub':       'Dê dois cliques em qualquer palavra'   if lang == 'pt' else 'Double-click any word',
+  'lupa':          'Lupa de conteúdo'                      if lang == 'pt' else 'Content magnifier',
+  'lupa_sub':      'O texto sob o cursor aparece ampliado' if lang == 'pt' else 'Text under the cursor shows enlarged',
+  'fonte':         'Tamanho da fonte'                      if lang == 'pt' else 'Font size',
+  'linhas':        'Espaço entre as linhas'                if lang == 'pt' else 'Line spacing',
+  'letras':        'Espaço entre as letras'                if lang == 'pt' else 'Letter spacing',
+  'contraste':     'Contraste de cores'                    if lang == 'pt' else 'Colour contrast',
+  'c_normal':      'Normal'                                if lang == 'pt' else 'Normal',
+  'c_alto':        'Fundo escuro'                          if lang == 'pt' else 'Dark background',
+  'c_invert':      'Fundo claro'                           if lang == 'pt' else 'Light background',
+  'c_sub':         'Preto e branco puros, sem fundo animado nem textura.' if lang == 'pt' else 'Pure black and white, no animated background or texture.',
+  'intensidade':   'Intensidade de cores'                  if lang == 'pt' else 'Colour intensity',
+  'i_cinza':       'Cinza'                                 if lang == 'pt' else 'Grey',
+  'i_suave':       'Suave'                                 if lang == 'pt' else 'Soft',
+  'i_normal':      'Normal'                                if lang == 'pt' else 'Normal',
+  'i_forte':       'Forte'                                 if lang == 'pt' else 'Strong',
+  'dalton':        'Modo daltônico'                        if lang == 'pt' else 'Colour blind mode',
+  'd_modo_c':      'Corrigir'                              if lang == 'pt' else 'Correct',
+  'd_modo_s':      'Simular'                               if lang == 'pt' else 'Simulate',
+  'd_nenhum':      'Desligado'                             if lang == 'pt' else 'Off',
+  'd_prot':        'Protanopia'                            if lang == 'pt' else 'Protanopia',
+  'd_deut':        'Deuteranopia'                          if lang == 'pt' else 'Deuteranopia',
+  'd_trit':        'Tritanopia'                            if lang == 'pt' else 'Tritanopia',
+  'd_sub':         'Corrigir separa as cores que se confundem. Simular mostra como a pessoa enxerga.' if lang == 'pt' else 'Correct separates confusable colours. Simulate shows how it is seen.',
+  'links':         'Destaque de links'                     if lang == 'pt' else 'Highlight links',
+  'links_sub':     'Sublinha e marca tudo que é clicável'  if lang == 'pt' else 'Underlines and marks everything clickable',
+  'estrutura':     'Estrutura da página'                   if lang == 'pt' else 'Page structure',
+  'estrutura_sub': 'Títulos, links e regiões, para ir direto' if lang == 'pt' else 'Headings, links and regions, to jump straight there',
+  'teclado':       'Navegação por teclado'                 if lang == 'pt' else 'Keyboard navigation',
+  'teclado_sub':   'Marca com um contorno grosso onde você está' if lang == 'pt' else 'Marks where you are with a thick outline',
+  'atalhos':       'Como andar pelo site sem o mouse'      if lang == 'pt' else 'Moving around without a mouse',
+  'k_tab':         'vai para o próximo link ou botão'      if lang == 'pt' else 'go to the next link or button',
+  'k_shift_tab':   'volta para o anterior'                 if lang == 'pt' else 'go back to the previous one',
+  'k_enter':       'abre o que está marcado'               if lang == 'pt' else 'open whatever is highlighted',
+  'k_esc':         'fecha o que estiver aberto'            if lang == 'pt' else 'close whatever is open',
+  'k_painel':      'abre e fecha esta barra'               if lang == 'pt' else 'open and close this bar',
+  'k_conteudo':    'pula direto para o conteúdo'           if lang == 'pt' else 'jump straight to the content',
+  'k_mac':         'No Mac, a tecla é a Option, do lado da barra de espaço.' if lang == 'pt' else 'On a Mac this is the Option key, next to the space bar.',
+  'k_win':         'A tecla Alt fica dos dois lados da barra de espaço.' if lang == 'pt' else 'The Alt key sits on both sides of the space bar.',
+  'titulos':       'Títulos'                               if lang == 'pt' else 'Headings',
+  'links_n':       'Links'                                 if lang == 'pt' else 'Links',
+  'regioes':       'Regiões'                               if lang == 'pt' else 'Regions',
+  'nada':          'Nada encontrado nesta página.'         if lang == 'pt' else 'Nothing found on this page.',
+  'restaurar':     'Restaurar tudo'                        if lang == 'pt' else 'Reset everything',
+  'ligado':        'ligado'                                if lang == 'pt' else 'on',
+  'desligado':     'desligado'                             if lang == 'pt' else 'off',
+  'pular':         'Pular para o conteúdo'                 if lang == 'pt' else 'Skip to content',
+  'buscando':      'Buscando…'                             if lang == 'pt' else 'Looking up…',
+  'sem_verbete':   'Não achei essa palavra no dicionário.' if lang == 'pt' else 'I could not find that word.',
+  'sinonimos':     'Sinônimos'                             if lang == 'pt' else 'Synonyms',
+  'ouvir':         'Ouvir a palavra'                       if lang == 'pt' else 'Hear the word',
+  'menos':         'Diminuir'                              if lang == 'pt' else 'Decrease',
+  'mais':          'Aumentar'                              if lang == 'pt' else 'Increase'
+} %}
+
+<a class="a11y-pular" href="#main">{{ A.pular }}</a>
+
+<div class="a11y" data-lang="{{ lang }}">
+
+  {# a barra: fina, translúcida, sempre acessível #}
+  <div class="a11y-bar">
+    <div class="a11y-bar-in">
+      <button type="button" class="a11y-trigger" aria-expanded="false" aria-controls="a11yPainel"
+              title="{{ A.abrir }} (Alt + A)">
+        <svg viewBox="0 0 24 24" aria-hidden="true" class="a11y-ic-main">
+          <circle cx="12" cy="12" r="10.2" fill="none" stroke="currentColor" stroke-width="1.4"/>
+          <circle cx="12" cy="6.4" r="1.5" fill="currentColor"/>
+          <path d="M5.6 9.2h12.8M12 9.6v4.2m0 0-2.6 5.4M12 13.8l2.6 5.4" fill="none"
+                stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span>{{ A.titulo }}</span>
+      </button>
+
+      {# atalhos diretos, para quem já sabe o que quer #}
+      <div class="a11y-quick" role="group" aria-label="{{ A.titulo }}">
+        <button type="button" data-a11y-quick="libras"    title="{{ A.libras }}"><span>LIBRAS</span></button>
+        <button type="button" data-a11y-quick="fonte"     title="{{ A.fonte }}"><span aria-hidden="true">A+</span></button>
+        <button type="button" data-a11y-quick="contraste" title="{{ A.contraste }}"><span>{{ A.contraste }}</span></button>
+      </div>
+
+      {#
+        Idioma na barra, só no celular. Lá o rodapé precisa de cada linha, e a
+        barra já está fixa no topo e sempre à mão. No desktop o PT/EN continua
+        no cabeçalho, onde sempre esteve.
+      #}
+      <span class="a11y-lang" role="group" aria-label="{{ 'Idioma' if lang == 'pt' else 'Language' }}">
+        <a href="{{ path if path != '/' else '/' }}" class="{{ 'on' if lang == 'pt' }}"
+           hreflang="pt-BR" aria-current="{{ 'true' if lang == 'pt' else 'false' }}">PT</a>
+        <i aria-hidden="true">/</i>
+        <a href="/en{{ path if path != '/' else '/' }}" class="{{ 'on' if lang == 'en' }}"
+           hreflang="en" aria-current="{{ 'true' if lang == 'en' else 'false' }}">EN</a>
+      </span>
+
+      <span class="a11y-kbd" aria-hidden="true">ALT&nbsp;+&nbsp;A</span>
+    </div>
+  </div>
+
+  {# o painel #}
+  <div class="a11y-painel" id="a11yPainel" role="dialog" aria-modal="false"
+       aria-labelledby="a11yTit" hidden>
+    <div class="a11y-p-head">
+      <div>
+        <h2 id="a11yTit">{{ A.titulo }}</h2>
+        <p>{{ A.sub }}</p>
+      </div>
+      <button type="button" class="a11y-x" aria-label="{{ A.fechar }}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" fill="none"
+             stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="a11y-p-corpo">
+
+      <section class="a11y-grupo">
+        <h3>{{ A.g_libras }}</h3>
+        <button type="button" class="a11y-item" data-a11y-alterna="libras" aria-pressed="false">
+          <span class="a11y-item-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M8.5 12.4V4.9a1.3 1.3 0 0 1 2.6 0v6.1"/><path d="M11.1 10.9V3.9a1.3 1.3 0 0 1 2.6 0v7"/>
+              <path d="M13.7 11.2V5.6a1.3 1.3 0 0 1 2.6 0v7.6"/>
+              <path d="M16.3 11.6c0-1 .6-1.7 1.5-1.7s1.4.7 1.4 1.7v3.1c0 3-2.3 5.4-5.2 5.4h-1.6c-2.2 0-3.4-1-4.6-2.7l-2.3-3.3a1.4 1.4 0 0 1 .4-2c.7-.4 1.5-.2 2 .4l1.6 2"/>
+            </svg>
+          </span>
+          <span class="a11y-item-txt">
+            <b>{{ A.libras }}</b>
+            <em>{{ A.libras_sub }}</em>
+          </span>
+          <span class="a11y-chave" aria-hidden="true"></span>
+        </button>
+        <p class="a11y-nota">{{ A.libras_aviso }}</p>
+      </section>
+
+      <section class="a11y-grupo">
+        <h3>{{ A.g_leitura }}</h3>
+
+        <button type="button" class="a11y-item" data-a11y-alterna="dic" aria-pressed="false">
+          <span class="a11y-item-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 5.2h5.4c1.4 0 2.6 1.1 2.6 2.5v11c0-1.1-1-2-2.2-2H4V5.2z"/>
+              <path d="M20 5.2h-5.4c-1.4 0-2.6 1.1-2.6 2.5v11c0-1.1 1-2 2.2-2H20V5.2z"/>
+            </svg>
+          </span>
+          <span class="a11y-item-txt"><b>{{ A.dic }}</b><em>{{ A.dic_sub }}</em></span>
+          <span class="a11y-chave" aria-hidden="true"></span>
+        </button>
+
+        <button type="button" class="a11y-item" data-a11y-alterna="lupa" aria-pressed="false">
+          <span class="a11y-item-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <circle cx="10.6" cy="10.6" r="6.4"/><path d="M15.3 15.3 20 20"/><path d="M8 10.6h5.2M10.6 8v5.2"/>
+            </svg>
+          </span>
+          <span class="a11y-item-txt"><b>{{ A.lupa }}</b><em>{{ A.lupa_sub }}</em></span>
+          <span class="a11y-chave" aria-hidden="true"></span>
+        </button>
+      </section>
+
+      <section class="a11y-grupo">
+        <h3>{{ A.g_texto }}</h3>
+        <div class="a11y-passo" data-a11y-passo="fonte" data-min="0" data-max="2">
+          <span class="a11y-passo-nome">{{ A.fonte }}<em data-valor></em></span>
+          <button type="button" data-passo="-" aria-label="{{ A.menos }}">−︎</button>
+          <span class="a11y-pontos" aria-hidden="true"></span>
+          <button type="button" data-passo="+" aria-label="{{ A.mais }}">+</button>
+        </div>
+        <div class="a11y-passo" data-a11y-passo="linhas" data-min="0" data-max="2">
+          <span class="a11y-passo-nome">{{ A.linhas }}<em data-valor></em></span>
+          <button type="button" data-passo="-" aria-label="{{ A.menos }}">−︎</button>
+          <span class="a11y-pontos" aria-hidden="true"></span>
+          <button type="button" data-passo="+" aria-label="{{ A.mais }}">+</button>
+        </div>
+        <div class="a11y-passo" data-a11y-passo="letras" data-min="0" data-max="2">
+          <span class="a11y-passo-nome">{{ A.letras }}<em data-valor></em></span>
+          <button type="button" data-passo="-" aria-label="{{ A.menos }}">−︎</button>
+          <span class="a11y-pontos" aria-hidden="true"></span>
+          <button type="button" data-passo="+" aria-label="{{ A.mais }}">+</button>
+        </div>
+      </section>
+
+      <section class="a11y-grupo">
+        <h3>{{ A.g_cores }}</h3>
+        <div class="a11y-opcoes" data-a11y-opcoes="contraste" role="radiogroup" aria-label="{{ A.contraste }}">
+          <span class="a11y-passo-nome">{{ A.contraste }}</span>
+          <div>
+            <button type="button" role="radio" value="0" aria-checked="true">{{ A.c_normal }}</button>
+            <button type="button" role="radio" value="1" aria-checked="false">{{ A.c_alto }}</button>
+            <button type="button" role="radio" value="2" aria-checked="false">{{ A.c_invert }}</button>
+          </div>
+        </div>
+        <div class="a11y-opcoes" data-a11y-opcoes="satur" role="radiogroup" aria-label="{{ A.intensidade }}">
+          <span class="a11y-passo-nome">{{ A.intensidade }}</span>
+          <div>
+            <button type="button" role="radio" value="0" aria-checked="false">{{ A.i_cinza }}</button>
+            <button type="button" role="radio" value="50" aria-checked="false">{{ A.i_suave }}</button>
+            <button type="button" role="radio" value="100" aria-checked="true">{{ A.i_normal }}</button>
+            <button type="button" role="radio" value="160" aria-checked="false">{{ A.i_forte }}</button>
+          </div>
+        </div>
+        <div class="a11y-opcoes" data-a11y-opcoes="dalton" role="radiogroup" aria-label="{{ A.dalton }}">
+          <span class="a11y-passo-nome">{{ A.dalton }}</span>
+          <div>
+            <button type="button" role="radio" value="" aria-checked="true">{{ A.d_nenhum }}</button>
+            <button type="button" role="radio" value="prot" aria-checked="false">{{ A.d_prot }}</button>
+            <button type="button" role="radio" value="deut" aria-checked="false">{{ A.d_deut }}</button>
+            <button type="button" role="radio" value="trit" aria-checked="false">{{ A.d_trit }}</button>
+          </div>
+        </div>
+        <div class="a11y-opcoes a11y-sub" data-a11y-opcoes="daltmodo" data-a11y-sub="dalton"
+             role="radiogroup" aria-label="{{ A.dalton }}" hidden>
+          <span class="a11y-passo-nome">{{ A.d_modo_c }} / {{ A.d_modo_s }}</span>
+          <div>
+            <button type="button" role="radio" value="corrigir" aria-checked="true">{{ A.d_modo_c }}</button>
+            <button type="button" role="radio" value="simular" aria-checked="false">{{ A.d_modo_s }}</button>
+          </div>
+        </div>
+        <p class="a11y-nota">{{ A.c_sub }}<br>{{ A.d_sub }}</p>
+      </section>
+
+      <section class="a11y-grupo">
+        <h3>{{ A.g_nav }}</h3>
+
+        <button type="button" class="a11y-item" data-a11y-alterna="links" aria-pressed="false">
+          <span class="a11y-item-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <path d="M10.2 13.8a3.6 3.6 0 0 0 5.1 0l2.8-2.8a3.6 3.6 0 0 0-5.1-5.1l-1.2 1.2"/>
+              <path d="M13.8 10.2a3.6 3.6 0 0 0-5.1 0l-2.8 2.8a3.6 3.6 0 0 0 5.1 5.1l1.2-1.2"/>
+            </svg>
+          </span>
+          <span class="a11y-item-txt"><b>{{ A.links }}</b><em>{{ A.links_sub }}</em></span>
+          <span class="a11y-chave" aria-hidden="true"></span>
+        </button>
+
+        <button type="button" class="a11y-item" data-a11y-alterna="estrutura" aria-pressed="false">
+          <span class="a11y-item-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <path d="M4 5.6h16M4 10.4h11M4 15.2h16M4 20h8"/>
+            </svg>
+          </span>
+          <span class="a11y-item-txt"><b>{{ A.estrutura }}</b><em>{{ A.estrutura_sub }}</em></span>
+          <span class="a11y-chave" aria-hidden="true"></span>
+        </button>
+
+        <div class="a11y-sub" data-a11y-sub="estrutura" hidden>
+          <div class="a11y-abas" role="tablist">
+            <button type="button" role="tab" data-aba="h" aria-selected="true">{{ A.titulos }}</button>
+            <button type="button" role="tab" data-aba="a" aria-selected="false">{{ A.links_n }}</button>
+            <button type="button" role="tab" data-aba="r" aria-selected="false">{{ A.regioes }}</button>
+          </div>
+          <ul class="a11y-mapa" data-a11y-mapa></ul>
+        </div>
+
+        <button type="button" class="a11y-item" data-a11y-alterna="teclado" aria-pressed="false">
+          <span class="a11y-item-ic">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <rect x="2.6" y="6.2" width="18.8" height="11.6" rx="2"/>
+              <path d="M6.2 9.6h.01M9.4 9.6h.01M12.6 9.6h.01M15.8 9.6h.01M18 9.6h.01M6.2 12.8h.01M9.4 12.8h.01M12.6 12.8h.01M15.8 12.8h.01M18 12.8h.01M8 15.6h8"/>
+            </svg>
+          </span>
+          <span class="a11y-item-txt"><b>{{ A.teclado }}</b><em>{{ A.teclado_sub }}</em></span>
+          <span class="a11y-chave" aria-hidden="true"></span>
+        </button>
+
+        {# A lista fica sempre visível: quem precisa dela não sabe que precisa. #}
+        <div class="a11y-sub a11y-atalhos">
+          <span class="a11y-atalhos-h">{{ A.atalhos }}</span>
+          <dl>
+            <dt><kbd>Tab</kbd></dt><dd>{{ A.k_tab }}</dd>
+            <dt><kbd>Shift</kbd><kbd>Tab</kbd></dt><dd>{{ A.k_shift_tab }}</dd>
+            <dt><kbd data-tecla-enter>Enter</kbd></dt><dd>{{ A.k_enter }}</dd>
+            <dt><kbd>Esc</kbd></dt><dd>{{ A.k_esc }}</dd>
+            <dt><kbd data-tecla-mod>Alt</kbd><kbd>A</kbd></dt><dd>{{ A.k_painel }}</dd>
+            <dt><kbd data-tecla-mod>Alt</kbd><kbd>C</kbd></dt><dd>{{ A.k_conteudo }}</dd>
+          </dl>
+          <p class="a11y-nota" data-tecla-dica></p>
+        </div>
+      </section>
+    </div>
+
+    <div class="a11y-p-pe">
+      <button type="button" class="a11y-reset">{{ A.restaurar }}</button>
+      <span class="a11y-marca" aria-hidden="true">// Leandro Furtado</span>
+    </div>
+  </div>
+
+  {# lupa: o texto sob o cursor, grande, numa faixa no rodapé #}
+  <div class="a11y-lupa" data-a11y-lupa hidden aria-hidden="true"><span></span></div>
+
+  {# verbete do dicionário #}
+  <div class="a11y-verbete" data-a11y-verbete hidden role="dialog" aria-live="polite"></div>
+</div>
+
+{# VLibras precisa exatamente destes três nós no documento #}
+<div vw class="enabled" data-a11y-vw hidden>
+  <div vw-access-button class="active"></div>
+  <div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div>
+</div>
+
+{#
+  Filtros de daltonismo. Corrigir usa daltonização de verdade: simula a visão,
+  mede o que se perdeu e devolve essa diferença nos canais que a pessoa enxerga,
+  em vez de só torcer o matiz.
+#}
+<svg class="a11y-filtros" aria-hidden="true" focusable="false" width="0" height="0">
+  <defs>
+    {% for id, m in [
+      ('prot', '0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0'),
+      ('deut', '0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0'),
+      ('trit', '0.95 0.05 0 0 0  0 0.433 0.567 0 0  0 0.475 0.525 0 0  0 0 0 1 0')
+    ] %}
+    <filter id="a11y-sim-{{ id }}" color-interpolation-filters="linearRGB">
+      <feColorMatrix type="matrix" values="{{ m }}"/>
+    </filter>
+    <filter id="a11y-cor-{{ id }}" color-interpolation-filters="linearRGB">
+      <feColorMatrix type="matrix" values="{{ m }}" result="sim"/>
+      <feComposite in="SourceGraphic" in2="sim" operator="arithmetic"
+                   k1="0" k2="1" k3="-1" k4="0" result="perdido"/>
+      <feColorMatrix in="perdido" type="matrix" result="devolvido"
+                     values="0 0 0 0 0   0.7 1 0 0 0   0.7 0 1 0 0   0 0 0 0 0"/>
+      <feComposite in="SourceGraphic" in2="devolvido" operator="arithmetic"
+                   k1="0" k2="1" k3="1" k4="0"/>
+    </filter>
+{#
+  Filtros de daltonismo. Só simulação: a matriz reproduz o que cada tipo deixa
+  de distinguir. Existiam também filtros de correção, que devolviam a diferença
+  perdida nos canais visíveis; saíram junto com o botão que os ligava, e não
+  ficam aqui parados sendo enviados em toda página sem ninguém usar.
+#}    {% endfor %}
+  </defs>
+</svg>
+
+{# a11y.css sai daqui: agora está no <head> (base.html e construction.html),
+   em paralelo com main.css. Ficar aqui, dentro do body, atrasava a descoberta
+   do link e custava ~610ms extras na cadeia crítica mobile. #}
+<script src="/static/js/a11y.js?v={{ asset_v }}" defer></script>

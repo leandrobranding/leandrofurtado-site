@@ -1,0 +1,78 @@
+{% extends "admin/base.html" %}
+{% block title %}Notificações{% endblock %}
+{% block content %}
+{% import "admin/_ico.html" as ico %}
+<header class="panel-head">
+  <h1>Notificações <small>{{ total }} registro{{ 's' if total != 1 }}</small></h1>
+  <div class="head-actions">
+    {% if avisos_nao_lidos %}
+    <form method="post" action="/admin/avisos/lidas">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn" type="submit">{{ ico.i('checar') }} Marcar todas como lidas</button>
+    </form>
+    {% endif %}
+    {% if total %}
+    <form method="post" action="/admin/avisos/limpar"
+          onsubmit="return confirm('Apagar todo o histórico de notificações?')">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <button class="btn ghost danger" type="submit">{{ ico.i('lixeira') }} Limpar histórico</button>
+    </form>
+    {% endif %}
+  </div>
+</header>
+
+{# Origem primeiro: "alguém falou comigo" e "eu mexi em algo" são perguntas
+   diferentes, e é por elas que se começa a procurar. #}
+<div class="cs-abas" role="tablist">
+  <a role="tab" aria-selected="{{ 'true' if not f.origem else 'false' }}" href="/admin/avisos">
+    Tudo{% if total %} <b>{{ total }}</b>{% endif %}</a>
+  <a role="tab" aria-selected="{{ 'true' if f.origem == 'site' else 'false' }}" href="/admin/avisos?origem=site">
+    Veio do site{% if contagens.site %} <b>{{ contagens.site }}</b>{% endif %}</a>
+  <a role="tab" aria-selected="{{ 'true' if f.origem == 'painel' else 'false' }}" href="/admin/avisos?origem=painel">
+    Feito no painel{% if contagens.painel %} <b>{{ contagens.painel }}</b>{% endif %}</a>
+</div>
+
+<form class="cs-filtros" method="get" action="/admin/avisos">
+  {% if f.origem %}<input type="hidden" name="origem" value="{{ f.origem }}">{% endif %}
+  <select name="area" aria-label="Área" onchange="this.form.submit()">
+    <option value="">Todas as áreas</option>
+    {% for chave, par in areas.items() %}
+    <option value="{{ chave }}" {% if f.area == chave %}selected{% endif %}>{{ par[0] }}</option>
+    {% endfor %}
+  </select>
+  {% if f.area or f.origem %}<a class="btn ghost" href="/admin/avisos">Limpar</a>{% endif %}
+</form>
+
+{% if dias %}
+{% for dia, itens in dias %}
+<section class="av-dia">
+  <h2>{{ dia }}</h2>
+  <ul class="av-lista">
+    {% for a in itens %}
+    <li class="av-item {{ 'nova' if not a.lida }}{{ ' do-site' if a.do_site }}">
+      <span class="av-verbo">{{ a.verbo }}</span>
+      <div class="av-corpo">
+        <strong>{{ a.titulo }}</strong>
+        <span>{{ areas.get(a.area, [a.area])[0] }}{% if a.detalhe %} ·︎ {{ a.detalhe }}{% endif %}</span>
+      </div>
+      <div class="av-lado">
+        <time>{{ a.created_at | local | strftime_('%H:%M') }}</time>
+        {% if a.url %}<a class="btn ghost sm" href="{{ a.url }}">{{ ico.i('externo') }} Abrir</a>{% endif %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endfor %}
+{% else %}
+<p class="hint cs-vazio">
+  {% if f.area or f.origem %}
+  Nada com esse filtro. <a class="linklike" href="/admin/avisos">Ver tudo</a>.
+  {% else %}
+  Nada registrado ainda. A partir de agora, tudo que você criar, editar, publicar,
+  arquivar ou excluir aparece aqui, junto com o que chegar pelo site: contato,
+  inscrição na newsletter e comentário em case.
+  {% endif %}
+</p>
+{% endif %}
+{% endblock %}

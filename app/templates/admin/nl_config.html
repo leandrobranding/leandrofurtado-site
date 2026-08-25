@@ -1,0 +1,73 @@
+{% extends "admin/base.html" %}
+{% block title %}Configurações de e-mail{% endblock %}
+{% block content %}
+{% set q = request.query_params %}
+<header class="panel-head">
+  <h1>Configurações de e-mail</h1>
+</header>
+
+{% include "admin/_nl_nav.html" %}
+
+{% if q.get('salvo') %}<div class="flash ok">Configurações salvas.</div>{% endif %}
+{% if q.get('teste') %}<div class="flash ok">E-mail de teste enviado. Confira a caixa de entrada, e o spam também.</div>{% endif %}
+{% if q.get('erro') %}<div class="flash err">{{ q.get('erro') }}</div>{% endif %}
+
+<div class="nl-status {% if smtp_ok %}ok{% endif %}">
+  <span class="nl-dot"></span>
+  {% if smtp_ok %}SMTP configurado. O site consegue enviar e-mail.
+  {% else %}SMTP não configurado. Nada sai daqui enquanto isso.{% endif %}
+</div>
+
+<form class="form" method="post" action="/admin/newsletter/config">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+
+  <h2>Servidor de envio</h2>
+  <p class="hint">
+    Com Gmail, use uma <em>senha de app</em>, nunca a senha da conta. Ela é criada em
+    Conta Google →︎ Segurança →︎ Senhas de app, e só aparece uma vez. Host
+    <code>smtp.gmail.com</code>, porta <code>587</code>.
+  </p>
+  <div class="grid-2">
+    <label>Servidor SMTP<input name="smtp_host" value="{{ s.smtp_host }}" placeholder="smtp.gmail.com"></label>
+    <label>Porta<input name="smtp_port" value="{{ s.smtp_port }}" placeholder="587"></label>
+    <label>Usuário<input name="smtp_user" value="{{ s.smtp_user }}" placeholder="seu@gmail.com" autocomplete="off"></label>
+    <label>Senha de app
+      <small>
+        {% if smtp_password_ind.configurado %}senha configurada ✓︎ (termina em ...{{ smtp_password_ind.final4 }}) — preencha só para trocar
+        {% else %}nenhuma senha configurada ainda{% endif %}
+      </small>
+      <input name="smtp_password" type="password" autocomplete="new-password"></label>
+    <label>Remetente <small>(vazio usa o usuário)</small><input name="smtp_from" value="{{ s.smtp_from }}"></label>
+    <label>Receber os leads em<input name="lead_email" value="{{ s.lead_email }}"></label>
+  </div>
+  <label class="check">
+    <input type="checkbox" name="smtp_password_remover">
+    Remover a senha guardada <small>(o envio de e-mail para de funcionar até uma nova ser colada)</small>
+  </label>
+
+  <div class="form-actions"><button class="btn primary" type="submit">Salvar</button></div>
+</form>
+
+<section class="form" id="teste">
+  <h2>Teste de e-mail</h2>
+  <p class="hint">
+    Manda uma mensagem real, no template padrão, para o endereço que você informar. É a forma
+    honesta de saber se o SMTP responde: se chegar, funciona de verdade.
+  </p>
+  <form method="post" action="/admin/newsletter/config/testar" class="send-row">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="email" name="para" required placeholder="seu@email.com">
+    <button class="btn primary" type="submit" {% if not smtp_ok %}disabled{% endif %}>Enviar teste</button>
+  </form>
+</section>
+
+<section class="form">
+  <h2>Limites e boa vizinhança</h2>
+  <p class="hint">
+    Conta Gmail comum entrega até <strong>500 e-mails por dia</strong>. Acima disso, ou com a
+    lista crescendo, o certo é migrar para um serviço de envio dedicado, com o domínio
+    autenticado por SPF e DKIM, senão a entrega começa a cair no spam. Hoje a base tem
+    <strong>{{ assinantes }} assinante{{ 's' if assinantes != 1 }}</strong>, então está tranquilo.
+  </p>
+</section>
+{% endblock %}

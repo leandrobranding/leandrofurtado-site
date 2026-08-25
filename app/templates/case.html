@@ -1,0 +1,540 @@
+{% extends "base.html" %}
+{% block pageid %}case{% endblock %}
+{#
+  SEO do case. Os campos do painel mandam quando preenchidos; vazios, valem o
+  título e o subtítulo, que é o certo na maioria das vezes. O noindex existe
+  para trabalho sob sigilo: fica no site, fora da busca.
+#}
+{#
+  `seo_title` já vem montado por services/seo.py com o cliente na frente e a
+  marca no fim quando cabe nos 60 caracteres. Acrescentar "— Leandro Furtado"
+  aqui empurraria todo case para 70+ e o corte comeria justamente o fim, que é
+  onde a marca está. Por isso o valor entra inteiro, sem sufixo. O fallback
+  (case sem seo_title, o que hoje só acontece em rascunho) mantém o padrão
+  antigo, para nenhuma página ficar sem a marca.
+#}
+{% block title %}{{ seo_titulo or (f(case, 'title') ~ ' ·︎ ' ~ site_name) }}{% endblock %}
+{% block description %}{{ seo_descricao or f(case, 'subtitle') or t('meta_desc') }}{% endblock %}
+{% block robots %}{% if case.noindex %}noindex, follow{% else %}index, follow, max-image-preview:large{% endif %}{% endblock %}
+{% block ogtype %}article{% endblock %}
+{# a imagem do card sai em 1200x630 JPEG, que é o que as redes esperam #}
+{% block ogimage %}{% if case.seo_image %}{{ base_url }}/media/{{ og_img(case.seo_image) }}{% elif case.cover_image %}{{ base_url }}/media/{{ og_img(case.cover_image) }}{% else %}{{ base_url }}/static/img/og-default.png{% endif %}{% endblock %}
+
+{% block jsonld_extra %},
+    {
+      "@type": "CreativeWork",
+      "name": "{{ f(case, 'title') | e }}",
+      "url": "{{ base_url }}{{ lp('/case/' ~ case.slug) }}",
+      {% if case.cover_image %}"image": "{{ base_url }}/media/{{ case.cover_image }}",{% endif %}
+      {% if case.client %}"sourceOrganization": {"@type": "Organization", "name": "{{ case.client | e }}"},{% endif %}
+      {#
+        As tags saíram da tela como link e entram aqui como dado. É o lugar
+        certo delas: buscador lê, visitante não tropeça num caminho que não
+        queria seguir. A categoria vira `genre`, que é o campo que descreve o
+        tipo de trabalho.
+      #}
+      {% if case.tags %}"keywords": "{{ case.tags | map(attribute='name') | join(', ') | e }}",{% endif %}
+      {% if case.category %}"genre": "{{ f(case.category, 'name') | e }}",{% endif %}
+      {% if case.year %}"dateCreated": "{{ case.year }}",{% endif %}
+      "author": {"@id": "{{ base_url }}/#person"},
+      "inLanguage": "{{ 'en' if lang == 'en' else 'pt-BR' }}"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "{{ t('work') }}", "item": "{{ base_url }}{{ lp('/portfolio') }}"},
+        {"@type": "ListItem", "position": 2, "name": "{{ f(case, 'title') | e }}"}
+      ]
+    }{% endblock %}
+
+{% macro share_row() %}
+{# o aviso padrão diz "Link copiado"; aqui ele fica específico, porque o que se
+   copia numa página de case é o endereço daquele case #}
+<div class="share-row" data-share-aviso="{{ 'Link desse case copiado' if lang == 'pt' else 'Case link copied' }}">
+  <button class="share-ic" type="button" data-share="x" aria-label="X" title="X">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.4 22H3.2l7.3-8.4L1 2h6.4l4.4 5.9L18.9 2zM17.8 20.1h1.7L7.3 3.8H5.5l12.3 16.3z"/></svg>
+  </button>
+  <button class="share-ic" type="button" data-share="threads" aria-label="Threads" title="Threads">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3.4"/><path d="M15.4 12v1c0 1.6 1 2.6 2.3 2.6 1.5 0 2.5-1.3 2.5-3.6 0-4.5-3.4-7.5-8.2-7.5S3.8 7.5 3.8 12s3.4 7.5 8.2 7.5c2.5 0 4.6-.9 6-2.4"/></svg>
+  </button>
+  <button class="share-ic" type="button" data-share="linkedin" aria-label="LinkedIn" title="LinkedIn">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.4 8.6H3.2V21h3.2V8.6zM4.8 7.2a1.9 1.9 0 1 0 0-3.8 1.9 1.9 0 0 0 0 3.8zM21 14.2c0-3.1-1.7-4.6-3.9-4.6-1.8 0-2.6 1-3.1 1.7V8.6h-3.2V21H14v-6.6c0-1.5.7-2.4 2-2.4 1.2 0 1.8.8 1.8 2.4V21H21v-6.8z"/></svg>
+  </button>
+  <button class="share-ic" type="button" data-share="pinterest" aria-label="Pinterest" title="Pinterest">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2C6.5 2 2 6.5 2 12c0 4.2 2.6 7.9 6.3 9.3-.1-.8-.2-2 0-2.9l1.2-4.9s-.3-.6-.3-1.5c0-1.4.8-2.4 1.8-2.4.9 0 1.3.6 1.3 1.4 0 .9-.6 2.2-.9 3.4-.2 1 .5 1.9 1.5 1.9 1.8 0 3.2-1.9 3.2-4.7 0-2.4-1.7-4.1-4.2-4.1-2.9 0-4.6 2.2-4.6 4.4 0 .9.3 1.8.8 2.3.1.1.1.2.1.3l-.3 1.1c0 .2-.2.2-.4.1-1.2-.6-1.9-2.3-1.9-3.8 0-3.2 2.3-6.1 6.7-6.1 3.5 0 6.2 2.5 6.2 5.8 0 3.5-2.2 6.3-5.2 6.3-1 0-2-.5-2.3-1.1l-.6 2.4c-.2.9-.8 2-1.2 2.7.9.3 1.9.4 2.9.4 5.5 0 10-4.5 10-10S17.5 2 12 2z"/></svg>
+  </button>
+  <button class="share-ic" type="button" data-share="email" aria-label="E-mail" title="E-mail">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="m2 7 10 6L22 7"/></svg>
+  </button>
+  <button class="share-ic" type="button" data-share="whatsapp" aria-label="WhatsApp" title="WhatsApp">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.6-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.3-.6.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.4-3c-.3-.4 0-.5.1-.7l.4-.5c.1-.2.2-.3.3-.5v-.5c0-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1.1 2.7c.1.2 1.8 2.8 4.4 3.9.6.3 1.1.4 1.5.5.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.5-.2z"/></svg>
+  </button>
+  <button class="share-ic" type="button" data-share="copy" aria-label="{{ t('copy_link') }}" title="{{ t('copy_link') }}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M10 13.5a4 4 0 0 0 6 .4l2.5-2.5a4 4 0 1 0-5.7-5.7L11.5 7"/><path d="M14 10.5a4 4 0 0 0-6-.4l-2.5 2.5a4 4 0 1 0 5.7 5.7l1.3-1.3"/></svg>
+  </button>
+</div>
+{% endmacro %}
+
+{% block content %}
+{% from "_bits.html" import tag_site_fixa, cat_link, moldura_site, ficha_ico, quadro_marca, selos_programas with context %}
+<article class="project" data-case-id="{{ case.id }}" data-share-title="{{ f(case, 'title') | e }}"
+         {% if case.accent %}style="--accent:{{ case.accent }}"{% endif %}>
+  <div class="project-layout">
+
+    <aside class="project-overview">
+      <div class="project-overview-inner">
+        <h1 class="project-title serif" data-hero-title>{{ f(case, 'title') }}</h1>
+
+        {% if case.category %}
+        <div class="project-tags">
+          <a class="pill mono-label on" href="{{ lp('/portfolio') }}?c={{ case.category.slug }}">{{ f(case.category, 'name') }}</a>
+        </div>
+        {% endif %}
+
+        {% if f(case, 'subtitle') %}<p class="project-summary" data-reveal>{{ f(case, 'subtitle') }}</p>{% endif %}
+        {% if f(case, 'body') %}<div class="project-body" data-reveal>{{ f(case, 'body') | md | safe }}</div>{% endif %}
+
+        <hr class="case-divider" data-reveal>
+
+        {#
+          A marca ganha o mesmo box da página do cliente. Espremida numa célula
+          de ficha, ela virava um detalhe; aqui ela tem o peso que tem lá, e o
+          box inteiro é o caminho para a página da marca.
+        #}
+        {% if case.client %}
+        <a class="case-marca {{ 'sem-logo' if not client_logo }}" data-reveal
+           href="{{ lp('/cliente/' ~ client_slug) }}"
+           title="{{ t('client_everything') }} {{ case.client }}">
+          <span class="cm-rotulo mono-label">{{ t('client') }}</span>
+          {% if client_logo %}
+          {{ quadro_marca(client_logo, case.client, client_escala, client_chapa, client_formato) }}
+          {% else %}<b class="cm-nome display">{{ case.client }}</b>{% endif %}
+          <em class="cm-seta" aria-hidden="true">→︎</em>
+        </a>
+        {% endif %}
+
+        <dl class="project-meta mono-label" data-reveal>
+          {#
+            Ano e ferramentas dividem a linha, com um fio entre eles: são as
+            duas credenciais curtas do case, e cada uma em linha própria
+            esticava a ficha sem dizer mais nada. Sem ano, o rótulo da linha
+            vira "Ferramentas" e o fio não entra.
+          #}
+          {% if case.year or programas_de(case) %}
+          <div><dt>{{ t('year') if case.year else ('Ferramentas' if lang == 'pt' else 'Tools') }}</dt>
+            <dd class="meta-ano-fer">
+              {%- if case.year %}<span class="maf-ano">{{ case.year }}</span>{% endif -%}
+              {{ selos_programas(case, 'selos-ficha') }}
+            </dd></div>
+          {% endif %}
+          {#
+            Tag é texto, não caminho. Fica aqui junto de cliente e ano porque é
+            a mesma natureza de informação, e sai da tela como pílula para não
+            parecer botão. O valor delas está no dado estruturado, mais abaixo
+            nesta página, onde viram `keywords`.
+          #}
+          {% if case.tags %}
+          <div><dt>{{ t('tags_label') }}</dt>
+            <dd class="meta-tags">
+              {% for tag in case.tags %}<span>{{ tag.name }}</span>{% endfor %}
+            </dd></div>
+          {% endif %}
+          {#
+            O selo mora aqui, e não dentro da ficha técnica, porque a ficha é
+            opcional e esta resposta não deveria sumir junto com ela. Vem do
+            cadastro: case que nunca foi perguntado não mostra selo nenhum, em
+            vez de dizer "não" por omissão.
+          #}
+          {% if case.ia %}
+          <div><dt>{{ t('ia_label') }}</dt>
+            <dd><b class="selo-ia {{ 'sim' if case.ia == 'sim' else 'nao' }}">
+              <i aria-hidden="true"></i>
+              {{ (('Com utilização' if case.ia == 'sim' else 'Sem utilização')
+                  if lang == 'pt' else ('AI assisted' if case.ia == 'sim' else 'No AI')) }}
+            </b></dd></div>
+          {% endif %}
+        </dl>
+
+
+        {#
+          A ficha técnica mora aqui, junto de cliente, ano e tags, e não no meio
+          das imagens. É a mesma natureza de informação: quem fez, para quem,
+          quando. Solta no meio da galeria ela cortava a leitura visual em duas.
+        #}
+        {% for m in case.media if m.kind == 'ficha' and case.ficha_on %}
+        {% set meta = m.meta or {} %}
+        <dl class="project-ficha mono-label" data-reveal>
+          {% if meta.titulo %}<p class="pf-titulo"><i>✳︎</i> {{ meta.titulo }}</p>{% endif %}
+          {#
+            Cliente e ano já estão logo acima, com o logotipo clicável. Repetir
+            os dois dentro da ficha é dizer a mesma coisa duas vezes na mesma
+            coluna, então a linha repetida não entra.
+          #}
+          {% set repetidos = ([('cliente'), ('client')] if case.client else []) + ([('ano'), ('year')] if case.year else [])
+                             + ['inteligência artificial', 'inteligencia artificial', 'ia', 'ai'] %}
+          {% for l in meta.linhas or [] if (l.rotulo | lower | trim) not in repetidos %}
+          {% set r = l.rotulo | lower %}
+          <div>
+            <span class="pf-ic" aria-hidden="true">{{ ficha_ico(l.rotulo) }}</span>
+            <dt>{{ l.rotulo }}</dt>
+            <dd>{{ l.valor }}</dd>
+          </div>
+          {% endfor %}
+
+        </dl>
+        {% endfor %}
+
+        <div class="case-share" data-reveal>
+          <span class="mono-label dim"><i>✳︎</i> {{ t('share_case') }}</span>
+          {{ share_row() }}
+        </div>
+      </div>
+    </aside>
+
+    <div class="project-stage">
+      <div class="view-switch mono-label" data-reveal role="group" aria-label="{{ t('view_mode') }}">
+        <span class="dim">{{ t('view_mode') }} //</span>
+        <div class="vs-seg">
+          <span class="vs-ind" aria-hidden="true"></span>
+          <button type="button" data-view="editorial" class="on" data-tip="{{ t('view_editorial') }}" aria-label="{{ t('view_editorial') }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="9" rx="1.5"/><rect x="3" y="15.5" width="8" height="5.5" rx="1.5"/><rect x="14.5" y="15.5" width="6.5" height="5.5" rx="1.5"/></svg>
+          </button>
+          <button type="button" data-view="grid" data-tip="{{ t('view_grid') }}" aria-label="{{ t('view_grid') }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+          </button>
+          <button type="button" data-view="masonry" data-tip="{{ t('view_masonry') }}" aria-label="{{ t('view_masonry') }}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="8" height="11" rx="1.5"/><rect x="13" y="3" width="8" height="6" rx="1.5"/><rect x="3" y="16.5" width="8" height="4.5" rx="1.5"/><rect x="13" y="11.5" width="8" height="9.5" rx="1.5"/></svg>
+          </button>
+        </div>
+        <button class="case-fs" type="button" data-case-fs aria-pressed="false"
+                title="{{ 'Ver case em tela cheia' if lang == 'pt' else 'View case fullscreen' }}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+          <span>{{ 'Ver em tela cheia' if lang == 'pt' else 'View fullscreen' }}</span>
+        </button>
+      </div>
+
+      <div class="project-gallery view-editorial" data-gallery>
+        {#
+          A capa não abre a galeria. Ela já é o cartão do case no portfólio, no
+          compartilhamento e no card de relacionado: repetida aqui, a página
+          começava mostrando de novo o que trouxe a pessoa até ela. Vídeo de capa
+          continua, porque esse não aparece em nenhum card.
+        #}
+        {% if case.cover_video %}
+        <figure class="g-item full"><video autoplay muted loop playsinline src="/media/{{ case.cover_video }}"></video></figure>
+        {% endif %}
+        {#
+          A página montada no compositor. Blocos visuais (foto, galeria, vídeo,
+          reels, áudio, link) obedecem à visualização escolhida no alternador;
+          os de leitura (texto, ficha, números, citação, hashtags, divisor)
+          ficam sempre em largura cheia, porque texto espremido numa coluna de
+          mosaico não é leitura, é enfeite.
+        #}
+        {# a ficha já foi renderizada na coluna da esquerda; sem este filtro ela
+           caía no ramo visual e deixava uma <figure> vazia no meio da grade #}
+        {% for m in case.media if m.kind != 'ficha' %}
+        {% set meta = m.meta or {} %}
+        {% if m.kind in ('texto', 'numeros', 'citacao', 'hashtags', 'divisor') %}
+
+        {% if m.kind == 'texto' %}
+        <div class="g-item full b-texto" data-reveal>
+          {% if meta.titulo %}<h2 class="serif b-titulo">{{ meta.titulo }}</h2>{% endif %}
+          <div class="b-corpo">{{ meta.corpo | md | safe }}</div>
+        </div>
+
+        {% elif m.kind == 'citacao' %}
+        <blockquote class="g-item full b-citacao" data-reveal>
+          <p class="serif">{{ meta.frase }}</p>
+          {% if meta.autor %}<cite class="mono-label dim">{{ meta.autor }}</cite>{% endif %}
+        </blockquote>
+
+        {% elif m.kind == 'numeros' %}
+        <div class="g-item full b-numeros" data-reveal>
+          {% for n in meta.itens or [] %}
+          <div class="b-num"><strong class="display">{{ n.valor }}</strong><span class="mono-label dim">{{ n.rotulo }}</span></div>
+          {% endfor %}
+        </div>
+
+        {% elif m.kind == 'hashtags' %}
+        <div class="g-item full b-hashtags" data-reveal>
+          {% for tag in meta.tags or [] %}<span class="b-tag mono-label">#{{ tag }}</span>{% endfor %}
+        </div>
+
+        {% elif m.kind == 'divisor' %}
+        <div class="g-item full b-divisor" data-reveal>
+          <span aria-hidden="true"></span>
+          {% if meta.rotulo %}<em class="mono-label">{{ meta.rotulo }}</em><span aria-hidden="true"></span>{% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        {#
+          A caixa segue a peça, e não o contrário. Antes toda imagem de largura
+          cheia era forçada em 16:10, e cartaz vertical entrava perdendo mais da
+          metade da altura: das catorze peças deste case, sete perdiam 40% ou
+          mais e duas perdiam 72%. Agora a proporção real vira `--prop`, e peça
+          vertical cai para meia largura, onde ela cabe inteira em vez de virar
+          uma tira do meio.
+        #}
+        {% set prop = prop_img(m.thumb or m.src) if m.kind == 'image' else 0 %}
+        {% set vertical = m.kind == 'image' and img_vertical(m.thumb or m.src) %}
+        <figure class="g-item {{ 'half' if (vertical and m.layout == 'full') else m.layout }}{{ ' b-galeria' if m.kind == 'galeria' }}"
+                {% if prop %}style="--prop: {{ prop }}"{% endif %}>
+          {% if m.kind == 'image' %}
+          <img src="/media/{{ m.thumb or m.src }}"
+               {% if srcset(m.src) %}srcset="{{ srcset(m.src) }}" sizes="(max-width: 900px) 100vw, {{ '50vw' if 'half' in (m.layout or '') else '55vw' }}"{% endif %}
+               alt="{{ alt_de(f(m, 'caption'), f(case, 'title'), case.client, loop.index) }}"
+               loading="lazy" decoding="async"
+               data-full="{{ img_cheia(m.src) }}" draggable="false" data-parallax>
+          <span class="g-lupa" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5M10.5 8v5M8 10.5h5"/>
+            </svg>
+          </span>
+
+          {% elif m.kind == 'galeria' %}
+          <div class="b-g-grade" style="--cols: {{ meta.colunas or 3 }}">
+            {% for foto in meta.fotos or [] %}
+            <span class="b-g-foto">
+              <img src="/media/{{ foto.thumb or foto.src }}"
+                   {% if srcset(foto.src) %}srcset="{{ srcset(foto.src) }}" sizes="(max-width: 900px) 50vw, 28vw"{% endif %}
+                   alt="{{ alt_de(foto.legenda, f(case, 'title'), case.client, loop.index) }}"
+                   loading="lazy" decoding="async"
+                   data-full="{{ img_cheia(foto.src) }}" draggable="false">
+              <span class="g-lupa" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4.5 4.5M10.5 8v5M8 10.5h5"/>
+                </svg>
+              </span>
+              {% if foto.legenda %}<em class="mono-label dim">{{ foto.legenda }}</em>{% endif %}
+            </span>
+            {% endfor %}
+          </div>
+
+          {#
+            Vertical entra dentro de um aparelho. O card do Instagram traz avatar,
+            curtidas e caixa de comentário: é a interface deles ocupando metade da
+            altura do meu case, e ela muda quando eles querem. O molde abaixo
+            mostra só a imagem, no formato em que ela foi feita.
+
+            Arquivo enviado toca nativo, mudo e em laço, sem iframe e sem cookie
+            de terceiro. Só quando existe apenas o link é que o iframe entra, e
+            aí ele é recortado no aparelho para esconder a moldura da rede.
+          #}
+          {% elif m.kind == 'reels' %}
+          <div class="fone" data-reveal>
+            <span class="fone-ilha" aria-hidden="true"></span>
+            <span class="fone-brilho" aria-hidden="true"></span>
+            <div class="fone-tela">
+              {% if m.src and meta.fonte != 'link' %}
+              {#
+                Arquivo enviado: player próprio dentro do aparelho. Começa mudo e
+                em laço, que é a única forma de tocar sozinho sem gesto do
+                visitante, e os controles ficam ali para quem quiser pausar ou
+                ouvir. Sem iframe e sem cookie de terceiro.
+              #}
+              <div class="fone-player" data-fone>
+                <video data-fone-video autoplay muted loop playsinline preload="metadata"
+                       poster="{{ '/media/' ~ m.thumb if m.thumb }}" src="/media/{{ m.src }}"></video>
+
+                <button class="fone-toque" type="button" data-fone-toggle
+                        aria-label="{{ 'Pausar' if lang == 'pt' else 'Pause' }}">
+                  <span class="fone-bolha" aria-hidden="true">
+                    <svg class="ic-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>
+                    <svg class="ic-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5.5" width="3.4" height="13" rx="1"/><rect x="13.6" y="5.5" width="3.4" height="13" rx="1"/></svg>
+                  </span>
+                </button>
+
+                <div class="fone-barra">
+                  <button class="fone-bt" type="button" data-fone-toggle
+                          aria-label="{{ 'Reproduzir ou pausar' if lang == 'pt' else 'Play or pause' }}">
+                    <svg class="ic-play" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>
+                    <svg class="ic-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5.5" width="3.4" height="13" rx="1"/><rect x="13.6" y="5.5" width="3.4" height="13" rx="1"/></svg>
+                  </button>
+
+                  <div class="fone-trilha" data-fone-seek role="slider" tabindex="0"
+                       aria-label="{{ 'Posição do vídeo' if lang == 'pt' else 'Video position' }}"
+                       aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <span class="fone-trilha-feita" data-fone-progresso></span>
+                  </div>
+
+                  <span class="fone-relogio" data-fone-relogio>0:00</span>
+
+                  <div class="fone-som">
+                    <button class="fone-bt" type="button" data-fone-mute
+                            aria-label="{{ 'Ligar o som' if lang == 'pt' else 'Unmute' }}" aria-pressed="true">
+                      <svg class="ic-mudo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="m16.5 9.5 4 5M20.5 9.5l-4 5"/></svg>
+                      <svg class="ic-som" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M15.5 9.6a3.4 3.4 0 0 1 0 4.8M18 7.2a6.8 6.8 0 0 1 0 9.6"/></svg>
+                    </button>
+                    <input class="fone-vol" type="range" min="0" max="1" step="0.05" value="0"
+                           data-fone-vol aria-label="{{ 'Volume' if lang == 'pt' else 'Volume' }}">
+                  </div>
+                </div>
+              </div>
+              {% else %}
+              {#
+                Sem o arquivo, o aparelho fica com a chapa e o caminho para fora.
+                Tentei recortar o iframe do Instagram aqui dentro e não fecha: o
+                post não é 9:16, ele já vem com tarja preta dentro do próprio
+                card, e o que sobra do recorte é a barra de curtidas no meio da
+                tela. Melhor uma chapa honesta que um recorte torto.
+              #}
+              <a class="fone-vazio" {% if meta.url %}href="{{ meta.url }}" target="_blank" rel="noopener noreferrer"{% endif %}>
+                <span class="fone-play" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>
+                </span>
+                <b class="mono-label">{{ 'Assistir no Instagram' if lang == 'pt' else 'Watch on Instagram' }}</b>
+                <em class="mono-label dim">{{ 'Envie o MP4 no painel para tocar aqui dentro' if lang == 'pt' else 'Upload the MP4 to play it right here' }}</em>
+              </a>
+              {% endif %}
+            </div>
+          </div>
+          {% if meta.url and m.src and meta.fonte != 'link' %}
+          <a class="fone-fonte mono-label" href="{{ meta.url }}" target="_blank" rel="noopener noreferrer">
+            {{ 'Ver no Instagram' if lang == 'pt' else 'View on Instagram' }} <em>↗︎</em>
+          </a>
+          {% endif %}
+
+          {% elif m.kind == 'video' %}
+            {% if meta.fonte == 'link' and meta.embed_url %}
+            <div class="embed video-embed">
+              <iframe src="{{ meta.embed_url }}" loading="lazy" allowfullscreen
+                      title="{{ meta.provider or 'vídeo' }}" allow="autoplay; fullscreen; picture-in-picture"></iframe>
+            </div>
+            {% else %}
+            <video controls playsinline preload="metadata" src="/media/{{ m.src }}"></video>
+            {% endif %}
+
+          {% elif m.kind == 'audio' %}
+            {% if meta.fonte == 'link' and meta.embed_url %}
+            <div class="embed audio-embed"><iframe src="{{ meta.embed_url }}" loading="lazy"
+                 title="{{ meta.provider or 'áudio' }}" allow="encrypted-media; clipboard-write"></iframe></div>
+            {% else %}
+            <div class="audio-shell"><audio controls preload="metadata" src="/media/{{ m.src }}"></audio></div>
+            {% endif %}
+
+          {% elif m.kind == 'embed' %}
+            {% if meta.provider == 'instagram' %}
+            <div class="embed ig-embed"><iframe src="{{ meta.embed_url }}" loading="lazy" allowfullscreen title="Instagram"></iframe></div>
+            {% elif meta.provider in ('youtube', 'vimeo') %}
+            <div class="embed video-embed"><iframe src="{{ meta.embed_url }}" loading="lazy" allowfullscreen title="{{ meta.provider }}" allow="autoplay; fullscreen; picture-in-picture"></iframe></div>
+            {% else %}
+            <a class="embed article-card" href="{{ meta.url or m.src }}" target="_blank" rel="noopener">
+              {% if meta.image %}<img src="{{ meta.image }}" alt="" loading="lazy">{% endif %}
+              <span class="article-card-body">
+                {% if meta.site %}<span class="mono-label dim">{{ meta.site }}</span>{% endif %}
+                <strong class="serif">{{ meta.title or m.src }}</strong>
+                <em class="mono-label">{{ 'Ler matéria ↗︎' if lang == 'pt' else 'Read article ↗︎' }}</em>
+              </span>
+            </a>
+            {% endif %}
+          {% endif %}
+          {% if f(m, 'caption') %}<figcaption class="mono-label dim">{{ f(m, 'caption') }}</figcaption>{% endif %}
+        </figure>
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <section class="case-verdict" data-reveal>
+    <span class="cv-ask display">{{ t('like_case') }}</span>
+    <div class="case-vote" data-case-vote>
+      <button class="cvote" type="button" data-cvote="up" aria-label="Like">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 22V11m0 0 4-7c1.5 0 2.5 1 2.5 2.5V10h5.6c1.2 0 2 1.1 1.8 2.2l-1.3 7.1a2 2 0 0 1-2 1.7H7m0-11H3v11h4"/></svg>
+        <em data-cvote-count="up">0</em>
+      </button>
+      <button class="cvote" type="button" data-cvote="down" aria-label="Dislike">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M17 2v11m0 0-4 7c-1.5 0-2.5-1-2.5-2.5V14H4.9c-1.2 0-2-1.1-1.8-2.2l1.3-7.1a2 2 0 0 1 2-1.7H17m0 11h4V2h-4"/></svg>
+        <em data-cvote-count="down">0</em>
+      </button>
+    </div>
+  </section>
+
+  {% if related %}
+  <section class="related">
+    <header class="ig-head" data-reveal>
+      <span class="ig-title display" data-drift="left"><i>✳︎</i> {{ t('related_cases') }}</span>
+    </header>
+    <div class="related-grid">
+      {% for r in related %}
+      {# relacionado pode ser um site: o link vai para fora e o botão diz isso #}
+      <a class="rel-card {{ 'is-site' if eh_site(r) }}" href="{{ destino(r) }}"
+         {% if eh_site(r) %}target="_blank" rel="noopener noreferrer"{% endif %}>
+        <figure>
+          {% if capa_de(r) %}<img src="{{ capa_de(r) }}"
+               {% if srcset(r.cover_image) %}srcset="{{ srcset(r.cover_image) }}" sizes="(max-width: 520px) 100vw, (max-width: 960px) 50vw, 25vw"{% endif %}
+               alt="{{ alt_de('', f(r, 'title'), r.client) }}" loading="lazy" decoding="async">{% else %}<div class="ph"></div>{% endif %}
+        </figure>
+        <strong class="rel-title">{{ f(r, 'title') }}</strong>
+        {% if eh_site(r) %}
+        <p class="rel-sub">{{ tag_site_fixa(r) }}</p>
+        {% elif f(r, 'subtitle') %}<p class="rel-sub">{{ f(r, 'subtitle') }}</p>{% endif %}
+        <span class="btn-underline mono-label">
+          {{ t('see_site') if eh_site(r) else t('see_case') }} {{ '↗︎' if eh_site(r) else '→︎' }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if next_case %}
+  <a class="next-case" href="{{ destino(next_case) }}"
+     data-cursor-chip="{{ t('see_site') if eh_site(next_case) else t('view_case') }}"
+     {% if eh_site(next_case) %}target="_blank" rel="noopener noreferrer"{% endif %}>
+    <span class="mono-label"><i>✳︎</i> {{ t('next_site') if eh_site(next_case) else t('next_case') }}</span>
+    <strong class="serif">{{ f(next_case, 'title') }}</strong>
+    {% if capa_de(next_case) %}<figure><img src="{{ capa_de(next_case) }}"
+     {% if srcset(next_case.cover_image) %}srcset="{{ srcset(next_case.cover_image) }}" sizes="(max-width: 960px) 0px, 24vw"{% endif %}
+     alt="" loading="lazy"></figure>{% endif %}
+  </a>
+  {% endif %}
+</article>
+
+<a class="case-bar" href="{{ lp('/portfolio') }}" data-case-bar aria-hidden="true">
+  <span class="cb-inner">
+    <span class="cb-back"><em class="cb-arrow" aria-hidden="true">←︎</em> <strong class="display">{{ t('back_to_work') }}</strong></span>
+    <span class="cb-meta mono-label">{{ f(case, 'title') }}{% if case.client %} ·︎ {{ case.client }}{% endif %}{% if case.year %} ·︎ {{ case.year }}{% endif %}</span>
+  </span>
+</a>
+
+<dialog class="lightbox case-lightbox" id="caseLightbox">
+  <button class="mm-close lightbox-close" type="button" aria-label="{{ 'Fechar' if lang == 'pt' else 'Close' }}">✕︎</button>
+  {#
+    A tela cheia é desta figura, e não da página. O botão de voltar mora dentro
+    dela porque em tela cheia o resto do documento não é desenhado: um botão
+    fora daqui simplesmente não existiria naquele estado.
+  #}
+  <figure class="clb-stage">
+    <img src="" alt="{{ f(case, 'title') }}" draggable="false">
+    <button class="clb-voltar" type="button" data-clb-sair
+            aria-label="{{ 'Sair da tela cheia' if lang == 'pt' else 'Exit fullscreen' }}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+           stroke-linecap="round" stroke-linejoin="round"><path d="M14 10h5V5M10 14H5v5M14 14h5v5M10 10H5V5"/></svg>
+      <span>{{ 'Voltar' if lang == 'pt' else 'Back' }}</span>
+    </button>
+  </figure>
+  <button class="lb-arrow lb-prev" type="button" aria-label="{{ 'Anterior' if lang == 'pt' else 'Previous' }}">←︎</button>
+  <button class="lb-arrow lb-next" type="button" aria-label="{{ 'Próxima' if lang == 'pt' else 'Next' }}">→︎</button>
+  <div class="clb-bar">
+    <span class="lb-count mono-label">1 / 1</span>
+    <div class="clb-actions">
+      <button class="clb-tool clb-zoom" type="button" aria-pressed="false" aria-label="{{ t('zoom_img') }}" title="{{ t('zoom_img') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3M8 11h6M11 8v6"/></svg>
+      </button>
+      <button class="clb-tool clb-fs" type="button" aria-label="{{ t('fullscreen_img') }}" title="{{ t('fullscreen_img') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+      </button>
+      <button class="clb-tool clb-share" type="button" aria-expanded="false" aria-label="{{ t('share_case') }}" title="{{ t('share_case') }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="6" r="2.6"/><circle cx="18" cy="18" r="2.6"/><path d="m8.4 10.8 7.2-3.6M8.4 13.2l7.2 3.6"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="clb-share-panel" hidden>
+    <span class="mono-label">{{ t('share_prompt') }}</span>
+    {{ share_row() }}
+  </div>
+</dialog>
+{% endblock %}

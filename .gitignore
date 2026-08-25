@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+data/
+.env
+.DS_Store
+
+# base de geolocalizacao: 124 MB, baixada no deploy
+data/geo/
+preview*.log
+.superpowers/

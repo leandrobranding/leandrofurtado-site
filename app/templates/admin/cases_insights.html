@@ -1,0 +1,94 @@
+{% extends "admin/base.html" %}
+{% block title %}Números dos cases{% endblock %}
+{% block content %}
+<header class="panel-head">
+  <h1>Números <small>últimos 30 dias</small></h1>
+</header>
+
+{% include "admin/_cases_nav.html" %}
+
+<div class="stat-grid">
+  <div class="stat-card"><span class="stat-n">{{ totais.vistos }}</span><span class="stat-l">Acessos no total</span>
+    <span class="stat-sub">{{ totais.mes }} nos últimos 30 dias</span></div>
+  <div class="stat-card"><span class="stat-n">{{ totais.publicados }}</span><span class="stat-l">Cases publicados</span>
+    <span class="stat-sub">{{ totais.rascunhos }} rascunho{{ 's' if totais.rascunhos != 1 }} ·︎ {{ totais.arquivados }} arquivado{{ 's' if totais.arquivados != 1 }}</span></div>
+  <div class="stat-card"><span class="stat-n">{{ totais.comentarios }}</span><span class="stat-l">Comentários</span></div>
+  <div class="stat-card"><span class="stat-n">{{ sem_acesso|length }}</span><span class="stat-l">Publicados sem nenhum acesso</span>
+    {% if sem_acesso %}<span class="stat-sub hot">merecem uma olhada</span>{% endif %}</div>
+</div>
+
+{# Barras em CSS puro: nenhuma biblioteca de gráfico entra no painel por causa
+   de trinta números. Cada barra é uma coluna com altura proporcional ao pico. #}
+<section class="dash-block">
+  <h2>Acessos por dia</h2>
+  {% if totais.mes %}
+  <div class="ci-grafico" role="img" aria-label="Acessos diários dos últimos 30 dias">
+    {% for d in serie %}
+    <span class="ci-barra" style="--h: {{ (d.hits * 100 // pico) if pico else 0 }}%"
+          title="{{ d.dia }}: {{ d.hits }} acesso{{ 's' if d.hits != 1 }}"></span>
+    {% endfor %}
+  </div>
+  <div class="ci-eixo mono-label"><span>{{ serie[0].dia }}</span><span>pico: {{ pico }}</span><span>{{ serie[-1].dia }}</span></div>
+  {% else %}
+  <p class="hint">Ainda não há acessos registrados. A contagem começa quando alguém abre um case publicado.</p>
+  {% endif %}
+</section>
+
+<div class="dash-cols">
+  <section class="dash-block">
+    <h2>Cases mais vistos</h2>
+    {% if ranking and totais.vistos %}
+    <ul class="ci-rank">
+      {% for c in ranking %}{% if vistos.get(c.id) %}
+      <li>
+        <a href="/admin/cases/{{ c.id }}">{{ c.title_pt }}</a>
+        <i style="--w: {{ (vistos.get(c.id) * 100 // (vistos.get(ranking[0].id) or 1)) }}%"></i>
+        <b>{{ vistos.get(c.id) }}</b>
+      </li>
+      {% endif %}{% endfor %}
+    </ul>
+    {% else %}<p class="hint">Nenhum acesso ainda.</p>{% endif %}
+
+    {% if sem_acesso %}
+    <h2 class="mt">Publicados que ninguém abriu</h2>
+    <ul class="ci-simples">
+      {% for c in sem_acesso[:10] %}<li><a href="/admin/cases/{{ c.id }}">{{ c.title_pt }}</a></li>{% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+
+  <section class="dash-block">
+    <h2>Por categoria</h2>
+    {% if por_categoria %}
+    <ul class="ci-tabela">
+      {% for g in por_categoria %}
+      <li><span>{{ g.nome }}</span><em>{{ g.cases }} case{{ 's' if g.cases != 1 }}</em><b>{{ g.vistos }}</b></li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="hint">Nenhum case categorizado.</p>{% endif %}
+
+    <h2 class="mt">Por cliente</h2>
+    {% if por_cliente %}
+    <ul class="ci-tabela">
+      {% for g in por_cliente[:12] %}
+      <li><span>{{ g.nome }}</span><em>{{ g.cases }} case{{ 's' if g.cases != 1 }}</em><b>{{ g.vistos }}</b></li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="hint">Nenhum cliente vinculado.</p>{% endif %}
+
+    <h2 class="mt">Por ano</h2>
+    {% if por_ano %}
+    <ul class="ci-tabela">
+      {% for g in por_ano %}
+      <li><span>{{ g.nome }}</span><em>{{ g.cases }} case{{ 's' if g.cases != 1 }}</em><b>{{ g.vistos }}</b></li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="hint">Nenhum case com ano preenchido.</p>{% endif %}
+  </section>
+</div>
+
+<p class="hint ci-nota">
+  A contagem é por case e por dia, agregada. Não guardo IP, não identifico quem entrou e não
+  há rastreamento entre visitas: só quantas vezes cada case foi aberto em cada dia.
+</p>
+{% endblock %}

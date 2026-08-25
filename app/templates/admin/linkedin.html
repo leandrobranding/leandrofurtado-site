@@ -1,0 +1,41 @@
+{% extends "admin/base.html" %}
+{% block title %}LinkedIn{% endblock %}
+{% block content %}
+<header class="panel-head"><h1>Postagens do LinkedIn <small>{{ posts | length }}</small></h1></header>
+<p class="hint" style="margin-bottom:24px">
+  As <strong>6 mais recentes</strong> aparecem na home. Copie o link do post no LinkedIn
+  (⋯︎ →︎ "Copiar link da publicação"), cole aqui com um resumo curto e uma tag.
+</p>
+
+<form class="form" method="post" action="/admin/linkedin" style="margin-bottom:36px">
+  <input type="hidden" name="csrf" value="{{ csrf }}">
+  <label>Resumo da postagem * <small>(até 400 caracteres — o card corta em ~4 linhas)</small>
+    <textarea name="summary" rows="3" required maxlength="400"></textarea></label>
+  <div class="grid-2">
+    <label>Tag <small>(ex.: #DireçãoDeArte)</small><input name="tag" maxlength="80" placeholder="#IAnaCriação"></label>
+    <label>Link do post *<input name="url" type="url" required placeholder="https://www.linkedin.com/posts/..."></label>
+  </div>
+  <div class="form-actions"><button class="btn primary" type="submit">Adicionar</button></div>
+</form>
+
+{% if posts %}
+<ul class="msg-list">
+  {% for post in posts %}
+  <li class="msg">
+    <div class="msg-head">
+      <strong>{{ post.tag or '—' }}</strong>
+      <a href="{{ post.url }}" target="_blank" rel="noopener">abrir post ↗︎</a>
+      <time>{{ post.created_at | local | strftime_('%d/%m/%Y') }}</time>
+      <form method="post" action="/admin/linkedin/{{ post.id }}/delete" onsubmit="return confirm('Remover esta postagem?')">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <button class="btn danger" type="submit">✕︎</button>
+      </form>
+    </div>
+    <p>{{ post.summary }}</p>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="empty"><p>Nenhuma postagem cadastrada ainda.</p></div>
+{% endif %}
+{% endblock %}
