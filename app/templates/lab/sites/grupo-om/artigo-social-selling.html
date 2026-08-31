@@ -1,0 +1,12 @@
+{# O stub do artigo "Social Selling: como vender mais nas redes sociais". Duas linhas de verdade: o slug e o parcial.
+   A razão de existir está em `_artigo.html`. #}
+{% extends "lab/sites/_base_redesign.html" %}
+{% set pagina = "artigo-social-selling" %}
+{% set artigo = "social-selling" %}
+
+{% block titulo %}{{ T(artigo_por_slug[artigo].titulo) }} | {{ r.marca }}{% endblock %}
+{% block descricao %}{{ T(artigo_por_slug[artigo].resumo) }}{% endblock %}
+{% block cabeca %}{% include "lab/sites/grupo-om/_cabeca.html" %}{% endblock %}
+{% block autoria %}{% include "lab/sites/grupo-om/_autoria.html" %}{% endblock %}
+{% block corpo %}{% include "lab/sites/grupo-om/_artigo.html" %}{% endblock %}
+{% block scripts %}{% include "lab/sites/grupo-om/_scripts.html" %}{% endblock %}

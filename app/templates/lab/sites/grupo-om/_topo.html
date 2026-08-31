@@ -1,0 +1,179 @@
+{# ==========================================================================
+   A barra do arco-íris e o cabeçalho. Iguais em todas as páginas.
+
+   O MENU LIGA AS CINCO, e todo `href` sai de `{{ base }}`, que a rota entrega
+   pronto: `/lab/sites/grupo-om` no endereço público e `/lab/p/<token>` no do
+   pitch. Montar isso aqui com um `if` sobre o estado espalharia a regra por
+   doze arquivos, e no dia em que ela mudasse onze ficariam para trás. Quem
+   abriu pelo link do pitch precisa continuar dentro dele: o endereço público
+   responde 404 enquanto o redesign é `pitch`.
+
+   `pagina` é a variável que cada template define no topo, e ela só serve para
+   o `aria-current`: o link da página atual não é link morto, é o link branco
+   com o fio do arco-íris embaixo.
+
+   ------------------------------------------------------------------------
+   ITEM 1, a barra do arco-íris. Ela é a primeira linha do CABEÇALHO, que fica
+   preso no topo da tela, e a parte acesa cresce de 0 a 100% conforme a
+   leitura avança. É o grafismo da marca fazendo um trabalho em vez de
+   decorando. Sem script ela nasce cheia.
+
+   ------------------------------------------------------------------------
+   O QUE MUDOU EM 26/08, com os itens 15 e 26.
+
+   ITEM 15, LARGURA MÁXIMA E UMA LINHA SÓ. O cabeçalho era o `om-wrap` de
+   82rem, e a marca ficava numa linha com as três pílulas caindo embaixo: um
+   cabeçalho de duas alturas que comia a primeira dobra. Agora ele usa
+   `om-largo`, que encosta nas bordas, e sobra largura para tudo caber numa
+   linha só.
+
+   O SELETOR DE IDIOMA VIRA SIGLA, `PT` / `EN`. Numa linha só, "Português" era
+   a peça mais larga do canto direito e a que menos precisava da largura. A
+   sigla mostrada é a do idioma de DESTINO, que é para onde o link leva: quem
+   está lendo em português vê `EN`.
+
+   O nome inteiro da língua não some, ele muda de lugar: vai para o
+   `aria-label`, que é onde o leitor de tela o lê por extenso. "EN" lido em
+   voz alta é uma letra e um ruído.
+
+   ITEM 26, O TELEFONE VIRA MENU. A pílula com o número virou um ícone que
+   abre os dois telefones, cada um com o lugar dele. Resolvido com `<details>`
+   e `<summary>`, que é dropdown NATIVO: abre, fecha e navega por teclado sem
+   uma linha de JavaScript. O script só acrescenta o que o elemento não faz
+   sozinho, que é fechar ao clicar fora e no Escape.
+
+   Isso resolve o estouro de 320 px por outro caminho, e a regra
+   `@media (max-width: 47.999em)` que escondia as pílulas foi MEDIDA de novo e
+   removida: com o ícone no lugar do número, os três controles do canto somam
+   menos que a largura da tela mais estreita. Código morto com teste em volta
+   é pior que nenhum dos dois.
+   ========================================================================== #}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+
+{# O sprite de ícones, uma vez por página. Um `<use>` só desenha se o símbolo
+   estiver no MESMO documento. #}
+{% include "lab/sites/grupo-om/_icones.html" %}
+
+<header class="om-cabecalho om-escuro" id="om-topo" data-cabecalho>
+  {# A barra do arco-íris: grafismo da identidade, largura cheia, e a parte
+     acesa é a barra de progresso da leitura. #}
+  <div class="om-arco" aria-hidden="true"><span class="om-arco-luz" data-progresso></span></div>
+
+  <div class="om-largo om-topo">
+    <a class="om-marca" href="{{ base }}" aria-label="{{ T("{}, início").format(r.marca) }}">
+      {# O vetor oficial do cliente. Ele é preto no arquivo e o cabeçalho é
+         grafite: a inversão está no CSS, e o `@media print` a desfaz. #}
+      <img src="/static/lab/sites/grupo-om/marca-grupo-om.svg" width="1147" height="104"
+           alt="{{ T("{}, comunicação integrada").format(r.marca) }}" fetchpriority="high" decoding="async">
+    </a>
+
+    <nav class="om-nav" aria-label="{{ T("Páginas do site") }}">
+      <a href="{{ base }}"{% if pagina == 'home' %} aria-current="page"{% endif %}>{{ T("Home") }}</a>
+      <a href="{{ base }}/sobre"{% if pagina == 'sobre' %} aria-current="page"{% endif %}>{{ T("O grupo") }}</a>
+      <a href="{{ base }}/servicos"{% if pagina == 'servicos' %} aria-current="page"{% endif %}>{{ T("Serviços") }}</a>
+      <a href="{{ base }}/cases"{% if pagina == 'cases' %} aria-current="page"{% endif %}>{{ T("Cases") }}</a>
+      {#- Um ARTIGO é página da central: o menu marca "Conteúdo" como atual,
+          porque é a seção onde a pessoa está — um artigo não tem item
+          próprio numa barra de sete. -#}
+      <a href="{{ base }}/conteudo"{% if pagina == 'conteudo' or pagina.startswith('artigo-') %} aria-current="page"{% endif %}>{{ T("Conteúdo") }}</a>
+      <a href="{{ base }}/certificacoes"{% if pagina == 'certificacoes' %} aria-current="page"{% endif %}>{{ T("Certificações") }}</a>
+      <a href="{{ base }}/contato"{% if pagina == 'contato' %} aria-current="page"{% endif %}>{{ T("Contato") }}</a>
+    </nav>
+
+    <div class="om-topo-acoes">
+      {# ITEM 26: o telefone. `<details>` nativo, e por isso ele funciona com o
+         script fora do ar. Cada número vai com o lugar dele, que é a resposta
+         a uma pergunta que ficou aberta três ciclos: o (41) é Alphaville e o
+         (11) é São Paulo. #}
+      <details class="om-tel-menu" data-tel-menu>
+        {#- TOOLTIP. Ela é `data-dica` e não `title`: o `title` do navegador
+            demora um segundo e meio para aparecer, some sozinho, não se
+            estiliza e, junto com um `aria-label`, faz o leitor de tela
+            anunciar a mesma coisa duas vezes. A dica visual é do CSS, e o
+            nome acessível continua sendo só o `aria-label`. -#}
+        <summary class="om-tel-abre" data-dica="{{ T("Telefones") }}"
+                 aria-label="{{ T("Telefones do Grupo OM") }}">
+          {{ ico.ic("tel", 16) }}<span class="om-tel-abre-t">{{ T("Telefones") }}</span>
+        </summary>
+        {#- ÍCONE | TELEFONE. O fio entre os dois não é enfeite: ele é o que
+            faz o ícone CLASSIFICAR o número em vez de só estar ao lado dele.
+            O fio é `aria-hidden` porque não há nada para um leitor de tela
+            ouvir ali, e o ícone também: o texto ao lado já diz tudo. -#}
+        <div class="om-tel-lista">
+          <a href="tel:+554133621919">
+            {{ ico.ic("tel", 15) }}<i class="om-tel-fio" aria-hidden="true"></i>
+            <b>(41) 3362-1919</b><span>{{ T("Alphaville, Pinhais") }}</span></a>
+          <a href="tel:+551130442215">
+            {{ ico.ic("tel", 15) }}<i class="om-tel-fio" aria-hidden="true"></i>
+            <b>(11) 3044-2215</b><span>{{ T("Vila Olímpia, São Paulo") }}</span></a>
+        </div>
+      </details>
+
+      {# A SIGLA É A DO IDIOMA ATUAL, e isto mudou em 27/08 por decisão do
+         Leandro: "quando o site estiver em PT, deixe o botão em PT".
+
+         Ele estava mostrando o idioma de DESTINO, e o argumento era que quem
+         procura a versão inglesa procura a palavra que reconhece. Ele
+         preferiu o outro padrão, que é o mais comum em site de agência: o
+         botão diz onde você está, e clicar troca.
+
+         A ambiguidade que isso cria fica resolvida em dois lugares. O
+         `aria-label` diz o destino por extenso, para quem ouve; e a sigla
+         apagada ao lado mostra a outra opção, para quem vê. Um botão que só
+         diz "PT" e leva ao inglês seria adivinhação. #}
+      {% if lang == "en" %}
+      <a class="om-idioma" href="{{ enderecos.pt }}" hreflang="pt-BR" lang="pt-BR"
+         data-dica="Ver em português" aria-label="Ver esta página em português">
+        {{ ico.ic("idioma", 15) }}<span>EN</span><span class="om-idioma-outro" aria-hidden="true">PT</span></a>
+      {% else %}
+      <a class="om-idioma" href="{{ enderecos.en }}" hreflang="en" lang="en"
+         data-dica="Read in English" aria-label="View this page in English">
+        {{ ico.ic("idioma", 15) }}<span>PT</span><span class="om-idioma-outro" aria-hidden="true">EN</span></a>
+      {% endif %}
+
+      {# O hambúrguer nasce `hidden` e o script o revela: sem script, o menu de
+         tela cheia não abre, e um botão que não faz nada é pior que nenhum.
+         É por isso que a navegação em texto continua no cabeçalho para quem
+         não tem script.
+
+         ELE É O MESMO BOTÃO QUE FECHA (pedido do Leandro, 27/08: "deixar o X
+         na mesma posição do hambúrguer, essa lógica precisa estar perfeita").
+
+         A forma mais perfeita de duas coisas ficarem na mesma posição é elas
+         serem a mesma coisa. Em vez de um X dentro do painel tentando acertar
+         as coordenadas de um botão que muda de altura quando o cabeçalho
+         encolhe, este botão sobe acima do menu quando o menu abre, troca o
+         desenho e o rótulo, e fica exatamente onde estava, porque nunca saiu
+         de lá. Os dois ícones existem no HTML o tempo todo e o CSS decide
+         qual aparece: nada é criado nem destruído no clique. #}
+      <button class="om-hamburguer" type="button" data-menu-alterna hidden
+              data-dica="{{ T("Menu") }}" data-dica-aberto="{{ T("Fechar") }}"
+              aria-expanded="false" aria-controls="om-menu">
+        <span class="om-hamburguer-ic">
+          <span class="om-hamburguer-menu">{{ ico.ic("menu", 22) }}</span>
+          <span class="om-hamburguer-fecha">{{ ico.ic("fecha", 22) }}</span>
+        </span>
+        <span class="om-hamburguer-t">
+          <span class="om-hamburguer-abrir">{{ T("Menu") }}</span>
+          <span class="om-hamburguer-fechar">{{ T("Fechar") }}</span>
+        </span>
+      </button>
+    </div>
+  </div>
+</header>
+
+{% include "lab/sites/grupo-om/_menu.html" %}
+
+{# ITEM 26: VOLTAR AO TOPO. Nasce `hidden` e o script o mostra depois da
+   primeira dobra, porque antes dela ele não teria o que fazer. É `<a href>`
+   para o cabeçalho e não um botão: com o script fora do ar ele nem aparece,
+   e quando aparece o destino é um endereço de verdade, que o teclado e o
+   leitor de tela entendem sem ninguém explicar. #}
+{# O RÓTULO VEM ANTES DA SETA na marcação, e não depois: ele abre à ESQUERDA
+   do botão (pedido do Leandro, 26/08), e a ordem visual e a ordem de leitura
+   precisam ser a mesma. Trocar isso no CSS com `row-reverse` faria o leitor
+   de tela anunciar "seta, ao topo". #}
+<a class="om-ao-topo" href="#om-topo" data-ao-topo hidden
+   aria-label="{{ T("Ao topo") }}">
+  <span class="om-ao-topo-t">{{ T("Voltar ao topo") }}</span>{{ ico.ic("acima", 18) }}
+</a>

@@ -3,7 +3,8 @@ import json
 import secrets
 from itertools import zip_longest
 
-from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
+from fastapi import (APIRouter, Depends, File, Form, HTTPException, Request,
+                     UploadFile)
 from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.orm import Session, joinedload
 
@@ -1531,6 +1532,7 @@ def _contexto_lab(db: Session) -> dict:
         # "centavos" (int) alimenta o filtro `reais` (vírgula PT-BR) na exibição.
         "teto_dia_reais": teto_centavos / 100,
         "teto_dia_centavos": teto_centavos,
+        "redesigns": db.query(Redesign).order_by(Redesign.criado_em.desc()).all(),
     }
 
 
@@ -1572,3 +1574,156 @@ async def lab_salvar(request: Request, db: Session = Depends(get_db), _=Depends(
 
     db.commit()
     return RedirectResponse("/admin/lab?ok=1", status_code=303)
+
+
+# ---------- Redesigns do Lab (Task 5 do corte 1 de Sites) ----------
+# O painel onde o Leandro cria o registro, colhe o dossiê do site do
+# cliente, dispara as duas capturas de tela, vira o estado e copia o link
+# do pitch. Cinco rotas, todas sob /admin/lab, para o mesmo modelo.
+
+from ..models import ESTADOS_REDESIGN, Redesign, novo_token
+from ..services import captura, coleta
+
+
+def _redesign(db: Session, ident: int) -> Redesign:
+    r = db.get(Redesign, ident)
+    if r is None:
+        raise HTTPException(status_code=404, detail="Redesign não encontrado.")
+    return r
+
+
+def _slug_livre(db: Session, base: str) -> str:
+    """`aurora`, depois `aurora-2`, depois `aurora-3`.
+
+    Duas marcas com o mesmo nome existem, e o segundo cadastro não pode
+    estourar com IntegrityError na cara de quem está cadastrando."""
+    slug = base or "redesign"
+    n = 1
+    while db.query(Redesign).filter(Redesign.slug == slug).first() is not None:
+        n += 1
+        slug = f"{base}-{n}"
+    return slug
+
+
+@router.post("/lab/redesigns")
+async def redesign_criar(request: Request, marca: str = Form(...), setor: str = Form(""),
+                         antes_url: str = Form(...), db: Session = Depends(get_db),
+                         _admin=Depends(require_admin), csrf: str = Form("")):
+    """O Leandro digita marca e endereço. Slug e token são derivados: um do
+    nome, outro de `secrets`. Pedir os dois no formulário seria pedir que ele
+    invente o que a máquina faz melhor, e um token digitado à mão seria um
+    token adivinhável."""
+    check_csrf(request, csrf)
+    endereco = captura.url_valida(antes_url)
+    if not endereco:
+        raise HTTPException(status_code=400, detail="Endereço do site inválido.")
+    r = Redesign(
+        slug=_slug_livre(db, slugify(marca)),
+        marca=marca.strip(), setor=setor.strip(),
+        antes_url=endereco, token=novo_token(),
+    )
+    db.add(r)
+    db.commit()
+    return RedirectResponse("/admin/lab", status_code=303)
+
+
+@router.post("/lab/redesigns/{ident}/estado")
+async def redesign_estado(ident: int, request: Request, estado: str = Form(...),
+                          db: Session = Depends(get_db),
+                          _admin=Depends(require_admin), csrf: str = Form("")):
+    check_csrf(request, csrf)
+    if estado not in ESTADOS_REDESIGN:
+        raise HTTPException(status_code=400, detail=f"Estado inválido: {estado}")
+    r = _redesign(db, ident)
+    r.estado = estado
+    db.commit()
+    return RedirectResponse("/admin/lab", status_code=303)
+
+
+@router.post("/lab/redesigns/{ident}/colher")
+async def redesign_colher(ident: int, request: Request, db: Session = Depends(get_db),
+                          _admin=Depends(require_admin), csrf: str = Form("")):
+    """Baixa o site do cliente e grava o dossiê (§4).
+
+    Falhando, NÃO apaga o dossiê anterior: site do cliente fora do ar não
+    pode custar o material de uma proposta em andamento."""
+    check_csrf(request, csrf)
+    r = _redesign(db, ident)
+    dossie = coleta.colher(r.antes_url)
+    if dossie.get("ok"):
+        r.insumos = dossie
+        r.insumos_em = dt.datetime.now(dt.timezone.utc)
+        db.commit()
+    return RedirectResponse("/admin/lab", status_code=303)
+
+
+@router.post("/lab/redesigns/{ident}/capturar")
+async def redesign_capturar(ident: int, request: Request, lado: str = Form("antes"),
+                            db: Session = Depends(get_db),
+                            _admin=Depends(require_admin), csrf: str = Form("")):
+    """Fotografa um dos dois lados da cortina.
+
+    O "depois" entra pelo endereço INTERNO do contêiner, e não por
+    `settings.base_url`. O Chromium de `app/services/captura.py` roda AQUI
+    DENTRO (Dockerfile, linha 14) e o nginx roda no host. Se a captura
+    batesse no endereço público, a requisição sairia do contêiner e
+    voltaria pelo nginx, que carimbaria o IP da bridge do Docker (172.x.x.x)
+    em vez de 127.0.0.1 — e a regra de loopback em
+    `app/lab/rotas_sites.py::marcar_visto` NÃO pegaria essa captura, que
+    marcaria o cliente como tendo aberto a proposta antes de ela ter sido
+    enviada (§9.1 da spec). O uvicorn escuta em 0.0.0.0:8000 dentro do
+    contêiner (Dockerfile, CMD), daí o endereço fixo abaixo.
+
+    Além disso, o "depois" só existe pelo link do TOKEN: enquanto o
+    redesign é `pitch`, o endereço público responde 404 (§6), e a captura
+    voltaria vazia."""
+    check_csrf(request, csrf)
+    r = _redesign(db, ident)
+    if lado == "depois":
+        # Endereço INTERNO do contêiner, e não `settings.base_url`. O
+        # Chromium roda aqui dentro e o nginx roda no host: bater no
+        # endereço público faria a requisição sair e voltar pelo proxy, que
+        # carimbaria o IP da bridge do Docker em vez de 127.0.0.1 — e aí a
+        # regra de loopback de `marcar_visto` não pegaria a captura, que
+        # marcaria o cliente como tendo aberto a proposta antes de ela ser
+        # enviada (§9.1 da spec).
+        alvo = f"http://127.0.0.1:8000/lab/p/{r.token}"
+        nome = f"redesign-{r.slug}-depois"
+    else:
+        alvo = r.antes_url
+        nome = f"redesign-{r.slug}-antes"
+
+    caminho, erro = captura.capturar(alvo, nome)
+    if not erro and caminho:
+        agora = dt.datetime.now(dt.timezone.utc)
+        if lado == "depois":
+            r.depois_shot, r.depois_shot_at = caminho, agora
+        else:
+            r.antes_shot, r.antes_shot_at = caminho, agora
+        db.commit()
+    return RedirectResponse("/admin/lab", status_code=303)
+
+
+@router.post("/lab/redesigns/{ident}/enviado")
+async def redesign_enviado(ident: int, request: Request, db: Session = Depends(get_db),
+                           _admin=Depends(require_admin), csrf: str = Form("")):
+    """Carimba `enviado_em`, o par de `visto_em`.
+
+    O servidor não tem como saber que o link foi para o WhatsApp de alguém,
+    então quem sabe é o Leandro, e ele diz com um clique. Sem os dois
+    carimbos, `visto_em` sozinho responde "abriu" mas não "abriu depois de
+    quanto tempo", que é a diferença entre um prospect morno e um frio."""
+    check_csrf(request, csrf)
+    r = _redesign(db, ident)
+    r.enviado_em = dt.datetime.now(dt.timezone.utc)
+    db.commit()
+    return RedirectResponse("/admin/lab", status_code=303)
+
+
+@router.post("/lab/redesigns/{ident}/excluir")
+async def redesign_excluir(ident: int, request: Request, db: Session = Depends(get_db),
+                           _admin=Depends(require_admin), csrf: str = Form("")):
+    check_csrf(request, csrf)
+    db.delete(_redesign(db, ident))
+    db.commit()
+    return RedirectResponse("/admin/lab", status_code=303)

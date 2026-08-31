@@ -26,11 +26,25 @@ CSS = [
     "lab/lab-base.css", "lab/lab-moldura.css", "lab/admita.css", "lab/notavel.css", "lab/caderneta.css",
     "lab/vitrine.css",
 ]
+# Lab de Sites (Plano 3): TODO redesign de cliente entra, e por PADRÃO, não
+# por caminho fixo. Cada home dessas vem com um CSS de marca próprio, e o
+# comentário interno é metade do arquivo: direção de arte, crítica ao que o
+# site do cliente faz hoje e log dos consertos do autor. No git isso é bom;
+# servido ao dono da agência é constrangimento, e um caminho fixo aqui só
+# seria lembrado no primeiro redesign. O padrão pega os próximos sozinho.
+CSS += sorted(caminho.relative_to(RAIZ).as_posix()
+              for caminho in RAIZ.glob("lab/sites/*.css"))
 JS = [
     "js/main.js", "js/a11y.js", "js/assinatura.js", "js/consentimento.js",
     # Lab de Demos (Plano 2, Task 4) — miolo da esteira do Admita.
     "lab/admita.js",
 ]
+# Lab de Sites (Plano 3): mesma regra do CSS, e pela mesma razão. O JS de um
+# redesign explica em comentário por que cada animação existe e o que ela
+# quebrou antes; isso é para o git, não para a aba de fontes do dono da
+# agência. Padrão, e não caminho fixo, para o próximo redesign entrar sozinho.
+JS += sorted(caminho.relative_to(RAIZ).as_posix()
+             for caminho in RAIZ.glob("lab/sites/*.js"))
 
 
 def _minificar(rel: str, funcao) -> None:

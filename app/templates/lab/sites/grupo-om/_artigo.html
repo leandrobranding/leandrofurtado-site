@@ -1,0 +1,51 @@
+{# ==========================================================================
+   UM ARTIGO DO BLOG, e a página é honesta sobre o que tem: a ABERTURA.
+
+   A colheita traz o título, a data, o resumo (a meta description do próprio
+   artigo) e os três primeiros parágrafos, tudo verbatim. O artigo completo
+   continua no site atual, e o botão diz exatamente isso — é o mesmo gesto do
+   cartão do Instituto: mandar o dono da agência para o endereço que ainda é
+   dele, em vez de fingir que a página inteira já mora aqui.
+
+   Quem usa este parcial são os oito stubs `artigo-<slug>.html`, cada um com
+   duas linhas: o `set` do slug e o include. Assim cada artigo tem endereço
+   próprio SEM rota nova — a validação de internas já serve qualquer template
+   que exista no disco.
+   ========================================================================== #}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+{% set a = artigo_por_slug[artigo] %}
+{% include "lab/sites/grupo-om/_topo.html" %}
+
+<main>
+  <section class="om-capa-interna om-escuro">
+    <div class="om-wrap">
+      <p class="om-kicker om-rv">{{ T("Artigo") }}</p>
+      <h1 class="om-manchete om-manchete-artigo om-split">{{ T(a.titulo) }}</h1>
+      <div class="om-fio om-fio-largo" aria-hidden="true"></div>
+      <div class="om-capa-pe">
+        <time class="om-cartao-data om-rv" datetime="{{ a.iso }}">{{ ico.ic("data", 13) }}{{ a.iso if lang == "en" else a.iso[8:10] ~ "/" ~ a.iso[5:7] ~ "/" ~ a.iso[:4] }}</time>
+        <p class="om-declaracao om-declaracao-larga om-rv">{{ T(a.resumo) }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="om-secao om-papel">
+    <div class="om-wrap">
+      <div class="om-case-prosa">
+        {%- for p in a.corpo %}
+        <p class="om-texto om-rv">{{ T(p) }}</p>
+        {%- endfor %}
+        {#- A PÁGINA DIZ QUE É A ABERTURA, e não o texto inteiro: meia
+            leitura sem aviso é o tipo de coisa que o dono do texto nota. -#}
+        <p class="om-artigo-aviso om-rv">{{ T("Esta é a abertura do artigo. O texto completo está publicado no site atual do grupo.") }}</p>
+        <div class="om-chamadas om-rv">
+          <a class="om-btn om-btn-cheio" href="https://grupoom.com.br/{{ a.slug }}/"
+             target="_blank" rel="noopener">{{ T("Ler o artigo completo") }} {{ ico.ic("fora", 15) }}</a>
+          <a class="om-btn om-btn-vazio" href="{{ base }}/conteudo#c-artigos">{{ T("Voltar à central") }} {{ ico.ic("volta", 15) }}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+{% include "lab/sites/grupo-om/_pe.html" %}

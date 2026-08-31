@@ -42,6 +42,7 @@ import re
 import time
 
 from ..config import settings
+from . import limite
 
 # ---------------------------------------------------------------- conteúdo --
 
@@ -118,25 +119,15 @@ def carimbo_valido(valor: str, chave: str, agora: float | None = None) -> bool:
 
 # -------------------------------------------------------------------- taxa --
 
-# Mesmo desenho do rate limit do login (app/auth.py): memória local, por IP.
-# Vale a mesma ressalva já registrada no ledger do Lab: com 2 workers no
-# container o teto efetivo dobra — aceito, o objetivo é parar rajada, não
-# fazer contagem exata.
-_envios: dict[str, list[float]] = {}
+# O contador é COMPARTILHADO entre os workers (services/limite.py). Até
+# 24/08/2026 era um dicionário na memória do processo, e com `--workers 2` no
+# contêiner o teto efetivo era o dobro do escrito: 3 envios por IP aceitavam
+# 6. O comentário antigo aqui chamava isso de "aceito, o objetivo é parar
+# rajada" — o que é verdade para rajada e falso para quem tenta de propósito,
+# que é justamente o caso que apareceu em 21/08.
 MAX_ENVIOS = settings.spam_max_envios
 JANELA = settings.spam_janela_segundos
 
 
 def envio_permitido(ip: str, agora: float | None = None) -> bool:
-    agora = agora if agora is not None else time.time()
-    fila = [t for t in _envios.get(ip, []) if agora - t < JANELA]
-    if len(fila) >= MAX_ENVIOS:
-        _envios[ip] = fila
-        return False
-    fila.append(agora)
-    _envios[ip] = fila
-    # poda: IPs cuja janela esvaziou não ficam para sempre na memória
-    if len(_envios) > 1000:
-        for k in [k for k, v in _envios.items() if not v or agora - v[-1] > JANELA]:
-            _envios.pop(k, None)
-    return True
+    return limite.permitir(f"envio:{ip}", MAX_ENVIOS, JANELA, agora)

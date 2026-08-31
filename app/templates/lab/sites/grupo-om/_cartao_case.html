@@ -1,0 +1,61 @@
+{# ==========================================================================
+   O CARTÃO DE UM CASE NA GRADE (itens 18 e 19).
+
+   O QUE SAIU (item 18). A captura mostrava `01 [logo GRUPO OM] GRUPO OM
+   <título> <título>`: quatro elementos para dizer duas coisas. Saiu o
+   numeral, saiu o nome da empresa em texto (a logo já diz, e o `alt` dela diz
+   para quem não vê) e saiu a repetição do título. O item 32 depois estendeu
+   essa mesma regra ao site inteiro.
+
+   O QUE ENTROU (item 19), e todo case tem os cinco, sem exceção: imagem, logo
+   de quem assina (maior), data real, etiqueta de assunto e o CTA.
+
+   A MESMA MEDIDA DE TEXTO EM TODOS. O `resumo` de cada case tem entre 130 e
+   160 caracteres, e essa é a razão de ele ser um campo escrito em
+   `cases_grupo_om.py` em vez de "o primeiro parágrafo": os primeiros
+   parágrafos reais vão de 41 a 250 caracteres, e um cartão de uma linha ao
+   lado de um de cinco é o que faz uma grade parecer rascunho.
+
+   AS ETIQUETAS FICAM FORA DO `<a>`, e isso não é arrumação de marcação: o
+   item 19 pede que elas NÃO sejam clicáveis, e tudo que estiver dentro da
+   âncora é clicável, mesmo sem `href` próprio. Quem quiser filtrar por
+   assunto tem os chips no topo da grade, que são links de verdade.
+
+   27/08: viraram TRÊS por case, sempre, ANTES do CTA. As três saem de
+   `ETIQUETAS` em `cases_grupo_om.py`, com a regra de honestidade escrita lá:
+   meio, natureza e território, cada palavra tirada do texto publicado do
+   case. E para as etiquetas ficarem entre o resumo e o botão SEM entrar na
+   âncora, o CTA saiu dela: o cartão inteiro clica pelo ELO ESTICADO (o
+   `::after` da âncora cobre o `li`), e "Ver o case" passou a ser um `<span>`
+   visual. O nome acessível do link continua sendo o título mais o resumo,
+   que é melhor do que dezessete links chamados "Ver o case".
+
+   `alt=""` NA IMAGEM porque o título do case está escrito no mesmo cartão, em
+   texto, dentro do mesmo link: um `alt` descritivo aqui faria o leitor de tela
+   anunciar a mesma coisa duas vezes antes de chegar ao que interessa.
+
+   O TÍTULO É `<h3>` DENTRO DA ÂNCORA, e não ao lado dela. Fosse ao lado, o
+   nome acessível de cada um dos dezoito links seria "Ver o case", e a lista de
+   links que o leitor de tela oferece viraria dezoito linhas idênticas.
+   ========================================================================== #}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+{% import "lab/sites/grupo-om/_assinatura.html" as sig with context %}
+
+{%- macro cartao(c) -%}
+<li class="om-cartao om-rv">
+  <a class="om-cartao-elo" href="{{ base }}/case/{{ c.slug }}">
+    <span class="om-cartao-arte">
+      <img src="{{ c.imagem }}" width="960" height="540" alt=""
+           loading="lazy" decoding="async">
+    </span>
+    <span class="om-cartao-cima">
+      {{ sig.marca(c.empresa, grande=true) }}
+      <time class="om-cartao-data" datetime="{{ c.iso }}">{{ ico.ic("data", 13) }}{{ c.iso if lang == "en" else c.data }}</time>
+    </span>
+    <h3 class="om-cartao-t">{{ T(c.titulo) }}</h3>
+    <p class="om-cartao-resumo">{{ T(c.resumo) }}</p>
+  </a>
+  <ul class="om-etiquetas">{% for e in c.etiquetas %}<li>{{ T(e) }}</li>{% endfor %}</ul>
+  <span class="om-case-ver" aria-hidden="true">{{ T("Ver o case") }} {{ ico.ic("seta", 14) }}</span>
+</li>
+{%- endmacro -%}

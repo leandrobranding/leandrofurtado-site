@@ -8,6 +8,7 @@ validação de e-mail, gravou lead e disparou e-mail para o Leandro.
 O primeiro teste reproduz esse envio literalmente. Se alguém afrouxar uma
 regra e ele voltar a passar, este arquivo acusa.
 """
+from app.services import limite
 import time
 
 from app.config import settings
@@ -91,7 +92,7 @@ def test_o_envio_seguinte_ao_teto_do_mesmo_ip_e_barrado():
     publicação do repositório. O teste passou a derivar dos dois em vez de
     contar até três na mão: com número fixo aqui, mudar o limite no ambiente
     faria a suíte mentir sem falhar."""
-    anti_spam._envios.clear()
+    limite.limpar()
     agora = time.time()
     ip = "203.0.113.7"
     for i in range(anti_spam.MAX_ENVIOS):
@@ -102,7 +103,7 @@ def test_o_envio_seguinte_ao_teto_do_mesmo_ip_e_barrado():
 
 
 def test_ips_diferentes_nao_dividem_o_mesmo_teto():
-    anti_spam._envios.clear()
+    limite.limpar()
     agora = time.time()
     for i in range(anti_spam.MAX_ENVIOS):
         assert envio_permitido("198.51.100.1", agora + i)
@@ -120,7 +121,7 @@ def test_bot_sem_carimbo_recebe_sucesso_falso_e_nada_e_gravado():
     from app.database import SessionLocal
     from app.models import ContactMessage, Lead
 
-    anti_spam._envios.clear()
+    limite.limpar()
     with TestClient(app, base_url="https://testserver") as cliente:
         r = cliente.post("/contact", data={
             "name": "Hi http://leandrofurtado.com.br/x Webmaster",
@@ -142,7 +143,7 @@ def test_humano_com_carimbo_valido_continua_conseguindo_falar():
     from app.database import SessionLocal
     from app.models import ContactMessage, Lead
 
-    anti_spam._envios.clear()
+    limite.limpar()
     t = carimbo(settings.secret_key, time.time() - 12)
     with TestClient(app, base_url="https://testserver") as cliente:
         r = cliente.post("/contact", data={

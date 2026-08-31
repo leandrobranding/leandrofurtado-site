@@ -1,0 +1,140 @@
+{# ==========================================================================
+   Grupo OM: política de cookies.
+
+   A segunda das três do item 7, e a que tem o melhor argumento comercial de
+   toda a proposta, porque ela é a comparação direta.
+
+   O site atual do cliente abre com um aviso de cookies (o texto está no
+   material colhido, verbatim) e roda um tradutor de terceiro que acompanha
+   quem visita. Esta peça não tem nem um nem outro, e não porque alguém
+   esqueceu: é decisão de projeto, e é a mesma decisão que faz a página pesar
+   uma fração do que o site atual pesa.
+
+   CORREÇÃO DE 26/08, e ela vale mais que a página inteira. Este texto
+   declarava um cookie de idioma chamado `lf_lang`, escrito antes de o item 11
+   existir, quando a suposição era que a troca de idioma guardaria a escolha.
+   ELA NÃO GUARDA. O idioma desta peça é um SEGMENTO DA URL
+   (`/lab/sites/grupo-om/en`), e um endereço não precisa de cookie para se
+   lembrar de si mesmo.
+
+   Ou seja: a política declarava um cookie que a peça não põe. Numa página cujo
+   assunto é exatamente "o que este site guarda sobre você", declarar de menos
+   e declarar de MAIS são o mesmo erro, e o segundo é o mais fácil de conferir:
+   basta abrir o painel do navegador e ver a lista vazia.
+
+   O texto agora diz o que é verdade, e o que é verdade é mais forte do que a
+   versão anterior: ZERO cookie. Nenhum de primeira parte, nenhum de terceiro,
+   nenhum de idioma. É a comparação direta com o site atual do cliente, que
+   abre com aviso de cookies e roda um tradutor de terceiro.
+   ========================================================================== #}
+{% extends "lab/sites/_base_redesign.html" %}
+{% set pagina = "politicas" %}
+
+{% block titulo %}{{ T("Política de Cookies") }} | {{ r.marca }}{% endblock %}
+{% block descricao %}{{ T("Esta proposta não põe cookie nenhum: nem de medição, nem de publicidade, nem de idioma. O idioma é um segmento do endereço.") }}{% endblock %}
+
+{% block cabeca %}{% include "lab/sites/grupo-om/_cabeca.html" %}{% endblock %}
+
+{% block autoria %}{% include "lab/sites/grupo-om/_autoria.html" %}{% endblock %}
+
+{% block corpo %}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+{% include "lab/sites/grupo-om/_topo.html" %}
+
+<main>
+  <section class="om-capa-interna om-escuro">
+    <div class="om-wrap">
+      <p class="om-kicker om-rv">{{ ico.ic("cookie", 14) }} {{ T("Política de Cookies") }}</p>
+      <h1 class="om-manchete om-split"> {{ T("Nenhum cookie,") }} <span class="om-leve">{{ T("e nada para consentir.") }}</span>
+      </h1>
+      <div class="om-fio om-fio-largo" aria-hidden="true"></div>
+      <div class="om-capa-pe">
+        <p class="om-kicker om-rv">{{ T("Por isso não há aviso") }}</p>
+        <p class="om-declaracao om-declaracao-larga om-rv">{{ T("Sem cookie de medição e sem cookie de publicidade,") }} <b>{{ T("não há consentimento a pedir") }}</b>{{ T(". A página abre no conteúdo, e não numa faixa.") }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="om-secao" aria-labelledby="om-t-unico">
+    <div class="om-wrap om-assim">
+      <p class="om-kicker om-rv">{{ T("A conta inteira") }}</p>
+      <div>
+        <h2 class="om-titulo om-split" id="om-t-unico"> {{ T("Zero,") }} <span class="om-leve">{{ T("e isso é conferível agora.") }}</span>
+        </h2>
+        <div class="om-fio" aria-hidden="true"></div>
+        <dl class="om-ficha om-rv">
+          <div>
+            <dt>{{ ico.ic("caso") }} {{ T("De primeira parte") }}</dt>
+            <dd>{{ T("nenhum") }}</dd>
+          </div>
+          <div>
+            <dt>{{ ico.ic("rede") }} {{ T("De terceiro") }}</dt>
+            <dd>{{ T("nenhum") }}</dd>
+          </div>
+          <div>
+            <dt>{{ ico.ic("idioma") }} {{ T("De idioma") }}</dt>
+            <dd>{{ T("nenhum: o idioma é o endereço") }}</dd>
+          </div>
+          <div>
+            <dt>{{ ico.ic("escudo") }} {{ T("Consentimento a pedir") }}</dt>
+            <dd>{{ T("nenhum") }}</dd>
+          </div>
+        </dl>
+        <p class="om-texto om-rv">{{ T("A versão em inglês desta proposta tem endereço próprio, terminado em barra en, e é assim que ela é lembrada: pelo link. Um endereço não precisa de cookie para saber quem é, e é por isso que a lista acima é a lista inteira. Abra o painel do navegador nesta página e confira.") }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="om-secao om-papel" aria-labelledby="om-t-ausentes">
+    <div class="om-wrap om-assim">
+      <p class="om-kicker om-rv">{{ T("O que não existe") }}</p>
+      <div>
+        <h2 class="om-titulo om-split" id="om-t-ausentes"> {{ T("Nenhum de terceiro,") }} <span class="om-leve">{{ T("porque nada vem de fora.") }}</span>
+        </h2>
+        <div class="om-fio" aria-hidden="true"></div>
+        <ol class="om-indice">
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">01</span>
+            <span class="om-item-nome">{{ T("Nenhum cookie de medição de audiência") }}</span>
+          </div></li>
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">02</span>
+            <span class="om-item-nome">{{ T("Nenhum cookie de publicidade ou remarketing") }}</span>
+          </div></li>
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">03</span>
+            <span class="om-item-nome">{{ T("Nenhum widget de tradução de terceiro") }}</span>
+          </div></li>
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">04</span>
+            <span class="om-item-nome">{{ T("Nenhum botão de rede social que carrega script") }}</span>
+          </div></li>
+        </ol>
+        <p class="om-texto om-rv">{{ T("O idioma desta proposta é") }} <b>{{ T("tradução escrita") }}</b>{{ T(", servida por este mesmo endereço, e não um tradutor automático de outra empresa. É por isso que não há terceiro nenhum para pôr cookie aqui.") }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="om-secao om-escuro" aria-labelledby="om-t-c-definitiva">
+    <div class="om-wrap om-assim">
+      <p class="om-kicker om-rv">{{ T("Fora do escopo") }}</p>
+      <div>
+        <h2 class="om-titulo om-split" id="om-t-c-definitiva"> {{ T("O texto oficial") }} <span class="om-leve">{{ T("é do grupo.") }}</span>
+        </h2>
+        <div class="om-fio" aria-hidden="true"></div>
+        <p class="om-texto om-rv">{{ T("Esta é uma proposta de redesign, e não o site oficial do") }} {{ r.marca }}{{ T(". Quando o site definitivo entrar no ar com as ferramentas que a agência decidir usar, a política de cookies dela é que vale. Este endereço declara o que") }} <b>{{ T("esta peça") }}</b> {{ T("faz.") }}</p>
+        <div class="om-chamadas om-rv">
+          <a class="om-btn om-btn-vazio" href="{{ base }}/politica-de-privacidade">
+            {{ T("Política de Privacidade") }} {{ ico.ic("seta", 15) }}</a>
+          <a class="om-btn om-btn-vazio" href="{{ base }}/acessibilidade">
+            {{ T("Acessibilidade") }} {{ ico.ic("seta", 15) }}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+{% include "lab/sites/grupo-om/_pe.html" %}
+{% endblock %}
+
+{% block scripts %}{% include "lab/sites/grupo-om/_scripts.html" %}{% endblock %}

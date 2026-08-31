@@ -6792,7 +6792,6 @@ body[data-page="nodal-estudo"] .site-header {
    classe inteira já sumiu com `.nd-no-print { display: none !important }`. */
 
 .nd-apr-certificados p { display: flex; align-items: center; gap: 8px; margin: 0; }
-=======
 /* ============================================================
    TRILHO DO LAB na home (lançamento do Lab de Demos, 21/08).
 
@@ -7039,13 +7038,27 @@ a.lab-trilho-card:hover {
   justify-content: center;
   padding: 30px var(--pad) 4px;
 }
-.selo {
+/* ATENÇÃO ao seletor: NUNCA use `.selo` sozinho aqui.
+   `.selo` já pertencia a outro componente quando estes selos nasceram (23/08):
+   é a classe dos ícones de ferramenta dos cases (`.selos .selo`, linha ~1016),
+   que são `<img>` de 18px. Um `.selo` cru neste bloco vence pela cascata nas
+   propriedades que aquele NÃO declara, e `padding: 11px 16px` mais `border`
+   caíram em cima dos ícones. Com `box-sizing: border-box` e 18px de largura,
+   o padding não cabe: a caixa de conteúdo colapsa para 0x0 e o ícone SOME,
+   sobrando só a moldura vazia. Foi o que aconteceu no site inteiro até 25/08.
+   Os dois selos deste componente sempre carregam `selo-google` ou
+   `selo-seguro` (ver as macros em app/templates/base.html), inclusive o do
+   menu de tela cheia, então escopar por elas cobre o componente todo sem
+   encostar em `<img>` nenhum. */
+.selo-google,
+.selo-seguro {
   display: inline-flex; align-items: center; gap: 11px;
   padding: 11px 16px; border: 1px solid var(--line); border-radius: 999px;
   text-decoration: none; color: var(--ink);
   transition: border-color .3s var(--ease), transform .3s var(--ease);
 }
-a.selo:hover, a.selo:focus-visible { border-color: var(--ink); transform: translateY(-2px); }
+a.selo-google:hover, a.selo-google:focus-visible,
+a.selo-seguro:hover, a.selo-seguro:focus-visible { border-color: var(--ink); transform: translateY(-2px); }
 /* Declaração não é botão: sem hover, sem deslocamento, borda mais discreta. */
 .selo-seguro { border-color: color-mix(in srgb, var(--line) 70%, transparent); cursor: default; }
 
@@ -7073,7 +7086,7 @@ a.selo:hover, a.selo:focus-visible { border-color: var(--ink); transform: transl
   /* Empilhado o par ocupa duas linhas inteiras; lado a lado ele espremeria o
      texto do selo de segurança, que é o mais longo dos dois. */
   .footer-selos { flex-direction: column; align-items: stretch; }
-  .selo { justify-content: center; }
+  .selo-google, .selo-seguro { justify-content: center; }
 }
 
 /* O selo de avaliação passa a morar ao lado dos ícones sociais no menu de

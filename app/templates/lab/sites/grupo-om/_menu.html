@@ -1,0 +1,242 @@
+{# ==========================================================================
+   O MENU DE TELA CHEIA. Item 5, verbatim: "menu hambúrguer que abre um menu
+   full screen moderno com tudo que tem no site: as cinco páginas, os cases,
+   contato, redes. Fechável por Esc e por clique fora, com foco preso enquanto
+   aberto."
+
+   "TUDO QUE TEM NO SITE" É LITERAL, e é o que faz este menu valer a pena. A
+   peça tem treze páginas: cinco de menu, cinco de case e três de política. Um
+   menu de tela cheia que repetisse só os cinco itens da barra seria a mesma
+   barra maior, e não teria por que existir. Aqui ele é o índice inteiro, e é
+   o único lugar da peça onde os cinco cases aparecem nomeados fora da página
+   de cases.
+
+   POR QUE ELE NÃO MARCA `aria-current`. A barra do topo já marca a página
+   atual, e dois `aria-current="page"` no mesmo documento fazem o leitor de
+   tela anunciar duas páginas atuais, que é pior do que nenhuma. Este menu é
+   índice, não localização.
+
+   `hidden` E `inert` juntos, e os dois fazem coisas diferentes: `hidden` tira
+   da pintura, `inert` tira do foco e da árvore de acessibilidade. Sem o
+   segundo, um menu fechado que ainda estivesse no DOM continuaria recebendo
+   tabulação e o leitor de tela leria trinta links invisíveis. Quem liga e
+   desliga os dois é o script, e enquanto ele não chega o menu simplesmente
+   não existe para ninguém.
+   ========================================================================== #}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+
+<div class="om-menu" id="om-menu" data-menu hidden inert>
+  {# O fundo escuro é um irmão, e não o pai: clicar fora fecha, e "fora" aqui
+     é exatamente esta camada. Um `click` no contêiner inteiro fecharia
+     também quando a pessoa clicasse num espaço vazio DENTRO do painel, que é
+     um fechamento que ninguém pediu. #}
+  <div class="om-menu-fundo" data-menu-fecha aria-hidden="true"></div>
+
+  {#- AS FAIXAS. Elas não decoram a abertura: elas SÃO o fundo do menu.
+
+      O painel é transparente, e a superfície escura que o cobre são estas
+      seis colunas. Ao abrir, cada uma desce do alto num tempo próprio, da
+      esquerda para a direita: por meio segundo o que se vê é a página sendo
+      coberta em pedaços, e não uma caixa crescendo. Ao fechar, elas sobem na
+      ordem inversa, e a página reaparece pela esquerda.
+
+      SEIS, e o número tem razão: com três a cascata quase não se lê, e com
+      dez a última chega tarde demais e o menu parece lento. Seis dá 275 ms de
+      diferença entre a primeira e a última, que é o tempo em que o olho ainda
+      liga uma coisa à outra.
+
+      A ORDEM ESTÁ NO CSS, por `nth-child`, e não numa variável escrita pelo
+      script: assim a cascata existe mesmo se o script falhar depois de abrir
+      o menu, e ninguém precisa lembrar de numerar nada ao mexer aqui.
+
+      `aria-hidden` e sem eventos: é superfície, não conteúdo. -#}
+  <div class="om-menu-faixas" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+
+  <div class="om-menu-painel" role="dialog" aria-modal="true" aria-label="{{ T("Menu do site") }}">
+    {#- A MARCA, GRANDE E À ESQUERDA, alinhada com a coluna do índice.
+
+        Ela estava centralizada e o Leandro trocou: alinhada ao índice, ela
+        deixa de flutuar sozinha e passa a abrir a coluna, como o título de
+        uma página abre o texto. E cresce, porque agora ela tem uma margem
+        para ancorar em vez de um centro para disputar. -#}
+    <div class="om-menu-topo">
+      <img class="om-menu-marca" src="/static/lab/sites/grupo-om/marca-grupo-om.svg"
+           width="1147" height="104" alt="{{ r.marca }}" loading="lazy" decoding="async">
+    </div>
+
+    <div class="om-menu-grade">
+      {#- A COLUNA DA ESQUERDA É UM GRUPO, e o agrupamento não é enfeite de
+          marcação: sem ele, a arte precisava ATRAVESSAR duas fileiras da
+          grade para ficar ao lado do índice e do cartão, e um item que
+          atravessa fileiras automáticas empurra as duas quando é mais alto
+          que elas. Era isso que abria um vão entre as páginas e o Instituto
+          em tela larga, e o que obrigava a arte a esticar (perdendo o 16:9)
+          para o vão não aparecer.
+
+          Com o grupo, a grade de fora tem UMA fileira e duas colunas: à
+          esquerda este bloco, com a altura do que tem dentro; à direita a
+          arte, com a altura que o 16:9 dela pede. As duas começam no mesmo
+          topo e cada uma termina onde termina. -#}
+      <div class="om-menu-esq">
+        {#- AS PÁGINAS, no canto esquerdo, em caixa normal.
+
+            Caixa alta em cinco linhas de 3 rem vira bloco, e bloco não se lê,
+            se reconhece. Em caixa normal a palavra volta a ter silhueta, que é
+            o que o olho usa para achar "Certificações" sem soletrar.
+
+            A COLUNA DE CASES SAIU (27/08). Ela nomeava seis dos dezessete, e
+            seis não é nem uma amostra nem o índice: "Cases" na lista de páginas
+            leva à grade inteira, com filtros, que é onde eles moram. -#}
+        <nav class="om-menu-paginas" aria-label="{{ T("Páginas, menu de tela cheia") }}">
+          <ul>
+            <li><a href="{{ base }}"><span>{{ T("Home") }}</span> {{ ico.ic("seta", 18) }}</a></li>
+            <li><a href="{{ base }}/sobre"><span>{{ T("O grupo") }}</span> {{ ico.ic("seta", 18) }}</a></li>
+            <li><a href="{{ base }}/servicos"><span>{{ T("Serviços") }}</span> {{ ico.ic("seta", 18) }}</a></li>
+            <li><a href="{{ base }}/cases"><span>{{ T("Cases") }}</span> {{ ico.ic("seta", 18) }}</a></li>
+            <li><a href="{{ base }}/conteudo"><span>{{ T("Conteúdo") }}</span> {{ ico.ic("seta", 18) }}</a></li>
+            <li><a href="{{ base }}/certificacoes"><span>{{ T("Certificações") }}</span> {{ ico.ic("seta", 18) }}</a></li>
+            <li><a href="{{ base }}/contato"><span>{{ T("Contato") }}</span> {{ ico.ic("seta", 18) }}</a></li>
+          </ul>
+        </nav>
+
+        {#- CONTATO E REDES, duas colunas dentro de uma caixa só, sem divisória
+            entre elas. A caixa é o que agrupa; um fio entre as duas diria que
+            são coisas de naturezas diferentes, e não são: as duas são "como
+            falar com eles". Tipografia menor que a das páginas, porque são
+            apoio e não destino. -#}
+        <div class="om-menu-caixa">
+          <div class="om-menu-tels">
+            <p class="om-menu-t">{{ ico.ic("tel", 13) }} {{ T("Telefones") }}</p>
+            <ul class="om-menu-mini">
+              <li><a href="tel:+554133621919"><b>(41) 3362-1919</b>
+                <span>{{ T("Alphaville, Pinhais") }}</span></a></li>
+              <li><a href="tel:+551130442215"><b>(11) 3044-2215</b>
+                <span>{{ T("Vila Olímpia, São Paulo") }}</span></a></li>
+            </ul>
+          </div>
+          {#- AS REDES viram uma FILEIRA DE ÍCONES no celular (Leandro, 27/08).
+              Três linhas rotuladas custam 132 px de altura numa tela onde o
+              menu já rola; a fileira custa 44 e diz a mesma coisa, porque a
+              marca de cada rede É o rótulo dela. O nome continua no DOM,
+              escondido só para os olhos: quem ouve a página continua ouvindo
+              "LinkedIn". -#}
+          <div class="om-menu-redes">
+            <p class="om-menu-t">{{ ico.ic("rede", 13) }} {{ T("Redes sociais") }}</p>
+            <ul class="om-menu-mini">
+              {#- LINKEDIN PRIMEIRO, premissa do site inteiro. -#}
+              <li><a href="https://www.linkedin.com/company/grupo-om-marketing-comunicacao/mycompany/"
+                     target="_blank" rel="noopener">{{ ico.ic("linkedin", 14) }}<b>LinkedIn</b></a></li>
+              <li><a href="https://www.instagram.com/grupo_om/" target="_blank" rel="noopener">
+                {{ ico.ic("instagram", 14) }}<b>Instagram</b></a></li>
+              <li><a href="https://www.facebook.com/Grupo-OM-247205285365059/"
+                     target="_blank" rel="noopener">{{ ico.ic("facebook", 14) }}<b>Facebook</b></a></li>
+            </ul>
+          </div>
+        </div>
+
+        {#- O INSTITUTO J.D. RODRIGUES.
+
+            Ele existe no site do cliente e não é uma página como as outras: é
+            o braço de conhecimento do grupo, com propósito, missão e marca
+            próprias. Numa lista de cinco páginas ele seria a sexta linha e
+            perderia o que tem de diferente; aqui ele é um cartão, com a marca
+            dele e a missão que eles mesmos escrevem.
+
+            Sai do redesign para o site atual, e é o único lugar da peça que
+            faz isso. É a resposta honesta: o Instituto não faz parte do que
+            está sendo reproposto, e mandar o dono da agência para um endereço
+            que ainda é dele é melhor do que fingir que a página existe aqui.
+
+            `rel="noopener"` e aba nova, como todo link que sai da peça. -#}
+        <a class="om-menu-instituto" href="https://grupoom.com.br/instituto-jd-rodrigues/"
+           target="_blank" rel="noopener">
+          {#- MARCA | TEXTO | CONHECER, os três em linha, separados por fio.
+              É a mesma gramática do dropdown de telefones, e pelo mesmo motivo:
+              o fio faz uma coisa CLASSIFICAR a outra, em vez de as três apenas
+              estarem lado a lado. Em linha o cartão também fica mais baixo, e é
+              isso que o faz caber inteiro num monitor baixo. -#}
+          <img src="/static/lab/sites/grupo-om/marca-instituto-jd.webp"
+               width="206" height="56" alt="Instituto J.D. Rodrigues"
+               loading="lazy" decoding="async">
+          <i class="om-menu-instituto-fio" aria-hidden="true"></i>
+          <span class="om-menu-instituto-t">{{ T("Zelar pela cultura da Comunicação Integrada de Marketing e disseminar esse conhecimento pelo mercado.") }}</span>
+          <i class="om-menu-instituto-fio" aria-hidden="true"></i>
+          <span class="om-menu-instituto-ir" aria-hidden="true">
+            {{ T("Conhecer") }} {{ ico.ic("fora", 13) }}</span>
+        </a>
+
+      </div>
+
+      {#- A COLUNA DE IMAGEM, em 16:9 exato.
+
+          A imagem é um CASE de verdade, sorteado a cada abertura entre os
+          dezessete que a peça já carrega: nenhum arquivo novo entra por causa
+          desta coluna, e nenhuma imagem decorativa de banco é inventada. O
+          menu passa a mostrar trabalho enquanto alguém decide para onde ir.
+
+          A primeira vem escolhida do servidor para a coluna nunca aparecer
+          vazia; a troca depois é do script. `aria-hidden` porque é
+          ilustração: o nome do case está na grade, não aqui. -#}
+      {#- ELA É UM LINK para a página de cases (Leandro, 27/08): a imagem
+          mostra trabalho, e clicar em trabalho tem que levar ao trabalho. O
+          botão só aparece no hover, discreto: a coluna continua sendo
+          atmosfera, e não uma chamada disputando com o índice ao lado.
+
+          Deixou de ser `aria-hidden`: agora ela é um destino, e um destino
+          precisa de nome. A imagem em si continua decorativa (`alt=""`), e
+          quem carrega o nome é o link. -#}
+      <a class="om-menu-arte" href="{{ base }}/cases"
+         aria-label="{{ T("Ver todos os cases") }}"
+         data-menu-arte="{{ cases | map(attribute='imagem') | join(',') }}">
+        {#- Todas as dezessete têm 960x540: a medida está aqui para o
+            navegador reservar a proporção e a coluna não pular quando a
+            imagem troca no sorteio. -#}
+        <img src="{{ cases[0].imagem }}" width="960" height="540"
+             alt="" loading="lazy" decoding="async">
+        <span class="om-menu-arte-btn" aria-hidden="true">
+          {{ T("Ver os cases") }} {{ ico.ic("seta", 14) }}</span>
+      </a>
+    </div>
+
+    <div class="om-menu-pe">
+      {#- O TEXTO LEGAL, e ele é REAL: esta é a frase que o próprio Grupo OM
+          publica na política de privacidade dele, com a razão social das seis
+          empresas. Não há CNPJ em lugar nenhum do site do cliente, e por isso
+          não há CNPJ aqui: inventar um número de registro numa peça que vai
+          para o dono da empresa é o pior erro possível. Fica em pendências. -#}
+      <p class="om-menu-legal">{{ T("O Grupo OM é formado pela conjugação de esforços das empresas OpusMúltipla Comunicação Integrada S.A., Brainbox Design Estratégico S.A., Senso Estratégia Multicanais S.A., Tailor Media Branded Content S.A., Housecricket Inteligência Digital S.A. e D’OM Soluções Improváveis S.A.") }}</p>
+
+      {#- POLÍTICAS, discretas. O seletor de idioma saiu daqui: ele já vive no
+          cabeçalho, que continua visível por cima deste painel, e repetir um
+          controle a dois palmos dele é dizer duas vezes a mesma coisa. -#}
+      {#- A MARCA D'ÁGUA, no canto oposto ao texto legal.
+
+          Ela é a assinatura de quem fez, no lugar onde uma assinatura fica:
+          no fim, na margem, pequena. É a mesma informação que a faixa de
+          copyright já dá lá embaixo, e por isso ela pode ser discreta a este
+          ponto: quem quiser o nome inteiro rola até o pé da página.
+
+          `aria-hidden` no glifo e no separador; o nome fica legível para quem
+          ouve, porque autoria não é enfeite. -#}
+      <p class="om-menu-agua">
+        <svg viewBox="0 0 100 100" class="om-menu-agua-glifo" aria-hidden="true">
+          <polygon fill="currentColor" points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+          <polygon fill="currentColor" points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+          <polygon fill="currentColor" points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+        </svg>
+        {#- O NOME É LINK e é a única coisa em negrito da linha: a legenda
+            explica, o nome assina. Aba nova, como todo link que sai da peça. -#}
+        <span>{{ T("Desenvolvido e certificado por") }}
+          <a href="https://leandrofurtado.com.br" target="_blank" rel="noopener">Leandro Furtado</a></span>
+      </p>
+
+      <nav class="om-legal-nav" aria-label="{{ T("Políticas, menu de tela cheia") }}">
+        <a href="{{ base }}/politica-de-privacidade">{{ T("Política de Privacidade") }}</a>
+        <a href="{{ base }}/politica-de-cookies">{{ T("Política de Cookies") }}</a>
+        <a href="{{ base }}/acessibilidade">{{ T("Acessibilidade") }}</a>
+      </nav>
+    </div>
+  </div>
+</div>

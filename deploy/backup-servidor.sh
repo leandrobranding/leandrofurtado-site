@@ -61,8 +61,27 @@ echo "$(date '+%F %T')  banco-$DIA.db.gz  $(du -h "$DESTINO/banco-$DIA.db.gz" | 
 # Escreve num nome temporário e só então substitui: se o tar falhar no meio
 # (disco cheio, queda), a cópia boa da semana passada continua de pé em vez de
 # virar um arquivo truncado com cara de backup.
+# O que NÃO entra na cópia completa, e por quê (medido em 24/08/2026, quando
+# o arquivo chegou a 1,2 GB):
+#
+#   data/geo               125 MB de base de geolocalização (DB-IP Lite), que
+#                          o deploy baixa sozinho. Guardar cópia de algo que
+#                          se rebaixa é gastar 10% do backup com nada.
+#   data/*.db-wal, -shm    diário do SQLite. O banco já sai daqui pela API de
+#                          backup, atômico e íntegro; copiar o WAL junto só
+#                          traz um estado parcial que ninguém vai usar.
+#   data/site.db.antes-*   cópias manuais soltas de antes de alguma mudança.
+#
+# O RESTO FICA, e é a maior parte: 685 MB de vídeo e 358 MB de foto originais.
+# Não são regeneráveis, e são o trabalho de dez anos. O backup é grande porque
+# o acervo é grande, e isso está certo.
 if [ "$DIA" = "7" ]; then
-  tar -czf "$DESTINO/completo.tar.gz.parcial" -C "$RAIZ" data
+  tar -czf "$DESTINO/completo.tar.gz.parcial" -C "$RAIZ" \
+    --exclude='data/geo' \
+    --exclude='data/*.db-wal' \
+    --exclude='data/*.db-shm' \
+    --exclude='data/site.db.antes-*' \
+    data
   tar -tzf "$DESTINO/completo.tar.gz.parcial" > /dev/null
   mv -f "$DESTINO/completo.tar.gz.parcial" "$DESTINO/completo.tar.gz"
   echo "$(date '+%F %T')  completo.tar.gz  $(du -h "$DESTINO/completo.tar.gz" | cut -f1)"

@@ -1,0 +1,251 @@
+{# ==========================================================================
+   Grupo OM: as certificações.
+
+   OS TRÊS SELOS VÃO EM TIPOGRAFIA, e não em imagem, porque não existe arquivo
+   de logo de GPTW, de Google Partner Premier nem de Meta Business Partner
+   neste repositório. Desenhar um selo "parecido" seria falsificar marca de
+   terceiro, que é infinitamente pior do que não mostrá-la. O nome composto
+   grande é honesto, e num sistema tipográfico como este ele é forte.
+
+   Os três nomes vieram do briefing do Leandro; o texto da rede mundial e todo
+   o bloco do Núcleo de Inclusão Geral são verbatim da página
+   `/nossas-certificacoes/` do cliente. Buscar os três arquivos oficiais de
+   selo, e confirmar se há mais algum, está na seção de Pendências do
+   relatório desta tarefa.
+
+   A página atual do cliente tem 154 KB de HTML e nenhum `<h1>`.
+   ========================================================================== #}
+{% extends "lab/sites/_base_redesign.html" %}
+{% set pagina = "certificacoes" %}
+
+{% block titulo %}{{ T("Nossas certificações") }} | {{ r.marca }}{% endblock %}
+{% block descricao %}{{ T("Os selos do Grupo OM, a rede mundial de agências independentes em 47 mercados e o Núcleo de Inclusão Geral.") }}{% endblock %}
+
+{% block cabeca %}{% include "lab/sites/grupo-om/_cabeca.html" %}{% endblock %}
+
+{# ITEM 10: a faixa de copyright do Lab, com o texto novo, SUBSTITUI a marca
+   de autoria padrão da base. Ver `_autoria.html`. #}
+{% block autoria %}{% include "lab/sites/grupo-om/_autoria.html" %}{% endblock %}
+
+{% block corpo %}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+
+{# OS TREZE SELOS DE PRÊMIO, e esta é a lista fechada deles.
+
+   O CONTRATO É O MESMO da fita de clientes (§4.1): para um prêmio entrar
+   nesta página, o selo dele precisa ter sido BAIXADO antes, e o nome escrito
+   precisa ser o nome daquele arquivo. Nenhum prêmio aqui é um nome que
+   alguém digitou, e há teste que confere os dois lados.
+
+   `selo-new-york-festvals.webp` tem o nome do arquivo escrito errado na
+   origem, sem o "i" de Festivals. O ARQUIVO fica como está, porque renomear
+   ativo baixado é perder o rastro de onde ele veio; o nome exibido é o certo. #}
+{% include "lab/sites/grupo-om/_topo.html" %}
+
+<main>
+  <section class="om-capa-interna om-escuro">
+    <div class="om-wrap">
+      <p class="om-kicker om-rv">{{ T("Nossas certificações") }}</p>
+      <h1 class="om-manchete om-split">
+        {{ T("Independentes aqui,") }}
+        <span class="om-leve">{{ T("em 47 mercados lá fora.") }}</span>
+      </h1>
+      <div class="om-fio om-fio-largo" aria-hidden="true"></div>
+      <div class="om-capa-pe">
+        <p class="om-kicker om-rv">{{ T("O que isso significa") }}</p>
+        <p class="om-declaracao om-declaracao-larga om-rv">{{ T("Certificação aqui não é selo de parede: é") }} <b>{{ T("a rede que dá suporte internacional") }}</b> {{ T("aos clientes do grupo, e o comitê que revisa o que o grupo produz.") }}</p>
+      </div>
+    </div>
+  </section>
+
+  {# ---------------------------------------- certificações e prêmios
+     ITEM 23, e a correção do Leandro em 26/08: "aumente os selos dos prêmios
+     também".
+
+     IMAGENS SOLTAS, SEM CAIXA EM VOLTA, MAIORES. Cada selo era um cartão de
+     papel com moldura e nome embaixo, e numa fileira de dezesseis marcas
+     recortadas a moldura não parece moldura: parece erro de quem montou a
+     fileira, e quem lê a peça é um diretor de arte. Agora o selo é a imagem, e
+     o nome vive no `alt`, que é onde o leitor de tela precisa dele.
+
+     DOIS GRUPOS, ROTULADOS. Prêmio ganho e certificação ativa não são a mesma
+     afirmação, e uma fileira só apagaria a diferença na página que existe
+     justamente para provar as duas.
+
+     A SEÇÃO É PAPEL porque metade dos arquivos é tinta escura (Cannes,
+     Colunistas, AMPRO) e os dois de parceria já vêm com fundo claro assado no
+     bitmap. Recortar o fundo de um selo oficial é adulterar marca alheia; pôr
+     um retângulo branco flutuando no grafite é pior ainda. A superfície clara
+     resolve os dois casos sem tocar em nenhum arquivo.
+
+     A FILEIRA IGUALA POR ALTURA. A GPTW é o único selo vertical (208x300) e as
+     outras são quadradas: igualada por largura, ela apareceria com o dobro do
+     peso visual das vizinhas.
+
+     CADA UM MOSTRA O QUE O ARQUIVO É, e nada além. Não há ano, não há
+     categoria e não há quantidade: o material não traz nenhum dos três, e um
+     "3x Cannes Lions" inventado numa página de prêmios é a mentira mais fácil
+     de conferir que existe. #}
+  <section class="om-secao om-papel" id="premios" aria-labelledby="om-t-premios">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <div>
+          <p class="om-kicker om-rv">{{ ico.ic("premio", 14) }} {{ T("Reconhecimento") }}</p>
+          <p class="om-kicker om-kicker-num om-rv">{{ (certificacoes | length) + (premios | length) }} {{ T("selos") }}</p>
+        </div>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-premios">
+            {{ T("Os prêmios") }}
+            <span class="om-leve">{{ T("que o site atual esconde.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+          <p class="om-texto om-rv">{{ T("Hoje eles vivem numa página interna que quase ninguém alcança. Aqui eles ficam onde uma prova precisa ficar: no caminho de quem está decidindo.") }}</p>
+        </div>
+      </div>
+
+      <div class="om-selario om-selario-grande om-rv">
+        <div>
+          <p class="om-rodape-t">{{ ico.ic("escudo", 14) }} {{ T("Certificações e parcerias") }}</p>
+          <ul class="om-selos-soltos">
+            {%- for arquivo, nome, w, h in certificacoes %}
+            <li><img src="/static/lab/sites/grupo-om/{{ arquivo }}" width="{{ w }}" height="{{ h }}"
+                     alt="{{ nome }}" loading="lazy" decoding="async"></li>
+            {%- endfor %}
+          </ul>
+        </div>
+        <div>
+          <p class="om-rodape-t">{{ ico.ic("premio", 14) }} {{ T("Prêmios") }}</p>
+          <ul class="om-selos-soltos">
+            {%- for arquivo, nome, w, h in premios %}
+            <li><img src="/static/lab/sites/grupo-om/{{ arquivo }}" width="{{ w }}" height="{{ h }}"
+                     alt="{{ nome }}" loading="lazy" decoding="async"></li>
+            {%- endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ---------------------------------------------------- as três certificações
+     TAAN, NIG e ESG, que são as três que o site atual lista num acordeão. Vão
+     em ícone de traço, que é a linguagem que o próprio cliente já usa nessa
+     página: marcador, lâmpada e bandeira.
+
+     Aqui não há imagem porque não há selo de "NIG" nem de "ESG": são
+     iniciativas da casa, não certificados emitidos por alguém. O ícone é
+     honesto; um selo desenhado seria invenção. #}
+  <section class="om-secao om-escuro" aria-labelledby="om-t-selos">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        {#- DERIVADO, e não escrito: este número dizia "3" e eram 4 desde que a
+            GPTW entrou, no mesmo dia. Número de conteúdo escrito à mão em
+            template envelhece na primeira vez que o conteúdo muda. -#}
+        <p class="om-kicker om-kicker-num om-rv">{{ certificacoes | length }} {{ T("certificações") }}</p>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-selos">
+            {{ T("O que o grupo") }}
+            <span class="om-leve">{{ T("assume como compromisso.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+        </div>
+      </div>
+      <ul class="om-selos om-rv">
+        <li class="om-selo">
+          <span class="om-selo-ic">{{ ico.ic("local", 26) }}</span>
+          <span class="om-selo-n">01</span>
+          <span class="om-selo-nome">TAAN</span>
+          <p>{{ T("A rede mundial de agências independentes, presente em 47 mercados.") }}</p>
+        </li>
+        <li class="om-selo">
+          <span class="om-selo-ic">{{ ico.ic("lampada", 26) }}</span>
+          <span class="om-selo-n">02</span>
+          <span class="om-selo-nome">NIG</span>
+          <p>{{ T("O Núcleo de Inclusão Geral, com um comitê de especialistas de fora da casa.") }}</p>
+        </li>
+        <li class="om-selo">
+          <span class="om-selo-ic">{{ ico.ic("bandeira", 26) }}</span>
+          <span class="om-selo-n">03</span>
+          <span class="om-selo-nome">ESG</span>
+          <p>{{ T("Ideias transformadas em práticas, com cartilha própria publicada pelo grupo.") }}</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  {# ---------------------------------------------------------- rede mundial
+     A diferenciação de verdade, e a que nenhum concorrente copia num pitch. O
+     parágrafo é verbatim da página do cliente. #}
+  <section class="om-secao om-papel" aria-labelledby="om-t-rede">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <p class="om-kicker om-rv">{{ T("Rede mundial") }}</p>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-rede">
+            {{ T("A mais antiga rede") }}
+            <span class="om-leve">{{ T("de agências independentes.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+          <p class="om-texto om-rv">{{ T("O Grupo OM faz parte da") }} <b>{{ T("mais antiga rede mundial de agências independentes") }}</b>{{ T(", presente em 47 mercados em todos os continentes. A rede nos permite conhecer como será o futuro da comunicação mundial e dar suporte internacional aos nossos clientes.") }}</p>
+        </div>
+      </div>
+      <ul class="om-numeros om-rv">
+        <li>
+          <span class="om-num-v" data-conta="47">47</span>
+          <span class="om-num-t">{{ T("mercados atendidos pela rede") }}</span>
+        </li>
+        <li>
+          <span class="om-num-v" data-conta="6">6</span>
+          <span class="om-num-t">{{ T("empresas no grupo, aqui") }}</span>
+        </li>
+        <li>
+          <span class="om-num-v" data-conta="3">3</span>
+          <span class="om-num-t">{{ T("especialistas no comitê de inclusão") }}</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  {# ------------------------------------------------------------------ NIG
+     A melhor frase de todo o material do cliente, e por isso ela é a única
+     citação desta página em corpo de manchete. Os três nomes são os que o
+     site publica, com o cargo que ele publica. #}
+  <section class="om-secao om-escuro" id="nig" aria-labelledby="om-t-nig">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <p class="om-kicker om-rv">{{ T("Núcleo de Inclusão Geral") }}</p>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-nig">
+            {{ T("Não dá para agradar todo mundo.") }}
+            <span class="om-leve">{{ T("Mas dá para respeitar todo mundo.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+          <p class="om-texto om-rv">{{ T("O") }} <b>{{ T("Núcleo de Inclusão Geral (NIG)") }}</b> {{ T("é uma iniciativa inédita no mercado brasileiro que tem o objetivo de incluir diferentes perspectivas de mundo nos projetos do Grupo OM.") }}</p>
+          <p class="om-texto om-rv">{{ T("Assim, formamos um comitê de especialistas que representam diversas frentes da diversidade para nos ajudar na avaliação e adaptação do nosso trabalho à realidade de todos.") }}</p>
+        </div>
+      </div>
+
+      {# Lista, e não cartão com foto: não existe foto no material, e um avatar
+         genérico ao lado do nome de uma pessoa real é o tipo de mentira
+         pequena que o dono nota na hora. #}
+      <ul class="om-nomes om-rv">
+        <li>
+          <span class="om-nome">Toni Reis</span>
+          <span class="om-nome-onde">{{ T("Diretor-executivo do Grupo Dignidade e presidente da Aliança Nacional LGBTI+") }}</span>
+        </li>
+        <li>
+          <span class="om-nome">Mariluce Mariá de Souza</span>
+          <span class="om-nome-onde">{{ T("Artista plástica e fundadora do Favela Art") }}</span>
+        </li>
+        <li>
+          <span class="om-nome">Rafael Bonfim</span>
+          <span class="om-nome-onde">{{ T("Especialista em diversidade e inclusão para a área empresarial") }}</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+{% include "lab/sites/grupo-om/_pe.html" %}
+{% endblock %}
+
+{% block scripts %}{% include "lab/sites/grupo-om/_scripts.html" %}{% endblock %}

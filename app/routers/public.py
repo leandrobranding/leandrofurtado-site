@@ -1305,6 +1305,30 @@ async def sitemap(db: Session = Depends(get_db)):
             parts.append(url(f"/nodal/situacao/{situacao.slug}", "0.7", tem_ingles=False))
     for brand in sorted(all_brands(db), key=lambda b: b["slug"]):
         parts.append(url(f"/cliente/{brand['slug']}", "0.5"))
+    # Redesigns (§6 da spec de Sites): só `publico`. `pitch` é proposta para
+    # uma pessoa e o endereço dela é secreto; `aprovado` migrou para o
+    # portfólio, e quem merece indexação passa a ser o `Case`. O endereço do
+    # token (/lab/p/<token>) NUNCA entra: um segredo no sitemap deixa de ser
+    # segredo.
+    #
+    # `tem_ingles=False` CONTINUA CERTO depois do item 11, e por um motivo que
+    # vale escrever: o inglês de um redesign NÃO mora em `/en/lab/sites/<slug>`
+    # (esse endereço é 301 desde 26/08, ver `LangMiddleware._sem_en_do_site`).
+    # Ele mora em `/lab/sites/<slug>/en`, que é convenção da PEÇA, e não do
+    # site. Declarar aqui a alternativa no formato do site mandaria o buscador
+    # a um redirect e diria que duas URLs são versões idiomáticas uma da outra
+    # quando uma delas nem existe.
+    #
+    # PENDÊNCIA, e ela só morde quando um redesign bilíngue virar `publico`:
+    # listar também `/lab/sites/<slug>/en`, com as duas se declarando por
+    # `hreflang`. Isso exige saber QUAIS redesigns têm inglês, e hoje o modelo
+    # `Redesign` não guarda isso: o Grupo OM tem, a Padaria Aurora não, e
+    # declarar `/en` para quem não tem seria pôr um 404 no sitemap. Enquanto
+    # não houver o campo, as tags `hreflang` dentro das próprias páginas são o
+    # que faz o par ser descoberto.
+    from ..models import Redesign
+    for r in db.query(Redesign).filter(Redesign.estado == "publico").all():
+        parts.append(url(f"/lab/sites/{r.slug}", "0.6", tem_ingles=False))
     xml = (
         '<?xml version="1.0" encoding="UTF-8"?>'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" '

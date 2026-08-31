@@ -1,0 +1,115 @@
+{# ==========================================================================
+   Grupo OM: política de privacidade.
+
+   Uma das três páginas que o item 7 pede no rodapé, e a que exigiu a decisão
+   mais delicada da rodada.
+
+   O QUE ESTA PÁGINA NÃO FAZ: ela NÃO escreve a política de privacidade do
+   Grupo OM. Redigir o texto jurídico de outra empresa, em nome dela, e
+   publicá-lo no domínio do Leandro seria assumir por ela uma declaração
+   vinculante sobre dados de terceiros. Isso é pior do que inventar um cliente
+   na fita: é inventar um compromisso legal.
+
+   O QUE ELA FAZ, e por que isso é mais forte do que um texto genérico: ela
+   declara o comportamento DESTA PÁGINA, que é verificável linha por linha
+   pelo próprio dono, e mostra a estrutura que a política definitiva precisa
+   ter. Numa proposta cujo argumento é peso e independência, "esta peça não
+   coleta nada, não tem formulário e não fala com host nenhum de fora" é
+   exatamente o que se quer dizer, e aqui é verdade auditável.
+
+   O texto definitivo é da agência e do jurídico dela. Está em Pendências.
+   ========================================================================== #}
+{% extends "lab/sites/_base_redesign.html" %}
+{% set pagina = "politicas" %}
+
+{% block titulo %}{{ T("Política de Privacidade") }} | {{ r.marca }}{% endblock %}
+{% block descricao %}{{ T("O que esta proposta de redesign coleta, o que ela não coleta, e a estrutura da política definitiva.") }}{% endblock %}
+
+{% block cabeca %}{% include "lab/sites/grupo-om/_cabeca.html" %}{% endblock %}
+
+{% block autoria %}{% include "lab/sites/grupo-om/_autoria.html" %}{% endblock %}
+
+{% block corpo %}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+{% include "lab/sites/grupo-om/_topo.html" %}
+
+<main>
+  <section class="om-capa-interna om-escuro">
+    <div class="om-wrap">
+      <p class="om-kicker om-rv">{{ ico.ic("escudo", 14) }} {{ T("Política de Privacidade") }}</p>
+      <h1 class="om-manchete om-split"> {{ T("Esta página") }} <span class="om-leve">{{ T("não coleta nada.") }}</span>
+      </h1>
+      <div class="om-fio om-fio-largo" aria-hidden="true"></div>
+      <div class="om-capa-pe">
+        <p class="om-kicker om-rv">{{ T("Em uma frase") }}</p>
+        <p class="om-declaracao om-declaracao-larga om-rv">{{ T("Não há formulário, não há rastreador e") }} <b>{{ T("nenhum recurso vem de fora") }}</b>{{ T(". Nada que você faz aqui vira dado de ninguém.") }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="om-secao" aria-labelledby="om-t-nada">
+    <div class="om-wrap om-assim">
+      <p class="om-kicker om-rv">{{ T("O que não acontece") }}</p>
+      <div>
+        <h2 class="om-titulo om-split" id="om-t-nada"> {{ T("Quatro coisas") }} <span class="om-leve">{{ T("que esta peça não faz.") }}</span>
+        </h2>
+        <div class="om-fio" aria-hidden="true"></div>
+        <ol class="om-indice">
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">01</span>
+            <span class="om-item-nome">{{ T("Não existe formulário em nenhuma página") }}</span>
+          </div></li>
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">02</span>
+            <span class="om-item-nome">{{ T("Nenhum recurso é carregado de outro domínio") }}</span>
+          </div></li>
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">03</span>
+            <span class="om-item-nome">{{ T("Nenhuma medição de audiência, nenhum pixel") }}</span>
+          </div></li>
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">04</span>
+            <span class="om-item-nome">{{ T("Nenhum perfil de navegação é montado") }}</span>
+          </div></li>
+        </ol>
+        <p class="om-texto om-rv">{{ T("A fonte, os quatro arquivos de movimento, os logos e os selos são servidos pelo mesmo endereço desta página. É por isso que ela pesa uma fração do site atual, e é o mesmo motivo pelo qual não há o que coletar.") }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="om-secao om-papel" aria-labelledby="om-t-servidor">
+    <div class="om-wrap om-assim">
+      <p class="om-kicker om-rv">{{ T("O que o servidor registra") }}</p>
+      <div>
+        <h2 class="om-titulo om-split" id="om-t-servidor"> {{ T("O mínimo") }} <span class="om-leve">{{ T("que qualquer servidor registra.") }}</span>
+        </h2>
+        <div class="om-fio" aria-hidden="true"></div>
+        <p class="om-texto om-rv">{{ T("Como todo servidor web, este anota o pedido que recebe: o endereço solicitado, a data e a hora, e o endereço de rede de onde o pedido veio. Isso existe para o site funcionar e para conter abuso, e não alimenta nenhum perfil.") }}</p>
+        <p class="om-texto om-rv">{{ T("Esta proposta guarda também") }} <b>{{ T("a data em que o link foi aberto pela primeira vez") }}</b>{{ T(". É um único carimbo, por proposta, e serve para o Leandro saber que ela chegou. Não é um contador de visitas e não identifica ninguém.") }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="om-secao om-escuro" aria-labelledby="om-t-definitiva">
+    <div class="om-wrap om-assim">
+      <p class="om-kicker om-rv">{{ T("Fora do escopo") }}</p>
+      <div>
+        <h2 class="om-titulo om-split" id="om-t-definitiva"> {{ T("A política do grupo") }} <span class="om-leve">{{ T("quem escreve é o grupo.") }}</span>
+        </h2>
+        <div class="om-fio" aria-hidden="true"></div>
+        <p class="om-texto om-rv">{{ T("Esta é uma proposta de redesign, e não o site oficial do") }} {{ r.marca }}{{ T(". O texto definitivo da política de privacidade da agência, com as bases legais da LGPD, os prazos de guarda e o canal do encarregado de dados, é da agência e do jurídico dela. Este endereço existe para mostrar") }} <b>{{ T("o lugar dela no desenho") }}</b>{{ T(", e para declarar, com honestidade, o que esta peça faz.") }}</p>
+        <div class="om-chamadas om-rv">
+          <a class="om-btn om-btn-vazio" href="{{ base }}/politica-de-cookies">
+            {{ T("Política de Cookies") }} {{ ico.ic("seta", 15) }}</a>
+          <a class="om-btn om-btn-vazio" href="{{ base }}/acessibilidade">
+            {{ T("Acessibilidade") }} {{ ico.ic("seta", 15) }}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+{% include "lab/sites/grupo-om/_pe.html" %}
+{% endblock %}
+
+{% block scripts %}{% include "lab/sites/grupo-om/_scripts.html" %}{% endblock %}

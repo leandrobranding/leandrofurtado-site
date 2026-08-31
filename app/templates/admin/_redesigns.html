@@ -1,0 +1,94 @@
+{# Lista de redesigns no painel do Lab. Cada linha traz o que o Leandro
+   precisa decidir sem sair da tela: em que estado está, se o dossiê foi
+   colhido, se as duas capturas existem, e o link do pitch para copiar.
+
+   `visto_em` é a coluna que mais vale: ela responde "o cliente abriu?" sem
+   ninguém precisar perguntar. #}
+<section class="bloco">
+  <h2>Redesigns</h2>
+
+  <form method="post" action="/admin/lab/redesigns" class="linha-form">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="text" name="marca" placeholder="Marca" required maxlength="200">
+    <input type="text" name="setor" placeholder="Setor" maxlength="120">
+    <input type="text" name="antes_url" placeholder="site atual (grupoom.com.br)" required>
+    <button type="submit">Criar</button>
+  </form>
+
+  <table class="tabela">
+    <thead>
+      <tr><th>Marca</th><th>Estado</th><th>Dossiê</th><th>Capturas</th>
+          <th>Pitch</th><th>Aberto</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for r in redesigns %}
+      <tr>
+        <td>
+          <strong>{{ r.marca }}</strong><br>
+          <small>{{ r.setor }}</small><br>
+          <a href="{{ r.antes_url }}" target="_blank" rel="noopener"><small>site atual</small></a>
+        </td>
+        <td>
+          <form method="post" action="/admin/lab/redesigns/{{ r.id }}/estado">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <select name="estado" onchange="this.form.submit()">
+              {% for e in ("pitch", "publico", "aprovado") %}
+              <option value="{{ e }}" {{ 'selected' if r.estado == e }}>{{ e }}</option>
+              {% endfor %}
+            </select>
+          </form>
+        </td>
+        <td>
+          {% if r.insumos_em %}
+            <small>{{ r.insumos_em.strftime('%d/%m %H:%M') }}</small><br>
+            {% if r.insumos and not r.insumos.get('h1') %}
+            <small class="alerta">sem h1</small><br>
+            {% endif %}
+          {% else %}<small>não colhido</small><br>{% endif %}
+          <form method="post" action="/admin/lab/redesigns/{{ r.id }}/colher">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <button type="submit">Colher</button>
+          </form>
+        </td>
+        <td>
+          <small>{{ 'antes ok' if r.antes_shot else 'sem antes' }}</small><br>
+          <small>{{ 'depois ok' if r.depois_shot else 'sem depois' }}</small><br>
+          {% for lado in ("antes", "depois") %}
+          <form method="post" action="/admin/lab/redesigns/{{ r.id }}/capturar">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <input type="hidden" name="lado" value="{{ lado }}">
+            <button type="submit">Capturar {{ lado }}</button>
+          </form>
+          {% endfor %}
+        </td>
+        <td>
+          <input type="text" readonly onclick="this.select()"
+                 value="{{ base_url }}/lab/p/{{ r.token }}" size="34">
+          {% if r.enviado_em %}
+          <br><small>enviado {{ r.enviado_em.strftime('%d/%m %H:%M') }}</small>
+          {% else %}
+          <form method="post" action="/admin/lab/redesigns/{{ r.id }}/enviado">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <button type="submit">Marcar como enviado</button>
+          </form>
+          {% endif %}
+        </td>
+        <td>
+          {% if r.visto_em %}
+            <strong>{{ r.visto_em.strftime('%d/%m %H:%M') }}</strong>
+          {% else %}<small>ainda não</small>{% endif %}
+        </td>
+        <td>
+          <form method="post" action="/admin/lab/redesigns/{{ r.id }}/excluir"
+                onsubmit="return confirm('Excluir o redesign de {{ r.marca }}?')">
+            <input type="hidden" name="csrf" value="{{ csrf }}">
+            <button type="submit">Excluir</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7"><small>Nenhum redesign ainda.</small></td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>

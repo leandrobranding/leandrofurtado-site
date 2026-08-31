@@ -1,0 +1,89 @@
+{# ==========================================================================
+   OS ÍCONES DA PEÇA, num sprite só.
+
+   Pedido do Leandro (item 4): "ícones em tudo que for possível, UI moderna,
+   UX impecável, e hover animado". A linguagem é a que o próprio site do
+   cliente já usa nas certificações: traço fino, sem preenchimento, marcador
+   e lâmpada e bandeira.
+
+   POR QUE SPRITE, e não SVG solto em cada lugar. O telefone aparece cinco
+   vezes por página, a seta oito. Copiado inteiro, cada um custa uns 200
+   bytes toda vez que aparece; declarado uma vez e chamado por `<use>`, custa
+   60. Numa peça cujo argumento É o peso, isso não é detalhe. E há a segunda
+   razão, que vale mais: um desenho num lugar só não pode divergir de si
+   mesmo, e um ícone que muda de espessura entre o rodapé e o menu é
+   exatamente o tipo de coisa que um diretor de arte vê antes de ler.
+
+   A GRAMÁTICA, e ela é a mesma nos dezoito: caixa de 24, traço de 1.6,
+   pontas e junções redondas, nenhum preenchimento, nenhuma cor própria
+   (`currentColor` sempre). Assim um ícone dentro de um link herda a cor do
+   link, inclusive no hover e no papel, e nenhum deles precisa de uma segunda
+   regra para o modo claro.
+
+   NENHUM EMOJI, e não é preferência: regra permanente do Leandro. Todo glifo
+   com apresentação emoji vira desenho colorido do sistema no Android e
+   destrói a página. Aqui não há glifo nenhum, só traço.
+
+   O sprite é `hidden` e `aria-hidden`: ele não é conteúdo, é biblioteca.
+   Cada `<use>` que o chama também é `aria-hidden`, porque em toda ocorrência
+   o ícone acompanha um texto que já diz a mesma coisa. Ícone que repete o
+   rótulo para o leitor de tela é ruído, não acessibilidade.
+   ========================================================================== #}
+{%- macro ic(nome, tam=16) -%}
+<svg class="om-ic om-ic-{{ nome }}" width="{{ tam }}" height="{{ tam }}" aria-hidden="true"><use href="#om-i-{{ nome }}"/></svg>
+{%- endmacro -%}
+
+<svg class="om-sprite" width="0" height="0" aria-hidden="true" focusable="false" hidden>
+  <defs>
+    <symbol id="om-i-seta" viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></symbol>
+    <symbol id="om-i-volta" viewBox="0 0 24 24"><path d="M20 12H5M11 6l-6 6 6 6"/></symbol>
+    <symbol id="om-i-abaixo" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="om-i-fora" viewBox="0 0 24 24"><path d="M8 16 16 8M9 8h7v7"/></symbol>
+    <symbol id="om-i-tel" viewBox="0 0 24 24"><path d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4.5 5.7a2 2 0 0 1 2-2.2Z"/></symbol>
+    <symbol id="om-i-local" viewBox="0 0 24 24"><path d="M12 21c4-4.2 6-7.4 6-10a6 6 0 1 0-12 0c0 2.6 2 5.8 6 10Z"/><circle cx="12" cy="11" r="2.4"/></symbol>
+    {#- AS MARCAS DAS REDES NÃO SÃO DESENHO NOSSO (Leandro, 27/08: "os ícones
+        não estão renderizados perfeitamente"). As três eram aproximações à
+        mão em traço 1.6 — um "in" e um "f" desenhados com linhas — e em
+        22 px liam como rabisco. Logotipo de terceiro não se redesenha: aqui
+        entram os glifos OFICIAIS, preenchidos, de Font Awesome Free 6
+        (fontawesome.com, ícones sob CC BY 4.0 — esta nota é a atribuição).
+
+        `fill`/`stroke` como ATRIBUTO no path, e não por classe: a regra
+        `.om-ic` pinta traço e apaga preenchimento por herança, e atributo de
+        apresentação no próprio elemento vence herança. Assim só as marcas
+        são preenchidas e todo o resto do sprite continua em traço. -#}
+    <symbol id="om-i-instagram" viewBox="0 0 448 512"><path fill="currentColor" stroke="none" d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></symbol>
+    <symbol id="om-i-linkedin" viewBox="0 0 448 512"><path fill="currentColor" stroke="none" d="M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z"/></symbol>
+    <symbol id="om-i-facebook" viewBox="0 0 320 512"><path fill="currentColor" stroke="none" d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z"/></symbol>
+    <symbol id="om-i-partilha" viewBox="0 0 24 24"><circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1"/></symbol>
+    <symbol id="om-i-elo" viewBox="0 0 24 24"><path d="M10.5 13.5a3.6 3.6 0 0 0 5.1 0l2.6-2.6a3.6 3.6 0 0 0-5.1-5.1l-1.2 1.2"/><path d="M13.5 10.5a3.6 3.6 0 0 0-5.1 0l-2.6 2.6a3.6 3.6 0 0 0 5.1 5.1l1.2-1.2"/></symbol>
+    <symbol id="om-i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="om-i-fecha" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="om-i-escudo" viewBox="0 0 24 24"><path d="M12 3.2 5 6v5.3c0 4.2 2.8 7.8 7 9.5 4.2-1.7 7-5.3 7-9.5V6Z"/><path d="m9.2 12 2 2 3.6-3.8"/></symbol>
+    <symbol id="om-i-cookie" viewBox="0 0 24 24"><path d="M20.9 12.4A9 9 0 1 1 11.6 3.1a3.3 3.3 0 0 0 4.4 4.4 3.3 3.3 0 0 0 4.9 4.9Z"/><path d="M9 10h.01M13.5 14.5h.01M8.5 15.5h.01"/></symbol>
+    <symbol id="om-i-acesso" viewBox="0 0 24 24"><circle cx="12" cy="4.6" r="1.6"/><path d="M5 8.4c4.6 1.4 9.4 1.4 14 0M12 9.2v5M12 14.2l-3 6.2M12 14.2l3 6.2"/></symbol>
+    <symbol id="om-i-premio" viewBox="0 0 24 24"><circle cx="12" cy="9" r="5.5"/><path d="m8.4 13.6-1.6 6.9 5.2-2.8 5.2 2.8-1.6-6.9"/></symbol>
+    <symbol id="om-i-lampada" viewBox="0 0 24 24"><path d="M9.4 17.4a6 6 0 1 1 5.2 0"/><path d="M9.6 17.4h4.8M10.4 20.4h3.2"/></symbol>
+    <symbol id="om-i-bandeira" viewBox="0 0 24 24"><path d="M5.5 21V4.2M5.5 4.6h11.8l-2 3.6 2 3.6H5.5"/></symbol>
+    <symbol id="om-i-rede" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.2 2.4 3.4 5.4 3.4 8.5S14.2 18.1 12 20.5c-2.2-2.4-3.4-5.4-3.4-8.5S9.8 5.9 12 3.5Z"/></symbol>
+    <symbol id="om-i-idioma" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.6 9.8h16.8M3.6 14.2h16.8M12 3.5c2.1 2.4 3.3 5.4 3.3 8.5S14.1 18.1 12 20.5c-2.1-2.4-3.3-5.4-3.3-8.5S9.9 5.9 12 3.5Z"/></symbol>
+    <symbol id="om-i-caso" viewBox="0 0 24 24"><path d="M4.5 6.5h15v13h-15z"/><path d="M9 6.5V4.8h6v1.7M4.5 11.2h15"/></symbol>
+    <symbol id="om-i-youtube" viewBox="0 0 24 24"><rect x="2.8" y="5.8" width="18.4" height="12.4" rx="3.6"/><path d="m10.4 9.4 4.8 2.6-4.8 2.6z"/></symbol>
+    <symbol id="om-i-acima" viewBox="0 0 24 24"><path d="M12 19.5V5M6 11l6-6 6 6"/></symbol>
+    <symbol id="om-i-x" viewBox="0 0 24 24"><path d="M4.5 4.5h3.4l11.6 15h-3.4z"/><path d="M19 4.5 13.6 10.6M10.4 13.4 5 19.5"/></symbol>
+    <symbol id="om-i-pinterest" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.4 20.2 12.3 8.6"/><path d="M9.1 13.4a3.4 3.4 0 0 0 6.5-1.4c0-2.3-2-3.9-4.3-3.4"/></symbol>
+    <symbol id="om-i-threads" viewBox="0 0 24 24"><path d="M12 20.5c-4.6 0-7.5-3.2-7.5-8.5S7.4 3.5 12 3.5c3 0 5 1.2 6.1 3.2"/><path d="M9.3 14.3c.5 1.3 2 1.9 3.4 1.5 1.6-.4 2.4-1.7 2.4-3.6 0-2.5-1.9-3.8-4.2-3.5"/><path d="M15.1 12.2c1.9.2 3 1.2 3 2.7 0 2.2-2 3.6-4.6 3.6"/></symbol>
+    <symbol id="om-i-whatsapp" viewBox="0 0 24 24"><path d="M3.8 20.2 5.1 16A8 8 0 1 1 8 18.9Z"/><path d="M9 8.6h1.2l.9 2.2-1 .8a6.5 6.5 0 0 0 2.4 2.4l.8-1 2.2.9v1.2a1.3 1.3 0 0 1-1.4 1.2 8.6 8.6 0 0 1-6.3-6.3A1.3 1.3 0 0 1 9 8.6Z"/></symbol>
+    <symbol id="om-i-telegram" viewBox="0 0 24 24"><path d="m20.5 4.2-17 6.6 4.6 1.6 1.7 5.4 2.7-3"/><path d="m8.1 12.4 12.4-8.2-3 15.6-5.4-4.6"/></symbol>
+    <symbol id="om-i-play" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.6"/><path d="m10 8.6 5.4 3.4-5.4 3.4z"/></symbol>
+    <symbol id="om-i-data" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10.2h17M8.2 2.8v4M15.8 2.8v4"/></symbol>
+    <symbol id="om-i-carta" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="m4.2 6.6 7.8 6 7.8-6"/></symbol>
+    {#- ITEM 33: o retrato que não existe. Não há foto de depoente em lugar
+        nenhum do material do cliente, e o monograma de iniciais que ocupava
+        esse lugar era tipografia fingindo ser imagem. Um ícone de pessoa diz o
+        que o espaço é sem fingir nada, e ele é da MESMA família dos outros
+        dezoito: caixa de 24, traço 1.6, `currentColor`, sem preenchimento. -#}
+    <symbol id="om-i-pessoa" viewBox="0 0 24 24"><circle cx="12" cy="8.4" r="3.9"/><path d="M4.9 20.4a7.1 7.1 0 0 1 14.2 0"/></symbol>
+    <symbol id="om-i-empresa" viewBox="0 0 24 24"><path d="M4 20.5h16M6 20.5V5.5h8v15M14 10.5h4v10"/><path d="M8.6 9h1.2M8.6 13h1.2M8.6 17h1.2"/></symbol>
+  </defs>
+</svg>

@@ -1,0 +1,15 @@
+{# Redesign mínimo, usado pelos testes das rotas. Não é peça de venda: é o
+   exemplo executável de como uma página de redesign se escreve. Note que
+   ele NÃO tem <form> e não carrega host externo (§8 e Global Constraints). #}
+{% extends "lab/sites/_base_redesign.html" %}
+
+{% block titulo %}{{ r.marca }}, pães artesanais em Curitiba{% endblock %}
+{% block descricao %}Padaria de bairro desde 1998, com fermentação natural.{% endblock %}
+
+{% block corpo %}
+<main style="min-height:60vh;display:grid;place-items:center;font-family:system-ui">
+  <h1>{{ r.marca }}</h1>
+  <p>{{ r.setor }}</p>
+  <a href="https://wa.me/5541999998888">Falar no WhatsApp</a>
+</main>
+{% endblock %}

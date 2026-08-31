@@ -1,0 +1,44 @@
+{# ==========================================================================
+   OS SEIS CARTÕES DAS EMPRESAS DO GRUPO (item 17).
+
+   O QUE SAIU: "ASSINA O CASE" e o nome do case dentro do cartão. Eram quatro
+   elementos para dizer duas coisas, e o cartão de uma empresa não é o lugar
+   de anunciar um case: o case tem grade própria e página própria.
+
+   O QUE ENTROU: o cartão inteiro virou LINK para o site da empresa, em nova
+   aba, e o hover é a COR DELA. As seis cores estão em
+   `app/lab/cases_grupo_om.py`, colhidas do `data-color` do site do cliente,
+   com a cor de contraste que ele mesmo declara.
+
+   A REGRA DO ARCO-ÍRIS NÃO MUDA POR CAUSA DISTO, e ela já custou um ciclo:
+   estas seis cores são a identidade de cada EMPRESA, e vivem só aqui, só no
+   hover, só no cartão dela. O Grupo OM continua monocromático.
+
+   A COR NÃO VEM EM `style=`. Um `style="--cor: #da0812"` seria uma medida
+   solta no HTML, que é o defeito que `test_nenhuma_medida_solta_no_html`
+   existe para pegar, e ainda espalharia a paleta do cliente por seis linhas
+   de template. Cada cartão ganha a classe da empresa, e as seis cores moram
+   em seis regras do CSS, num lugar só.
+
+   O LOGO É PRETO no arquivo, e o cartão em repouso é papel: ele fica como
+   está. No hover, sobre a cor da empresa, ele inverte para branco SÓ quando o
+   contraste declarado é branco. Sobre o amarelo da Brain Box e o verde-oliva
+   da House Cricket, inverter apagaria a marca delas.
+   ========================================================================== #}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+<ul class="om-marcas om-rv">
+  {%- for e in empresas %}
+  <li class="om-marca-cartao om-e-{{ e.chave }}">
+    {#- SEM "VER O SITE" (Leandro, 27/08): a marca fica sozinha, CENTRADA na
+        célula. O destino não some — o cartão inteiro continua sendo o link,
+        e o `alt` com o nome da empresa continua sendo o nome acessível dele.
+        O convite visual passou a ser o hover na cor da própria empresa, que
+        diz "isto reage" melhor do que uma legenda repetida seis vezes. -#}
+    <a class="om-marca-elo" href="{{ e.site }}" target="_blank" rel="noopener">
+      <img src="/static/lab/sites/grupo-om/{{ e.arquivo }}"
+           width="{{ e.w }}" height="{{ e.h }}"
+           alt="{{ e.nome }}" loading="lazy" decoding="async">
+    </a>
+  </li>
+  {%- endfor %}
+</ul>

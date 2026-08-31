@@ -18,16 +18,33 @@ jobs:
   responde:
     runs-on: ubuntu-latest
     steps:
-      - name: A home responde 200
+      # DOIS RUNS SEGUIDOS para alarmar, e a razão é o fim de semana de
+      # 28-31/08: mais de trinta e-mails de "site fora do ar" com o site DE
+      # PÉ o tempo todo. O nginx não registrou nenhum 5xx no período; nas
+      # janelas de falha, o pedido do runner nem CHEGOU ao servidor — soluço
+      # de rota IPv4 entre a Azure e a Hostinger, que dura minutos e some.
+      #
+      # A regra nova: falhou agora E falhou no run anterior (15 min atrás),
+      # aí sim é queda de verdade e o e-mail sai. Falha isolada vira aviso
+      # no run, sem e-mail. Queda real continua detectada em ≤30 min.
+      - name: A home responde 200 (alarme só em falha persistente)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          for tentativa in 1 2 3; do
-            codigo=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 20 https://leandrofurtado.com.br/ || echo 000)
+          for tentativa in 1 2 3 4; do
+            codigo=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 25 https://leandrofurtado.com.br/ || echo 000)
             echo "tentativa $tentativa: $codigo"
             [ "$codigo" = "200" ] && exit 0
-            sleep 20
+            sleep 25
           done
-          echo "::error::a home não respondeu 200 em três tentativas"
-          exit 1
+          anterior=$(curl -s -H "Authorization: Bearer $GH_TOKEN"             "https://api.github.com/repos/${{ github.repository }}/actions/workflows/site-no-ar.yml/runs?per_page=2&status=completed"             | python3 -c "import json,sys; rs=json.load(sys.stdin)['workflow_runs']; print(rs[0]['conclusion'] if rs else 'none')")
+          echo "run anterior: $anterior"
+          if [ "$anterior" = "failure" ]; then
+            echo "::error::a home não responde há dois runs seguidos (30+ min): queda de verdade"
+            exit 1
+          fi
+          echo "::warning::a home não respondeu NESTE run (soluço de rota Azure→Hostinger); o alarme sai se o próximo também falhar"
+          exit 0
 
       - name: O certificado ainda tem mais de 10 dias
         run: |

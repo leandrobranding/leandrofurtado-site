@@ -1,0 +1,42 @@
+{# ==========================================================================
+   A FAIXA DE COPYRIGHT, item 10 do Leandro.
+
+   Ela SUBSTITUI a marca de autoria padrão de `lab/sites/_base_redesign.html`
+   (o bloco `autoria`), e o pedido foi específico: "igual ao do Lab, mesma
+   marcação e mesmo CSS de `.footer-bottom` / `.mono-label`, porém com o texto
+   novo".
+
+   Então a marcação abaixo é a de `app/templates/_copyright.html`, e os
+   valores de `.footer-bottom` e `.mono-label` em `grupo-om.css` são os de
+   `app/static/lab/lab-moldura.css`, copiados e não reescritos. É a mesma
+   decisão que a rodada de 20/08 tomou para o Lab: uma faixa só, em todo
+   lugar, sem um copyright novo por peça.
+
+   POR QUE O TEXTO NOVO É MELHOR QUE O ANTIGO, e não só diferente. O padrão da
+   base diz duas coisas: quem fez, e que não é o site oficial. Este diz as
+   duas, com as mesmas palavras, e ainda faz a terceira que faltava: pergunta
+   se a pessoa gostou e oferece o caminho. A peça inteira existe para gerar
+   uma conversa, e até esta rodada a última linha dela era um aviso legal.
+
+   A garantia da §8 continua cumprida, e é fácil conferir: "Leandro Furtado"
+   está escrito, "Esse não é o site oficial" está escrito, e o
+   `<meta name="author">` do `<head>` sequer é tocado por este arquivo, porque
+   ele vive fora do bloco.
+
+   O botão abre em aba nova de propósito: a proposta é o que o dono da agência
+   está lendo, e mandá-lo embora dela para ver um contato seria fechar a porta
+   pela qual ele acabou de entrar.
+   ========================================================================== #}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+<div class="footer-bottom">
+  {#- A PERGUNTA MUDOU DE LADO em 26/08, e a razão é de conversão, não de
+      composição: "Gostou da proposta?" era o fim de uma frase de aviso legal,
+      a meia tela de distância do botão que a responde. Perguntar e oferecer a
+      resposta no mesmo lugar é o que transforma as duas coisas em uma. O que
+      fica na assinatura é o que ela sempre foi: quem fez, e que não é o site
+      oficial. -#}
+  <span class="mono-label"><b>{{ T("Proposta de redesign do site do {}").format(r.marca) }}</b>
+    {{ T("por Leandro Furtado. Esse não é o site oficial.") }}</span>
+  <a class="om-autoria-btn" href="https://leandrofurtado.com.br/contato"
+     target="_blank" rel="noopener">{{ T("Gostou da proposta? Entre em contato.") }} {{ ico.ic("fora", 13) }}</a>
+</div>

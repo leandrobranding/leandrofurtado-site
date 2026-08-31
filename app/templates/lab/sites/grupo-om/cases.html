@@ -1,0 +1,220 @@
+{# ==========================================================================
+   A PÁGINA DE CASES: dezoito cases reais, grade de três colunas e os filtros
+   que o site do cliente tem (itens 19 e 27).
+
+   COMO O FILTRO FUNCIONA, e por que assim.
+
+   EMPRESA e CATEGORIA são LINK com parâmetro, resolvido no servidor
+   (`rotas_sites.py::_filtros`). Não é `<form>`, que a Global Constraint 4
+   proíbe; não é script, que sumiria junto com ele; e cada recorte ganha
+   endereço próprio, que é o que permite mandar "os cases da OpusMúltipla" por
+   e-mail em vez de mandar uma instrução de clique.
+
+   A BUSCA POR TEXTO é o contrário: ela nasce `hidden` e só aparece quando o
+   script chega, porque uma caixa de busca sem `<form>` e sem JS é um campo
+   que não faz nada. A grade já veio COMPLETA e legível do servidor; a busca
+   só esconde linhas dela.
+
+   OS CHIPS SÓ EXISTEM PARA QUEM TEM CASE. As sete categorias e as seis
+   empresas continuam na lista fechada de `cases_grupo_om.py`, que é a do
+   cliente, mas três categorias e duas empresas não assinam nenhum dos dezoito
+   cases publicados. Um chip que leva a uma grade vazia é um beco sem saída
+   dentro de uma proposta comercial.
+   ========================================================================== #}
+{% extends "lab/sites/_base_redesign.html" %}
+{% set pagina = "cases" %}
+
+{% block titulo %}{{ T("Cases e campanhas") }} | {{ r.marca }}{% endblock %}
+{#- ITEM 34: a descrição dizia "Dezoito cases". Número escrito à mão em texto
+    de tela envelhece na primeira vez que o conteúdo muda, e mudou: o case da
+    Ninfa saiu. Aqui a frase deixou de contar, e quem conta é o kicker logo
+    abaixo, que já lê o tamanho da lista. -#}
+{% block descricao %}{{ T("Os cases assinados pelas empresas do Grupo OM, com data, assunto e a empresa que assina cada um.") }}{% endblock %}
+
+{% block cabeca %}{% include "lab/sites/grupo-om/_cabeca.html" %}{% endblock %}
+
+{% block autoria %}{% include "lab/sites/grupo-om/_autoria.html" %}{% endblock %}
+
+{% block corpo %}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+{% import "lab/sites/grupo-om/_cartao_case.html" as grade with context %}
+{% include "lab/sites/grupo-om/_topo.html" %}
+
+{#- O endereço de um recorte. Os valores já passaram pela lista fechada da
+    rota, então não há nada aqui para escapar: são chaves de `[a-z-]`. -#}
+{%- macro recorte(emp, cat) -%}
+{%- set partes = [] -%}
+{%- if cat %}{% set _ = partes.append("categoria=" ~ cat) %}{% endif -%}
+{%- if emp %}{% set _ = partes.append("empresa=" ~ emp) %}{% endif -%}
+{{ base }}/cases{% if partes %}?{{ partes | join("&amp;") }}{% endif %}
+{%- endmacro -%}
+
+<main>
+  <section class="om-capa-interna om-escuro">
+    <div class="om-wrap">
+      <p class="om-kicker om-rv">{{ T("Cases e campanhas") }}</p>
+      <h1 class="om-manchete om-split">
+        {{ T("O trabalho") }}
+        <span class="om-leve">{{ T("com nome e assinatura.") }}</span>
+      </h1>
+      <div class="om-fio om-fio-largo" aria-hidden="true"></div>
+      <div class="om-capa-pe">
+        <p class="om-kicker om-kicker-num om-rv">{{ cases | length }} {{ T("cases publicados") }}</p>
+        <p class="om-declaracao om-declaracao-larga om-rv">{{ T("Cada campanha aqui é assinada por") }} <b>{{ T("uma das seis empresas") }}</b> {{ T("do grupo, e é essa assinatura que prova que o planejamento integrado não é retórica.") }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="om-secao" aria-labelledby="om-t-lista">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <p class="om-kicker om-rv">{{ T("Todos os cases") }}</p>
+        <div>
+          {#- ITEM 34: OS DOIS NÚMEROS SÃO DERIVADOS.
+
+              Este título dizia "Dezoito campanhas, cinco assinaturas.", com
+              os dois números escritos à mão. No dia em que o case da Ninfa
+              saiu, o primeiro virou mentira e ninguém teria percebido: são
+              dezessete cartões numa grade, e ninguém conta cartão.
+
+              Agora os dois saem da mesma lista que desenha a grade. Numeral e
+              não palavra, e isso é escolha: com a palavra por extenso, o
+              número volta a depender de alguém escrever "dezessete" na hora
+              certa, nos dois idiomas. O numeral em tipo grande é a mesma
+              gramática dos contadores da home. -#}
+          <h2 class="om-titulo om-split" id="om-t-lista">
+            {{ cases | length }} {{ T("campanhas,") }}
+            <span class="om-leve">{{ empresas_com_case | length }} {{ T("assinaturas.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      {#- A FAIXA DE FILTROS. Três grupos, cada um com o próprio rótulo: sem
+          rótulo, dois punhados de pílulas viram uma sopa de palavras em que
+          "Senso" e "Digital" parecem a mesma coisa. -#}
+      <div class="om-filtros om-rv" data-filtros>
+        {#- OS FILTROS EM UMA LINHA (pedido do Leandro, 26/08).
+
+            Eram onze chips soltos que enchiam três fileiras e faziam a página
+            começar por uma parede de pílulas. Agora são dois menus e a busca,
+            lado a lado, que é o mesmo arranjo que o site do cliente usa.
+
+            É `<details>`, e não um menu de script, pelo mesmo motivo do
+            dropdown de telefones do cabeçalho: o navegador já sabe abrir,
+            fechar, dar foco e responder ao teclado, e isso continua valendo
+            com o JavaScript desligado. Cada opção é um LINK de verdade, com
+            o recorte resolvido no servidor.
+
+            O resumo mostra o recorte ATIVO. Um filtro que não diz onde está
+            obriga a abrir o menu só para descobrir. -#}
+        <details class="om-menu-f" data-menu-filtro>
+          <summary class="om-f-abre">
+            {{ ico.ic("empresa", 14) }}
+            <span class="om-f-rotulo">{{ T("Empresa") }}</span>
+            <b class="om-f-valor">
+              {%- if filtros.empresa -%}
+                {%- for e in empresas_com_case if e.chave == filtros.empresa -%}{{ e.nome }}{%- endfor -%}
+              {%- else -%}{{ T("Todas") }}{%- endif -%}
+            </b>
+            {{ ico.ic("abaixo", 12) }}
+          </summary>
+          <nav class="om-f-lista" aria-label="{{ T("Empresa") }}">
+            <a class="om-f-op{% if not filtros.empresa %} om-f-op-on{% endif %}"
+               href="{{ recorte(none, filtros.categoria) }}"
+               {% if not filtros.empresa %}aria-current="true"{% endif %}>{{ T("Todas") }}
+              <b>{{ cases | length }}</b></a>
+            {%- for e in empresas_com_case %}
+            <a class="om-f-op{% if filtros.empresa == e.chave %} om-f-op-on{% endif %}"
+               href="{{ recorte(e.chave, filtros.categoria) }}"
+               {% if filtros.empresa == e.chave %}aria-current="true"{% endif %}>{{ e.nome }}
+              <b>{{ e.quantos }}</b></a>
+            {%- endfor %}
+          </nav>
+        </details>
+
+        <details class="om-menu-f" data-menu-filtro>
+          <summary class="om-f-abre">
+            {{ ico.ic("caso", 14) }}
+            <span class="om-f-rotulo">{{ T("Assunto") }}</span>
+            <b class="om-f-valor">
+              {%- if filtros.categoria -%}
+                {%- for chave, nome, quantos in categorias_com_case if chave == filtros.categoria -%}{{ T(nome) }}{%- endfor -%}
+              {%- else -%}{{ T("Todos") }}{%- endif -%}
+            </b>
+            {{ ico.ic("abaixo", 12) }}
+          </summary>
+          <nav class="om-f-lista" aria-label="{{ T("Assunto") }}">
+            <a class="om-f-op{% if not filtros.categoria %} om-f-op-on{% endif %}"
+               href="{{ recorte(filtros.empresa, none) }}"
+               {% if not filtros.categoria %}aria-current="true"{% endif %}>{{ T("Todos") }}
+              <b>{{ cases | length }}</b></a>
+            {%- for chave, nome, quantos in categorias_com_case %}
+            <a class="om-f-op{% if filtros.categoria == chave %} om-f-op-on{% endif %}"
+               href="{{ recorte(filtros.empresa, chave) }}"
+               {% if filtros.categoria == chave %}aria-current="true"{% endif %}>{{ T(nome) }}
+              <b>{{ quantos }}</b></a>
+            {%- endfor %}
+          </nav>
+        </details>
+
+        {#- A BUSCA. `hidden` no HTML, e só o script tira: sem ele, este campo
+            não teria para onde enviar nada. -#}
+        <div class="om-filtro-busca" data-busca hidden>
+          <label class="om-vis-oculto" for="om-busca">{{ T("Buscar no texto") }}</label>
+          {{ ico.ic("lampada", 14) }}
+          <input class="om-busca" id="om-busca" type="search" autocomplete="off"
+                 placeholder="{{ T("Buscar no texto") }}" data-busca-campo>
+        </div>
+        {#- O CONTADOR NA MESMA LINHA (Leandro, 27/08): ele era uma linha
+            própria abaixo dos filtros e virou o fecho da fileira deles, com
+            o ícone de case no lugar de mais uma palavra. `margin-inline-
+            start: auto` no CSS o manda para a ponta direita. -#}
+        <p class="om-conta" data-conta-cases aria-live="polite"
+           data-molde="{{ T("{n} de {total} cases") }}">
+          {{- ico.ic("caso", 14) }} <span>
+          {%- if filtros.empresa or filtros.categoria -%}
+          {{ cases_filtrados | length }} {{ T("de") }} {{ cases | length }} {{ T("cases") }}
+          {%- else -%}
+          {{ cases | length }} {{ T("cases") }}
+          {%- endif -%}</span>
+        </p>
+      </div>
+
+      <ul class="om-grade-cases">
+        {%- for c in cases_filtrados %}
+        {{ grade.cartao(c) }}
+        {%- endfor %}
+      </ul>
+
+      {#- O vazio da BUSCA, que é o único vazio possível aqui: os chips só
+          existem para recortes que têm case, e o servidor recusa valor fora da
+          lista fechada. Ele nasce escondido e quem o mostra é o script. -#}
+      {#- A PAGINAÇÃO. Nasce vazia e `hidden`, e quem a preenche é o script.
+
+          Ela não vem pronta do servidor de propósito: sem script a grade
+          entrega os dezoito de uma vez, que é o comportamento certo, e uma
+          paginação de verdade exigiria um endereço por página, cada um deles
+          uma URL a mais com o mesmo conteúdo para o buscador achar.
+
+          Os rótulos vêm como atributo porque o script não fala português nem
+          inglês: ele lê o que a página lhe der, e a peça é bilíngue. -#}
+      <ul class="om-paginacao" data-paginacao hidden
+          aria-label="{{ T("Páginas de cases") }}"
+          data-anterior="{{ T("Página anterior") }}"
+          data-proxima="{{ T("Próxima página") }}"
+          data-pagina="{{ T("Página") }}"></ul>
+
+      {#- ITEM 34: "para ver os dezoito" prometia uma contagem que envelheceu.
+          A frase não conta mais nada, e a contagem verdadeira está no
+          `om-conta` acima, que o script atualiza a cada busca. -#}
+      <p class="om-vazio" data-vazio hidden>{{ T("Nenhum case com esse texto. Limpe a busca para ver todos.") }}</p>
+    </div>
+  </section>
+
+</main>
+
+{% include "lab/sites/grupo-om/_pe.html" %}
+{% endblock %}
+
+{% block scripts %}{% include "lab/sites/grupo-om/_scripts.html" %}{% endblock %}

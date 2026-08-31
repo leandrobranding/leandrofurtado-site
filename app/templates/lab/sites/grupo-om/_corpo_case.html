@@ -1,0 +1,271 @@
+{# ==========================================================================
+   A PÁGINA DE UM CASE, no formato que o site do cliente usa (item 27).
+
+   A ordem é a dele, e é a ordem que o material descreve: migalha de pão, a
+   palavra CASES com a categoria ao lado e a data, o `<h1>`, a marca de quem
+   assina, a arte, o texto, a ficha técnica, e o botão de voltar.
+
+   A MARCA DESCEU UMA LINHA em 27/08 (item 32). Ela ficava na linha de ficha
+   da capa, com o nome da empresa escrito ao lado, e o pé da capa repetia esse
+   nome três linhas abaixo: três afirmações para uma. Agora ela mora no pé da
+   capa, sozinha, sob o rótulo "Assina".
+
+   O AUTOR É A EMPRESA QUE ASSINA. O site do cliente publica um autor por
+   case; o material colhido não trouxe o nome de pessoa nenhuma nesse campo, e
+   inventar um seria pôr assinatura de gente na página de outra empresa. Quem
+   assina é a empresa, e é isso que está escrito.
+
+   NÃO HÁ VÍDEO, e a ausência é decisão. Os cases do cliente embutem um
+   `iframe` do YouTube; um `iframe` desses é host externo de script e de
+   rastreamento, que a Global Constraint 11 proíbe, e seria a peça carregando
+   um terceiro na mesma página em que acusa o site do cliente de peso. A
+   imagem que entra no lugar É o quadro de destaque que o cliente publica para
+   aquele filme. Está em Pendências, e a decisão de hospedar o filme é do
+   Leandro.
+   ========================================================================== #}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+{% import "lab/sites/grupo-om/_assinatura.html" as sig with context %}
+
+{% set c = por_slug[caso] %}
+{% set quantos = cases | length %}
+{% set indice = cases.index(c) %}
+{% set proximo = cases[(indice + 1) % quantos] %}
+{% set arte_abs = endereco_raiz ~ c.imagem %}
+
+<main>
+  {#- ITEM 31: `om-largo`, e não `om-wrap`. A capa de um case é ESTRUTURA
+      (migalha, linha de ficha, manchete e um pé de duas colunas), e estrutura
+      é o que ganha com a largura máxima. O texto corrido desta página continua
+      com medida de leitura, e o teto dele está no CSS, não aqui. -#}
+  <section class="om-capa-interna om-escuro">
+    <div class="om-largo">
+      <nav class="om-trilha om-rv" aria-label="{{ T("Você está aqui") }}">
+        <a href="{{ base }}/cases">{{ ico.ic("volta") }} {{ T("Cases") }}</a>
+        <span>{{ T(c.titulo) }}</span>
+      </nav>
+
+      {#- A LINHA DE FICHA DA CAPA: o assunto e a data. É o cabeçalho de case
+          do cliente, na ordem dele.
+
+          ITEM 32: A MARCA SAIU DAQUI e desceu para o pé da capa. Ela estava
+          nesta linha ACOMPANHADA DO NOME em texto, que é a repetição que o
+          item manda tirar; e, três linhas abaixo, o pé da capa escrevia o
+          mesmo nome outra vez sob o rótulo "Assina". Eram três afirmações
+          para uma. Agora existe UMA: o logo, no lugar onde a capa diz quem
+          assina. -#}
+      <div class="om-case-linha om-rv">
+        <span class="om-case-meta">
+          <b>{{ T("Cases") }}</b>
+          {%- if c.categoria %} <span class="om-etiqueta-solta">{{ T(nome_da_categoria[c.categoria]) }}</span>{% endif %}
+          <time datetime="{{ c.iso }}">{{ c.iso if lang == "en" else c.data }}</time>
+        </span>
+      </div>
+
+      <h1 class="om-manchete om-split">{{ T(c.titulo) }}</h1>
+      <div class="om-fio om-fio-largo" aria-hidden="true"></div>
+
+      <div class="om-capa-pe">
+        <div class="om-rv">
+          <p class="om-kicker">{{ T("Assina") }}</p>
+          {#- O logo sozinho. O nome de quem assina continua escrito na peça,
+              no `alt` desta imagem e por extenso na FICHA lá embaixo, que é um
+              bloco sem logo nenhum. -#}
+          <p class="om-case-autor">{{ sig.marca(c.empresa, grande=true) }}</p>
+        </div>
+        <div>
+          <p class="om-declaracao om-declaracao-larga om-rv">{{ T(c.resumo) }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {#- A ARTE, sangrada na largura do miolo. `lazy` porque ela fica abaixo da
+      capa, que é o que a primeira dobra mostra.
+
+      ELA É A ÚNICA SEÇÃO DESTA PÁGINA QUE NÃO FOI PARA `om-largo`, e a razão é
+      medida: o arquivo tem 960 px de largura. Em `om-wrap` ele já é esticado
+      1,37 vez numa tela de 1440; em `om-largo` numa de 1920 seriam 1,85 vez, e
+      esticar a arte de um cliente até ela ficar mole não é aproveitamento de
+      tela, é perda de qualidade. A regra do item 31 é "onde houver
+      aproveitamento a GANHAR", e aqui não há. -#}
+  <section class="om-secao om-secao-arte" aria-label="{{ T("Arte do case") }}">
+    <div class="om-wrap">
+      <figure class="om-case-arte om-rv">
+        <img src="{{ c.imagem }}" width="960" height="540" loading="lazy" decoding="async"
+             alt="{{ T("Quadro de destaque do case") }} {{ T(c.titulo) }}">
+      </figure>
+    </div>
+  </section>
+
+  <section class="om-secao" aria-labelledby="om-t-ficha">
+    <div class="om-largo om-assim">
+      <div>
+        {#- ============================================================
+            ITEM 30, A FICHA TÉCNICA.
+
+            O QUE ESTAVA ERRADO, medido em 1440 antes de mexer: a coluna
+            estreita da grade assimétrica tinha 389 px e a ficha se dividia em
+            DUAS colunas de 183 px lá dentro. Nessas colunas "Empresa do grupo"
+            saía em duas linhas, "Produção gráfica e arte-final" em três, e uma
+            lista de cinco nomes ocupava 162 px de altura, seis linhas de duas
+            palavras. Ficha técnica é consultada, não lida em sequência, e uma
+            que ocupa meia página de altura já não se consulta.
+
+            O QUE MUDOU, e tudo mora no CSS: uma coluna só a partir de 62em
+            (que é onde a grade assimétrica entra e a coluna estreita nasce),
+            rótulo menor e menos apertado, valor menor, e as categorias
+            delimitadas por PROXIMIDADE, com o vão entre dois campos quase
+            quatro vezes o vão entre um rótulo e o valor dele. Rótulo à
+            esquerda e valor à direita foi medido e descartado: numa coluna de
+            429 px ele piora a lista de cinco nomes de duas linhas para
+            quatro.
+
+            O ÍCONE SAIU. Ele era o mesmo desenho repetido em cada papel da
+            ficha, e num rótulo de 11 px ele custava 19 px de largura mais o
+            vão: era a diferença entre "Publicado em" numa linha e em duas.
+            ============================================================ -#}
+        <p class="om-kicker om-rv" id="om-t-ficha">{{ T("A ficha") }}</p>
+        <dl class="om-ficha om-rv">
+          <div>
+            <dt>{{ T("Empresa do grupo") }}</dt>
+            <dd>{{ assinante(c.empresa).nome }}</dd>
+          </div>
+          <div>
+            <dt>{{ T("Publicado em") }}</dt>
+            <dd><time datetime="{{ c.iso }}">{{ c.iso if lang == "en" else c.data }}</time></dd>
+          </div>
+          {% if c.categoria %}
+          <div>
+            <dt>{{ T("Assunto") }}</dt>
+            <dd>{{ T(nome_da_categoria[c.categoria]) }}</dd>
+          </div>
+          {% endif %}
+          {%- for papel, pessoa in c.ficha %}
+          <div>
+            <dt>{{ T(papel) }}</dt>
+            <dd>{{ pessoa }}</dd>
+          </div>
+          {%- endfor %}
+        </dl>
+      </div>
+      <div class="om-case-prosa">
+        <h2 class="om-titulo om-split">
+          {{ T("O trabalho,") }}
+          <span class="om-leve">{{ T("como o grupo o publica.") }}</span>
+        </h2>
+        <div class="om-fio" aria-hidden="true"></div>
+
+        {% for paragrafo in c.corpo %}
+        <p class="om-texto om-rv">{{ T(paragrafo) }}</p>
+        {% endfor %}
+
+        {#- ============================================================
+            COMPARTILHAR: LINK, NUNCA WIDGET.
+
+            Cada botão é um `<a href>` para o endereço de intenção público da
+            rede. Nenhum SDK oficial entra: a Global Constraint 11 proíbe host
+            externo de script, a CSP da peça é `default-src 'self'`, e um
+            widget oficial ainda carregaria rastreador de terceiro na página
+            que a proposta usa para acusar o site do cliente de peso.
+
+            O ENDEREÇO É MONTADO AQUI, no servidor, com `urlencode`. Título de
+            case tem `&` e acento: `Frimesa Fogo & Sabor` concatenado na
+            mão quebra a query string no primeiro `&`, e o que chega na rede é
+            meia frase.
+
+            O INSTAGRAM FICA DE FORA, por decisão do Leandro em 26/08: não
+            existe endereço de intenção público dele na web, e qualquer coisa
+            inventada ali abre a home do Instagram no celular de quem clicou.
+            Ele continua no rodapé, onde é PERFIL, que é o que ele é. Quem vai
+            postar no Instagram usa o COPIAR ENDEREÇO, que é justamente a
+            função que sobrou para esse botão.
+
+            Os dois controles de JavaScript nascem `hidden` e só aparecem
+            quando a API existe, pelo mesmo motivo de sempre: botão que não faz
+            nada é pior que botão nenhum.
+            ============================================================ -#}
+        {#- ITEM 29: A SETA DE ENTRADA. Ela é `aria-hidden` e nasce apagada e
+            deslocada; quem a traz para dentro é o hover no bloco inteiro. É um
+            desenho do sprite, e não um caractere: a regra dos glifos vale aqui
+            como em toda a peça, e "→" tem apresentação emoji em parte dos
+            Androids. Em `prefers-reduced-motion` ela simplesmente não aparece,
+            e nada do bloco depende dela. -#}
+        <div class="om-partilha om-rv">
+          <p class="om-partilha-t">
+            {{ ico.ic("partilha") }} {{ T("Compartilhar este case") }}
+            <span class="om-partilha-seta" aria-hidden="true">{{ ico.ic("seta", 15) }}</span>
+          </p>
+          <nav class="om-partilha-redes" aria-label="{{ T("Compartilhar este case") }}">
+            <a href="https://x.com/intent/post?url={{ endereco_abs | urlencode }}&amp;text={{ T(c.titulo) | urlencode }}"
+               target="_blank" rel="noopener">{{ ico.ic("x", 15) }} <span>X</span></a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ endereco_abs | urlencode }}"
+               target="_blank" rel="noopener">{{ ico.ic("facebook", 15) }} <span>Facebook</span></a>
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ endereco_abs | urlencode }}"
+               target="_blank" rel="noopener">{{ ico.ic("linkedin", 15) }} <span>LinkedIn</span></a>
+            <a href="https://pinterest.com/pin/create/button/?url={{ endereco_abs | urlencode }}&amp;media={{ arte_abs | urlencode }}&amp;description={{ T(c.titulo) | urlencode }}"
+               target="_blank" rel="noopener">{{ ico.ic("pinterest", 15) }} <span>Pinterest</span></a>
+            <a href="https://www.threads.net/intent/post?text={{ (T(c.titulo) ~ " " ~ endereco_abs) | urlencode }}"
+               target="_blank" rel="noopener">{{ ico.ic("threads", 15) }} <span>Threads</span></a>
+            <a href="https://wa.me/?text={{ (T(c.titulo) ~ " " ~ endereco_abs) | urlencode }}"
+               target="_blank" rel="noopener">{{ ico.ic("whatsapp", 15) }} <span>WhatsApp</span></a>
+            <a href="https://t.me/share/url?url={{ endereco_abs | urlencode }}&amp;text={{ T(c.titulo) | urlencode }}"
+               target="_blank" rel="noopener">{{ ico.ic("telegram", 15) }} <span>Telegram</span></a>
+            <a href="mailto:?subject={{ T(c.titulo) | urlencode }}&amp;body={{ endereco_abs | urlencode }}">
+              {{ ico.ic("carta", 15) }} <span>{{ T("E-mail") }}</span></a>
+          </nav>
+          <div class="om-partilha-bts" data-partilha>
+            <button class="om-btn om-btn-vazio" type="button" data-partilha-nativo hidden>
+              {{ ico.ic("partilha") }} {{ T("Enviar") }}
+            </button>
+            <button class="om-btn om-btn-vazio" type="button" data-partilha-copiar hidden>
+              {{ ico.ic("elo") }} <span data-partilha-rotulo>{{ T("Copiar endereço") }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {#- ============================================================
+      ITEM 32, O TRILHO DO PRÓXIMO CASE.
+
+      ELE GANHOU A IMAGEM, como os cartões da grade. Sem ela o trilho era um
+      título e dois botões no fim de uma página que acabou de mostrar uma arte
+      grande: o próximo case chegava sem nenhuma razão para ser clicado, numa
+      peça cujo argumento é justamente o trabalho que se VÊ.
+
+      A IMAGEM É FIGURA, NÃO LINK. O cartão tem um CTA logo abaixo, e um
+      segundo link para o mesmo endereço só faria o leitor de tela anunciar o
+      mesmo destino duas vezes e criaria um alvo de toque a mais para a mesma
+      coisa. `alt=""` pelo mesmo motivo: o título do próximo case está escrito
+      ao lado, em texto.
+
+      E A MARCA VEM SOZINHA (item 32, segunda metade). Aqui estava
+      `assina()`, que punha o logo com o nome da empresa ao lado: o par que o
+      item manda desfazer no site inteiro.
+      ============================================================ -#}
+  <section class="om-secao om-papel" aria-labelledby="om-t-proximo">
+    <div class="om-largo om-assim">
+      <div>
+        <p class="om-kicker om-rv">{{ T("Próximo case") }}</p>
+        <p class="om-kicker om-kicker-num om-rv">{{ "%02d" | format(indice + 1) }} {{ T("de") }} {{ quantos }}</p>
+        <figure class="om-proximo-arte om-rv">
+          <img src="{{ proximo.imagem }}" width="960" height="540" alt=""
+               loading="lazy" decoding="async">
+        </figure>
+      </div>
+      <div>
+        <h2 class="om-titulo om-split" id="om-t-proximo">{{ T(proximo.titulo) }}</h2>
+        <div class="om-fio" aria-hidden="true"></div>
+        {{ sig.marca(proximo.empresa, grande=true) }}
+        <div class="om-chamadas om-rv">
+          <a class="om-btn om-btn-cheio" href="{{ base }}/case/{{ proximo.slug }}">
+            {{ T("Ver o case") }} {{ ico.ic("seta") }}
+          </a>
+          <a class="om-btn om-btn-vazio" href="{{ base }}/cases">
+            {{ ico.ic("volta") }} {{ T("Voltar para os cases") }}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>

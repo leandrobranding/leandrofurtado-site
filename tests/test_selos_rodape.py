@@ -77,3 +77,69 @@ def test_textos_dos_selos_existem_nos_dois_idiomas():
     for chave in ("review_cta", "review_on", "secure_title", "secure_detail"):
         for lang in ("pt", "en"):
             assert STRINGS[lang].get(chave), f"falta {chave} em {lang}"
+
+
+# --------------------------------- a colisão de nome que apagou os ícones --
+# 25/08/2026: os selos deste componente nasceram (23/08) com a classe `.selo`,
+# que JÁ pertencia a outro componente — os ícones de ferramenta dos cases
+# (`<img class="selo">`, 18px, estilizados por `.selos .selo` desde 14/08).
+#
+# `.selos .selo` (0,2,0) vence `.selo` (0,1,0) nas propriedades que os DOIS
+# declaram. O estrago veio das que só o segundo declarava: `padding: 11px 16px`
+# e `border: 1px`. Com o `box-sizing: border-box` global, 32px de padding
+# horizontal não cabem numa caixa de 18px — a caixa de conteúdo colapsa para
+# 0x0 e o ícone some, sobrando a moldura vazia.
+#
+# Sumiram os ícones de ferramenta de TODO case, na home, no portfólio, na
+# página do case e na do cliente, e nenhum teste acusou: a suíte olhava se o
+# HTML tinha a classe, nunca se o CSS a estava destruindo.
+
+import pathlib
+
+CSS = pathlib.Path(__file__).resolve().parent.parent / "app/static/css/main.css"
+
+# Um seletor cujo ÚLTIMO passo é `.selo` sem nada antes limitando o alcance.
+# `.selos .selo` e `.selos-ficha .selo` passam; `.selo`, `a.selo` e
+# `.qualquer-coisa, .selo` não.
+_SELO_CRU = re.compile(r"(?:^|[,{}])\s*[a-z]*\.selo\s*(?=[,{:])", re.M)
+
+
+def test_nenhuma_regra_de_css_usa_selo_sem_escopo():
+    """`.selo` é a classe dos ícones de ferramenta. Qualquer outro componente
+    que a use precisa de escopo próprio, senão volta a destruí-los.
+
+    Os selos do rodapé sempre carregam `selo-google` ou `selo-seguro`, então é
+    por elas que o CSS deles deve mirar."""
+    css = re.sub(r"/\*.*?\*/", "", CSS.read_text(encoding="utf-8"), flags=re.S)
+    achados = [
+        css[: m.start()].count("\n") + 1
+        for m in _SELO_CRU.finditer(css)
+        if not re.search(r"\.selos(-ficha)?\s+[a-z]*\.selo\s*$",
+                         css[max(0, m.start() - 60):m.end()].strip())
+    ]
+    assert not achados, (
+        "seletor `.selo` sem escopo em main.css, linha(s) "
+        f"{achados}: isso apaga os ícones de ferramenta dos cases"
+    )
+
+
+def test_o_icone_de_ferramenta_nao_recebe_padding_nem_borda():
+    """A regra que dimensiona os ícones não declara padding nem borda, e é
+    exatamente por isso que uma regra alheia conseguiu injetá-los. Este teste
+    prova que a regra continua existindo e com o tamanho que ela promete."""
+    css = CSS.read_text(encoding="utf-8")
+    regra = re.search(r"\.selos \.selo \{([^}]*)\}", css)
+    assert regra, "a regra .selos .selo sumiu de main.css"
+    corpo = regra.group(1)
+    assert "width: 18px" in corpo and "height: 18px" in corpo
+    assert "padding" not in corpo and "border:" not in corpo
+
+
+def test_os_svgs_de_todos_os_programas_existem():
+    """O selo aponta para `/static/img/programas/<slug>.svg`. Slug na lista sem
+    arquivo no disco é ícone quebrado em produção."""
+    from app.services.programas import PROGRAMAS
+
+    pasta = CSS.parent.parent / "img" / "programas"
+    faltando = [s for s in PROGRAMAS if not (pasta / f"{s}.svg").is_file()]
+    assert not faltando, f"SVG ausente para: {faltando}"

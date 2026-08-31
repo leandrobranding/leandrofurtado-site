@@ -366,6 +366,92 @@ class CaseComment(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=now)
 
 
+# ------------------------------------------------------------ Redesign --
+
+ESTADOS_REDESIGN = ("pitch", "publico", "aprovado")
+
+
+def novo_token() -> str:
+    """Endereço secreto de um pitch.
+
+    `token_urlsafe(16)` dá 22 caracteres de 128 bits de entropia: curto o
+    bastante para ser colado no WhatsApp e às vezes lido em voz alta, e longe
+    demais de ser adivinhado.
+
+    Opaco de propósito. Um token derivado do nome da marca deixaria de ser
+    secreto no instante em que alguém lesse a URL por cima do ombro do dono.
+    """
+    import secrets
+
+    return secrets.token_urlsafe(16)
+
+
+class Redesign(Base):
+    """Uma home refeita por conta própria, para mostrar e vender.
+
+    POR QUE AQUI, E NÃO EM app/lab/models.py
+
+    Todo modelo do Lab pendura em `sandbox_id` e some na limpeza diária,
+    porque é dado de visitante que vive 24 horas. Um redesign é o oposto:
+    conteúdo editorial do Leandro, permanente, irmão de `Case`. Ele mora no
+    endereço /lab porque é lá que o visitante o encontra, e endereço não
+    dita onde o dado vive.
+
+    OS TRÊS ESTADOS (§6 da spec)
+
+    `pitch`     só existe pelo token. O endereço público responde 404.
+    `publico`   na vitrine e no sitemap. Marca grande, ou cliente que
+                autorizou.
+    `aprovado`  virou trabalho real: sai da vitrine e do sitemap, e o
+                portfólio passa a ter o `Case`. A página continua servindo
+                como registro de que aquilo começou como pitch.
+
+    AS DUAS CAPTURAS
+
+    Saem do mesmo `app/services/captura.py` que já fotografa o site de um
+    case. O "antes" vem de `antes_url`, o "depois" vem da própria página do
+    Leandro. A cortina da vitrine nunca desatualiza porque é recapturada.
+    """
+
+    __tablename__ = "redesigns"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    slug: Mapped[str] = mapped_column(String(140), unique=True, index=True)
+    marca: Mapped[str] = mapped_column(String(200), default="")
+    setor: Mapped[str] = mapped_column(String(120), default="")
+    estado: Mapped[str] = mapped_column(String(20), default="pitch", index=True)
+    token: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+
+    # o site atual, de verdade
+    antes_url: Mapped[str] = mapped_column(String(500), default="")
+    antes_shot: Mapped[str] = mapped_column(String(300), default="")
+    antes_shot_at: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    # a página deste redesign, fotografada pelo mesmo serviço
+    depois_shot: Mapped[str] = mapped_column(String(300), default="")
+    depois_shot_at: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    # o dossiê da §4, colhido do site original
+    insumos: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    insumos_em: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+    # texto do Leandro: o argumento, e o que falta perguntar
+    diagnostico: Mapped[str] = mapped_column(Text, default="")
+    pendencias: Mapped[str] = mapped_column(Text, default="")
+
+    criado_em: Mapped[dt.datetime] = mapped_column(
+        DateTime(timezone=True), default=now)
+    enviado_em: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    # carimbado na PRIMEIRA abertura por visitante de verdade. Ver a regra do
+    # loopback em app/lab/rotas_sites.py: sem ela, a captura do "depois"
+    # marcaria o cliente como tendo visto antes de o link ser enviado.
+    visto_em: Mapped[dt.datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+
+
 class Activity(Base):
     """Tudo que acontece no painel e no site, em uma linha do tempo só.
 

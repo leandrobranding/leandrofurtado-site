@@ -1,0 +1,426 @@
+{# ==========================================================================
+   Grupo OM, a home. Terceira versão, reescrita do zero, e agora uma das
+   CINCO páginas.
+
+   POR QUE A SEGUNDA CAIU. O diretor de arte reprovou assim: "ruim de todas as
+   formas, tá um site feito em IA praticamente, textos e tipografias de IA, não
+   tem hierarquias, esse laranja não tem nada a ver". Os três pontos estavam
+   certos. O laranja era invenção (a identidade é monocromática, e a única cor
+   dela é um arco-íris de seis paradas usado como barra no topo e como
+   fio sob um título, e que nunca toca a marca); a
+   tipografia era escolha de gosto (o pedido é Montserrat, que é quase o
+   desenho do próprio wordmark do cliente); e "não tem hierarquias" era o mais
+   concreto de todos, porque a página inteira vivia entre 16 e 50 px.
+
+   A HIERARQUIA DESTA PÁGINA é uma régua de três degraus muito separados, e o
+   salto entre eles é o desenho:
+
+       kicker      14 px, fixo
+       declaração  23 a 44 px
+       manchete    44 a 110 px
+
+   REGRA QUE MANDA AQUI (§4.1 da spec): nada nesta página é inventado. Todo
+   telefone, endereço, serviço, case, nome, depoimento e número sai do material
+   colhido de grupoom.com.br, ou de um arquivo que o cliente mandou. O dono lê
+   e confere. Um fato errado destrói o pitch inteiro.
+
+   O QUE ESTA PÁGINA NÃO TEM, e a ausência é deliberada:
+     - nenhum e-mail e nenhum WhatsApp (o site atual não publica nenhum)
+     - nenhum "mais de X anos", nenhum prêmio, nenhum resultado em número
+     - nenhuma cidade escrita ao lado de um telefone: são dois DDDs e dois
+       endereços, e emparelhá-los seria adivinhar (vai como pendência)
+     - nenhuma imagem ilustrando um case: não veio nenhum frame das campanhas,
+       e ilustrar a Continental com um banner de ESG seria dizer que uma peça
+       é outra
+     - nenhum serviço fora dos SETE que o site atual nomeia. A versão anterior
+       tinha nove, e os dois excedentes ("identidades visuais", "embalagens")
+       não estão no material: eram invenção que passou despercebida.
+
+   O DIAGNÓSTICO que esta peça responde, medido em 26/08/2026: as cinco páginas
+   atuais entregam de 154 a 266 KB de HTML, rodam WordPress 6.6.7 e NENHUMA
+   delas tem um `<h1>`.
+   ========================================================================== #}
+{% extends "lab/sites/_base_redesign.html" %}
+{% set pagina = "home" %}
+
+{# O `<title>` é o do próprio site, palavra por palavra. Não é falta de ideia:
+   o cliente reconhece o que já é dele, e a proposta não abre uma discussão de
+   posicionamento que ninguém pediu. #}
+{% block titulo %}{{ r.marca }} | {{ T("Marketing e comunicação") }}{% endblock %}
+
+{# `descricao` NÃO é sobrescrito de propósito. A home atual não tem meta
+   description nenhuma, e escrever uma aqui seria inventar posicionamento em
+   nome do cliente. Sem o bloco, a base cai no `{{ r.setor }}`. #}
+
+{% block cabeca %}{% include "lab/sites/grupo-om/_cabeca.html" %}{% endblock %}
+
+{# ITEM 10: a faixa de copyright do Lab, com o texto novo, SUBSTITUI a marca
+   de autoria padrão da base. Ver `_autoria.html`. #}
+{% block autoria %}{% include "lab/sites/grupo-om/_autoria.html" %}{% endblock %}
+
+{% block corpo %}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+{% import "lab/sites/grupo-om/_voz.html" as voz with context %}
+{% import "lab/sites/grupo-om/_cartao_case.html" as grade with context %}
+{% include "lab/sites/grupo-om/_topo.html" %}
+
+<main>
+  {# ---------------------------------------------------------------- capa
+     Tipografia pura, e a prova vem na dobra seguinte. A tentação era encostar
+     seis logos na manchete; isso apertaria a primeira dobra e estragaria as
+     duas coisas.
+
+     A MANCHETE FICA FORA DA GRADE, na medida inteira: dentro de uma coluna de
+     65% ela quebrava em cinco linhas em 992 px, com uma preposição sozinha na
+     quarta. A grade assimétrica de 35/65 entra logo abaixo dela, com o kicker
+     na coluna estreita e a declaração na larga. É esse desequilíbrio que faz a
+     dobra parecer composta em vez de empilhada. #}
+  <section class="om-capa om-escuro">
+    {#- ------------------------------------------------------- a AURORA --
+        Pedido do Leandro: "um gradiente em movimento bem sutil que o mouse
+        acompanhe, algo épico e que combine".
+
+        ELE SUGERIU three.js. Não usei, e a razão é o argumento da própria
+        peça: three.js pesa uns 150 KB comprimidos, e a pilha de movimento
+        daqui já custa 145. Dobrar o peso do site cujo diagnóstico é "o seu
+        entrega de 154 a 266 KB por página" destruiria a frase que vende a
+        proposta. O que os sites que ele mandou de referência usam para isto
+        não é uma biblioteca 3D: é um shader de duas dezenas de linhas. Aqui
+        ele custa cerca de 4 KB e roda na GPU.
+
+        A COR É A DA IDENTIDADE, e ela obedece a mesma regra de sempre: o
+        arco-íris nunca toca a marca. A aurora vive ATRÁS do herói, com o
+        cabeçalho por cima dela, e o brilho é fraco o bastante para o texto
+        branco manter contraste de sobra. É grafismo de fundo, que é
+        exatamente o que o Leandro disse que o gradiente é na identidade do
+        cliente: insumo gráfico.
+
+        SEM SCRIPT, ou sem WebGL, o `<canvas>` fica vazio e transparente e o
+        fundo continua sendo o grafite de sempre. Quem pediu menos movimento
+        recebe um único quadro, parado: a imagem existe, o movimento não. -#}
+    <canvas class="om-aurora" data-aurora aria-hidden="true"></canvas>
+    <div class="om-wrap">
+      {#- ITEM 16: O BLOCO DE CIMA DO HERÓI é um grupo próprio, e não quatro
+          irmãos soltos, porque em tela estreita é ELE que precisa ocupar a
+          dobra inteira: assim a linha de baixo da tela cai exatamente no fio
+          que abre o `om-capa-pe`, e não no meio do parágrafo. Ver o CSS de
+          `.om-capa-topo`. -#}
+      <div class="om-capa-topo">
+        <p class="om-kicker om-rv">{{ T("Comunicação integrada desde a estratégia") }}</p>
+        {# O ÚNICO h1 da página, e ele diz o objetivo que o próprio Grupo OM
+           escreve no site: "gerar ideias que funcionam para ajudar a construir
+           marcas e mercados". Nenhuma das cinco páginas do site atual tem um
+           h1: é o achado mais fácil de explicar em uma frase para um dono de
+           agência, e o mais constrangedor de deixar em pé. #}
+        <h1 class="om-manchete om-split">
+          {{ T("Ideias que funcionam") }}
+          <span class="om-leve">{{ T("para construir marcas e mercados.") }}</span>
+        </h1>
+        <div class="om-fio om-fio-largo" aria-hidden="true"></div>
+
+      </div>
+
+      <div class="om-capa-pe">
+        <p class="om-kicker om-rv">{{ T("Quem faz") }}</p>
+        <div>
+          {# Texto do próprio site, sem uma palavra a mais. #}
+          <p class="om-declaracao om-declaracao-larga om-rv">{{ T("Somos") }} <b>{{ T("6 empresas") }}</b>
+            {{ T("que combinam especialistas das diversas disciplinas do marketing e da comunicação, mas que trabalham de forma sinérgica, com planejamento integrado.") }}</p>
+          <div class="om-chamadas om-rv">
+            <a class="om-btn om-btn-cheio" href="{{ base }}/cases">
+              {{ T("Ver os cases") }} {{ ico.ic("seta", 15) }}
+            </a>
+            <a class="om-btn om-btn-vazio" href="tel:+554133621919">{{ T("Falar com o {}").format(r.marca) }} {{ ico.ic("tel", 15) }}</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {# ---------------------------------------------------- clientes (o muro) #}
+  {% include "lab/sites/grupo-om/_fita.html" %}
+
+  {# ------------------------------------------------------------- serviços
+     Índice numerado, e não uma grade de cartões. Cartão de serviço é o que
+     faz toda home de agência parecer a mesma; um sumário em corpo grande põe
+     o NOME do serviço no tamanho em que ele é procurado, e o número de 14 px
+     ao lado dele é o contraste que faz a lista ter hierarquia.
+
+     São SETE, e são exatamente os que o site atual nomeia, sem tradução e sem
+     "melhoria". A ordem é editorial: estratégia, marca, execução, mídia,
+     relacionamento.
+
+     ITEM 14, e a contradição que ele carrega. O Leandro pediu "hover animado
+     e motion na rolagem" nestas linhas. O hover tinha sido REMOVIDO num ciclo
+     anterior, e por um bom motivo: as sete linhas não são link, não levam a
+     lugar nenhum, e deslocá-las ou realçá-las como se levassem é prometer um
+     clique que a página não sabe cumprir.
+
+     A saída preferida do documento era transformar cada linha num link de
+     verdade. Ela não existe aqui: a peça tem cinco páginas e nenhuma delas é
+     "Branding" nem "Gestão de mídia", e criar sete páginas de serviço seria
+     escrever, em nome da agência, texto que a agência não escreveu. Serviço
+     inventado numa proposta é o mesmo erro que cliente inventado.
+
+     Então vale a segunda saída, e ela é literal: o movimento é DESTAQUE DE
+     LEITURA, e não navegação. Nada de seta, nada de sublinhado, nada de
+     deslocamento, nenhum `cursor: pointer`. O que acontece no hover é o
+     CONTRÁRIO de um alvo: as outras seis linhas recuam e a linha sob o
+     cursor fica onde sempre esteve. Ninguém clica no que não mudou.
+
+     27/08: NO HOVER ENTRA A IMAGEM DE UM CASE, e a relação serviço→case não
+     é decorativa — cada uma se defende pelo texto do próprio case, e o mapa
+     com as sete justificativas mora em `cases_grupo_om.py`
+     (`CASO_DO_SERVICO`). A lista de serviços não tem página para onde ir,
+     mas tem PROVA para mostrar: o hover responde "isso aqui é o quê, na
+     prática?" com um trabalho publicado. A imagem é decorativa para o leitor
+     de tela (`aria-hidden`), porque o case aparece nomeado na grade logo
+     abaixo.
+
+     Na rolagem, o fio de cada linha se desenha da esquerda para a direita
+     conforme ela entra. Um fio que se desenha é um sumário sendo escrito, e
+     é o único gesto desta lista que sobrevive ao celular, onde hover não
+     existe. #}
+  <section class="om-secao om-escuro" id="servicos" aria-labelledby="om-t-servicos">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <p class="om-kicker om-rv">{{ T("Serviços") }}</p>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-servicos">
+            {{ T("Da estratégia de marca") }}
+            <span class="om-leve">{{ T("à gestão de mídia.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+        </div>
+      </div>
+      <ol class="om-indice om-indice-leitura" data-indice>
+        <li class="om-rv"><div class="om-item">
+          <span class="om-item-n">01</span>
+          <span class="om-item-arte" aria-hidden="true"><img
+            src="/static/lab/sites/grupo-om/cases/{{ caso_do_servico['consultoria'] }}.webp"
+            width="960" height="540" alt="" loading="lazy" decoding="async"></span>
+          <span class="om-item-nome">{{ T("Consultoria estratégica de marcas") }}</span>
+        </div></li>
+        <li class="om-rv"><div class="om-item">
+          <span class="om-item-n">02</span>
+          <span class="om-item-arte" aria-hidden="true"><img
+            src="/static/lab/sites/grupo-om/cases/{{ caso_do_servico['branding'] }}.webp"
+            width="960" height="540" alt="" loading="lazy" decoding="async"></span>
+          <span class="om-item-nome">{{ T("Branding e identidade de marca") }}</span>
+        </div></li>
+        <li class="om-rv"><div class="om-item">
+          <span class="om-item-n">03</span>
+          <span class="om-item-arte" aria-hidden="true"><img
+            src="/static/lab/sites/grupo-om/cases/{{ caso_do_servico['design'] }}.webp"
+            width="960" height="540" alt="" loading="lazy" decoding="async"></span>
+          <span class="om-item-nome">{{ T("Design gráfico e de produto") }}</span>
+        </div></li>
+        <li class="om-rv"><div class="om-item">
+          <span class="om-item-n">04</span>
+          <span class="om-item-arte" aria-hidden="true"><img
+            src="/static/lab/sites/grupo-om/cases/{{ caso_do_servico['integrada'] }}.webp"
+            width="960" height="540" alt="" loading="lazy" decoding="async"></span>
+          <span class="om-item-nome">{{ T("Comunicação integrada e publicidade") }}</span>
+        </div></li>
+        <li class="om-rv"><div class="om-item">
+          <span class="om-item-n">05</span>
+          <span class="om-item-arte" aria-hidden="true"><img
+            src="/static/lab/sites/grupo-om/cases/{{ caso_do_servico['performance'] }}.webp"
+            width="960" height="540" alt="" loading="lazy" decoding="async"></span>
+          <span class="om-item-nome">{{ T("Marketing digital e performance") }}</span>
+        </div></li>
+        <li class="om-rv"><div class="om-item">
+          <span class="om-item-n">06</span>
+          <span class="om-item-arte" aria-hidden="true"><img
+            src="/static/lab/sites/grupo-om/cases/{{ caso_do_servico['midia'] }}.webp"
+            width="960" height="540" alt="" loading="lazy" decoding="async"></span>
+          <span class="om-item-nome">{{ T("Inteligência e gestão de mídia") }}</span>
+        </div></li>
+        <li class="om-rv"><div class="om-item">
+          <span class="om-item-n">07</span>
+          <span class="om-item-arte" aria-hidden="true"><img
+            src="/static/lab/sites/grupo-om/cases/{{ caso_do_servico['relacionamento'] }}.webp"
+            width="960" height="540" alt="" loading="lazy" decoding="async"></span>
+          <span class="om-item-nome">{{ T("Relacionamento e customer experience") }}</span>
+        </div></li>
+      </ol>
+      {#- O CTA que faltava: os sete itens agora TÊM página (27/08), com as
+          soluções de cada serviço e o case que o comprova. -#}
+      <div class="om-chamadas om-chamadas-meio om-rv">
+        <a class="om-btn om-btn-vazio" href="{{ base }}/servicos">{{ T("Conhecer os serviços") }} {{ ico.ic("seta", 15) }}</a>
+      </div>
+    </div>
+  </section>
+
+  {# ---------------------------------------------------------------- grupo
+     As seis empresas, com os logos em vetor, e os três números que este
+     material sustenta. 6 e 47 saem palavra por palavra do site do cliente;
+     27 é a contagem dos logos da fita logo acima, e quem duvidar conta.
+     Nenhum "mais de X anos", nenhum prêmio, nenhum resultado: é isso que
+     separa uma proposta lida de uma proposta conferida. #}
+  <section class="om-secao om-papel" id="grupo" aria-labelledby="om-t-grupo">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <p class="om-kicker om-rv">{{ T("O grupo") }}</p>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-grupo">
+            {{ T("Seis empresas,") }}
+            <span class="om-leve">{{ T("um planejamento só.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+          <p class="om-texto om-rv">{{ T("Analisamos mercados e desenvolvemos campanhas completas de comunicação, em todas as plataformas, on e off line.") }}</p>
+        </div>
+      </div>
+
+      {% include "lab/sites/grupo-om/_empresas.html" %}
+
+      {# O contador anima do zero, mas o número final já está no HTML: sem
+         script, ele aparece pronto. #}
+      <ul class="om-numeros om-rv">
+        <li>
+          <span class="om-num-v" data-conta="6">6</span>
+          <span class="om-num-t">{{ T("empresas, com planejamento integrado") }}</span>
+        </li>
+        <li>
+          <span class="om-num-v" data-conta="47">47</span>
+          <span class="om-num-t">{{ T("mercados, em todos os continentes") }}</span>
+        </li>
+        <li>
+          <span class="om-num-v" data-conta="27">27</span>
+          {#- "de clientes atendidas", e não "na fita logo acima" (Leandro,
+              27/08: o texto era feio e não dizia do que se tratava). O número
+              continua sendo a contagem dos logos da fita, e a fita é a lista
+              de clientes: a legenda agora diz O QUE são os 27, não ONDE
+              estão. -#}
+          <span class="om-num-t">{{ T("marcas de clientes atendidas") }}</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  {# ---------------------------------------------------------------- cases
+     Três dos cinco, com a empresa do grupo que assina cada um, e um link
+     para a página que traz os cinco. Cada trecho foi cortado em FIM DE
+     FRASE, nunca no meio: a colheita truncou os parágrafos, e publicar meia
+     frase seria pôr palavra na boca da agência. #}
+  <section class="om-secao om-escuro" id="cases" aria-labelledby="om-t-cases">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <p class="om-kicker om-rv">{{ T("Cases") }}</p>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-cases">
+            {{ T("Campanhas assinadas") }}
+            <span class="om-leve">{{ T("pelas empresas do grupo.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+        </div>
+      </div>
+      {# TRÊS dos cinco, e os três saem da MESMA lista que a página de cases e
+         as cinco internas usam (`_dados_cases.html`). Até 26/08 a home e a
+         listagem escreviam os mesmos textos à mão, em dois arquivos.
+
+         Cada um leva à interna do case, e cada um vai assinado pela empresa do
+         grupo que o fez, com a marca dela ao lado do nome (item 3): é essa
+         assinatura repetida que prova que "somos 6 empresas" não é retórica. #}
+      {#- TRÊS na home, dezoito na página de cases. A home mostra a forma; a
+          grade completa, com filtro por empresa e por assunto, é o destino do
+          botão logo abaixo. -#}
+      <ul class="om-grade-cases">
+        {%- for c in cases[:3] %}
+        {{ grade.cartao(c) }}
+        {%- endfor %}
+      </ul>
+      {#- CENTRALIZADO na largura da seção, e não alinhado ao começo da grade
+          (pedido do Leandro, 26/08). É o único botão da página que fecha um
+          bloco em vez de abrir um: alinhado à esquerda ele parecia a quarta
+          coluna de uma grade de três, centralizado ele vira o ponto final.
+
+          O texto também mudou, e a razão importa mais do que a palavra: "ver
+          os dezoito" prometia uma contagem que o próprio botão obrigaria a
+          reescrever no dia em que a agência publicasse o décimo nono case.
+
+          27/08: A CONTAGEM VOLTOU, mas por CÓDIGO — `cases | length` conta a
+          mesma lista que alimenta a grade, e o décimo nono case atualiza o
+          número sozinho. Era a promessa escrita à mão que o texto acima
+          proibiu, não o número. -#}
+      <div class="om-chamadas om-chamadas-meio om-rv">
+        <a class="om-btn om-btn-vazio" href="{{ base }}/cases">{{ T("Ver todos os cases") }} ({{ cases | length }}) {{ ico.ic("seta", 15) }}</a>
+      </div>
+    </div>
+  </section>
+
+  {# ------------------------------------------------------------- em alta
+     AS PEÇAS DO PRÓPRIO GRUPO viraram um BANNER DE MÍDIA na home (Leandro,
+     27/08): "como se fosse um banner programático, uma peça publicitária.
+     Somente a arte e o título. Rotativo e randômico, sem legendas".
+
+     É a linguagem que a agência vende, aplicada a ela mesma: um slot de
+     mídia, com a arte inteira e nada explicando a arte. A legenda saiu; o
+     `alt` FICA, porque alt não é legenda — é a peça para quem não a vê.
+
+     RANDÔMICO E ROTATIVO no script: a primeira peça é sorteada a cada
+     carga e a troca acontece num crossfade lento. Sem script, a primeira
+     peça fica parada, que é um banner igualmente honesto. #}
+  <section class="om-secao om-escuro" aria-label="{{ T("Em alta") }}">
+    <div class="om-wrap">
+      <p class="om-kicker om-rv">{{ T("Em alta") }}</p>
+      <div class="om-alta om-rv" data-alta>
+        <img src="/static/lab/sites/grupo-om/filme-banner-site-grupo-om.webp"
+             width="1440" height="348" loading="lazy" decoding="async" class="om-alta-viva"
+             alt="{{ T("Peça de ESG do Grupo OM: as letras E, S e G ilustradas, com a frase transformamos ideias em práticas que ajudam a melhorar o mundo") }}">
+        <img src="/static/lab/sites/grupo-om/af-grp-0027-25-a-banner-cartilha-pense-verde-site-a01.webp"
+             width="1366" height="330" loading="lazy" decoding="async"
+             alt="{{ T("Peça da Cartilha Pense Verde do Grupo OM, com o subtítulo sustentabilidade começa com pequenas atitudes") }}">
+      </div>
+    </div>
+  </section>
+
+  {# ----------------------------------------------------------- depoimentos
+     Dois dos três depoimentos de CLIENTE que o site publica, com nome e
+     cargo; o terceiro abre a página do grupo. Os de funcionário que também
+     estão no site ficaram de fora: são marca empregadora, e não venda.
+
+     Hierarquia deliberada: o primeiro é grande e o segundo é o coro. Dois
+     depoimentos do mesmo tamanho viram uma parede de texto que ninguém lê. #}
+  <section class="om-secao" aria-labelledby="om-t-vozes">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <p class="om-kicker om-rv">{{ T("Depoimentos") }}</p>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-vozes">
+            {{ T("O que dizem") }}
+            <span class="om-leve">{{ T("os clientes.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <figure class="om-voz-destaque om-rv">
+        <blockquote>
+          <p class="om-citacao">{{ T("O Grupo OM é uma referência. Nós somos muito fãs do trabalho que é realizado por eles.") }}</p>
+        </blockquote>
+        {{ voz.assina_voz("Fernanda Salgueiro", "Gerente de Marketing do Hospital Pequeno Príncipe") }}
+      </figure>
+
+      <ul class="om-vozes">
+        <li>
+          <figure class="om-voz om-rv">
+            <blockquote><p>{{ T("O Grupo teve a competência de captar a nossa origem como produtor, nosso envolvimento com a natureza, nosso cooperativismo e associativismo.") }}</p></blockquote>
+            {{ voz.assina_voz("Elias José Zydek", "Diretor-executivo da Frimesa") }}
+          </figure>
+        </li>
+        <li>
+          <figure class="om-voz om-rv">
+            <blockquote><p>{{ T("O Grupo OM nos oferece, por meio de suas empresas, um trabalho diferenciado, fortemente embasado em dados, estratégico e muito bem planejado. Por isso, os resultados aparecem.") }}</p></blockquote>
+            {{ voz.assina_voz("Daniela Baruch", "Superintendente do Shopping Mueller") }}
+          </figure>
+        </li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+{% include "lab/sites/grupo-om/_pe.html" %}
+{% endblock %}
+
+{% block scripts %}{% include "lab/sites/grupo-om/_scripts.html" %}{% endblock %}

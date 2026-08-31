@@ -31,6 +31,21 @@ LOCAL="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CARIMBO="$(date +%Y-%m-%d-%H%M)"
 ENCOLHIMENTO_ACEITAVEL=70   # % do tamanho da cópia anterior
 
+# RETENÇÃO EM DOIS NÍVEIS (25/08/2026). Antes era um só, e ele tinha que
+# escolher entre profundidade e espaço em disco, porque a cópia completa pesa
+# ~1 GB. O que pesa e o que importa não são a mesma coisa:
+#
+#   uploads   1,2 GB   muda devagar, e os originais estão no Mac do Leandro
+#   geo/      125 MB   baixado do db-ip.com pelo deploy/subir.sh todo mês
+#   site.db   ~900 KB  muda em TODO deploy, e é o único insubstituível
+#
+# O banco é onde vivem cases, textos, configurações, leads e a lista da
+# newsletter. Guardar 60 cópias dele custa 60 MB. Guardar 60 completas
+# custaria 60 GB, e o Mac tem 44 GB livres — foi por isso que a retenção
+# tinha caído para 2 em 19/08, depois de encher o disco.
+COPIAS_COMPLETAS=3    # ~3 GB: cobre o acidente real, apagar algo recente
+COPIAS_DO_BANCO=60    # ~60 MB: dois meses do que de fato muda
+
 if [ -z "$IP" ]; then
   echo "uso: $0 IP_DO_VPS" >&2
   exit 1
@@ -52,12 +67,20 @@ print('banco copiado com a API de backup, WAL incluído')
 PY"
 
 echo "==> 2/5  Empacotando data/ + banco consistente"
-ssh_ "cd $REMOTO && tar -czf /tmp/lf-$CARIMBO.tar.gz data -C /tmp site-consistente.db && du -h /tmp/lf-$CARIMBO.tar.gz"
+# `data/geo` fica DE FORA: são 125 MB de uma base do db-ip.com que o
+# deploy/subir.sh rebaixa sozinho quando o mês vira, e que `app/services/geo.py`
+# já trata como ausente sem quebrar nada. Guardá-la em toda cópia é pagar
+# disco para proteger um download gratuito.
+ssh_ "cd $REMOTO && tar --exclude='data/geo' -czf /tmp/lf-$CARIMBO.tar.gz data -C /tmp site-consistente.db && du -h /tmp/lf-$CARIMBO.tar.gz"
+# O banco sozinho, comprimido: ~300 KB contra ~1 GB da cópia completa. É o que
+# permite guardar dois meses de histórico do que muda todo dia.
+ssh_ "gzip -c /tmp/site-consistente.db > /tmp/lf-db-$CARIMBO.db.gz && du -h /tmp/lf-db-$CARIMBO.db.gz"
 
 echo "==> 3/5  Trazendo para o Mac"
 mkdir -p "$DESTINO"
 scp -i "$CHAVE" "root@$IP:/tmp/lf-$CARIMBO.tar.gz" "$DESTINO/"
-ssh_ "rm -f /tmp/lf-$CARIMBO.tar.gz /tmp/site-consistente.db"
+scp -i "$CHAVE" "root@$IP:/tmp/lf-db-$CARIMBO.db.gz" "$DESTINO/"
+ssh_ "rm -f /tmp/lf-$CARIMBO.tar.gz /tmp/lf-db-$CARIMBO.db.gz /tmp/site-consistente.db"
 
 ARQUIVO="$DESTINO/lf-$CARIMBO.tar.gz"
 TAM=$(wc -c < "$ARQUIVO")
@@ -67,7 +90,11 @@ echo "    $ARQUIVO — $(du -h "$ARQUIVO" | cut -f1)"
 # tem conteúdo, e a descoberta disso no dia da restauração é tarde demais.
 tar -tzf "$ARQUIVO" > /dev/null || { echo "ERRO: o pacote não abre. Deploy cancelado." >&2; exit 1; }
 
-ANTERIOR=$(ls -t "$DESTINO"/lf-*.tar.gz 2>/dev/null | sed -n 2p || true)
+# Compara só com cópias COMPLETAS (`lf-<data>`), nunca com as do banco.
+# Nota para a primeira execução depois de 25/08: a cópia nova vem ~125 MB
+# menor que a anterior, porque `data/geo` saiu do pacote. É uma queda de ~11%,
+# bem dentro dos 30% que este guarda tolera.
+ANTERIOR=$(ls -t "$DESTINO"/lf-[0-9]*.tar.gz 2>/dev/null | sed -n 2p || true)
 if [ -n "$ANTERIOR" ]; then
   TAM_ANT=$(wc -c < "$ANTERIOR")
   MINIMO=$(( TAM_ANT * ENCOLHIMENTO_ACEITAVEL / 100 ))
@@ -79,19 +106,27 @@ if [ -n "$ANTERIOR" ]; then
   fi
 fi
 
-# Rotação (pedido de 19/08): só os 2 backups mais novos ficam — o recém
-# verificado (abriu E não encolheu) e um anterior de segurança. Sem isto o
-# disco do Mac enche até alguém notar (encheu: 10,6 GB apagados à mão).
-# A rotação SÓ roda depois das duas verificações acima passarem — um backup
-# suspeito cancela o deploy antes de qualquer apagamento.
-ls -t "$DESTINO"/lf-*.tar.gz 2>/dev/null | tail -n +3 | while read -r VELHO; do
-  rm -f "$VELHO"
-  echo "    rotação: apagado $(basename "$VELHO")"
-done
+# O banco também precisa ABRIR. `gzip -t` confere o CRC do pacote inteiro.
+ARQUIVO_DB="$DESTINO/lf-db-$CARIMBO.db.gz"
+gzip -t "$ARQUIVO_DB" || { echo "ERRO: o pacote do banco não abre. Deploy cancelado." >&2; exit 1; }
+echo "    $ARQUIVO_DB — $(du -h "$ARQUIVO_DB" | cut -f1)"
 
-# 30 cópias: com um deploy por dia é um mês de histórico, e a 348 MB por cópia
-# cabe folgado no Mac. Apaga as mais velhas, nunca a recém-criada.
-ls -t "$DESTINO"/lf-*.tar.gz 2>/dev/null | tail -n +31 | xargs -r rm --
+# ROTAÇÃO. Só roda depois das verificações acima passarem — um backup suspeito
+# cancela o deploy antes de qualquer apagamento.
+#
+# Até 25/08 havia DUAS rotações aqui, e a primeira (mantinha 2) tornava a
+# segunda (mantinha 30) código morto. O comentário da segunda prometia "um mês
+# de histórico" e o que existia era um deploy. Agora é uma só por tipo, e o
+# número está numa constante lá em cima, onde dá para conferir sem ler o laço.
+rotacionar() {
+  local padrao="$1" quantas="$2"
+  ls -t "$DESTINO"/$padrao 2>/dev/null | tail -n +$(( quantas + 1 )) | while read -r VELHO; do
+    rm -f "$VELHO"
+    echo "    rotação: apagado $(basename "$VELHO")"
+  done
+}
+rotacionar "lf-[0-9]*.tar.gz" "$COPIAS_COMPLETAS"
+rotacionar "lf-db-*.db.gz" "$COPIAS_DO_BANCO"
 
 echo "==> 4/5  Enviando o código (data/ e .env ficam de fora)"
 rsync -az --delete --timeout=60 \

@@ -1,0 +1,206 @@
+{# ==========================================================================
+   Grupo OM: a CENTRAL DE CONTEÚDO (Leandro, 27/08).
+
+   O site atual espalha o conteúdo por três lugares (/publicacoes, /blog e o
+   rodapé); aqui tudo vive numa página só, por tipo: cases, artigos, vídeos,
+   áudio e as pontes para as redes. A régua de honestidade não muda:
+
+   - os CASES são os dezessete da peça;
+   - os ARTIGOS são o blog inteiro publicado (oito), abertura verbatim, com
+     o artigo completo linkado no site atual;
+   - os VÍDEOS são os do Canal de Vídeos que ESTÃO NO AR. Quatro embeds da
+     página do cliente apontam para vídeos privados e aparecem quebrados lá
+     — pendência e argumento de venda;
+   - o ÁUDIO é o Soundbrand do grupo, que é áudio de verdade;
+   - reels e LinkedIn não têm colheita possível sem API: viram PONTES para
+     os perfis, com o LinkedIn primeiro (premissa do site inteiro).
+
+   OS VÍDEOS ABREM NO YOUTUBE, em aba nova. Um player embutido traria
+   iframes de terceiro para dentro da peça — a mesma razão que baixou as
+   capas para `videos/` manda o play acontecer na casa dele.
+   ========================================================================== #}
+{% extends "lab/sites/_base_redesign.html" %}
+{% set pagina = "conteudo" %}
+
+{% block titulo %}{{ T("Central de conteúdo") }} | {{ r.marca }}{% endblock %}
+{% block descricao %}{{ T("Cases, artigos, vídeos e o áudio do Grupo OM, num lugar só.") }}{% endblock %}
+
+{% block cabeca %}{% include "lab/sites/grupo-om/_cabeca.html" %}{% endblock %}
+{% block autoria %}{% include "lab/sites/grupo-om/_autoria.html" %}{% endblock %}
+
+{% block corpo %}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+{% import "lab/sites/grupo-om/_cartao_case.html" as grade with context %}
+{% include "lab/sites/grupo-om/_topo.html" %}
+
+<main>
+  <section class="om-capa-interna om-escuro">
+    <div class="om-wrap">
+      <p class="om-kicker om-rv">{{ T("Central de conteúdo") }}</p>
+      <h1 class="om-manchete om-split">
+        {{ T("Tudo que o grupo publica,") }}
+        <span class="om-leve">{{ T("num lugar só.") }}</span>
+      </h1>
+      <div class="om-fio om-fio-largo" aria-hidden="true"></div>
+      {#- O SUMÁRIO da central: âncoras, não filtros. Cada tipo é uma seção
+          desta página, e um link de âncora funciona sem script, sem
+          parâmetro e sem recarregar nada. -#}
+      <nav class="om-tipos om-rv" aria-label="{{ T("Tipos de conteúdo") }}">
+        <a href="#c-cases">{{ ico.ic("caso", 14) }} {{ T("Cases") }} <b>{{ cases | length }}</b></a>
+        <a href="#c-artigos">{{ ico.ic("carta", 14) }} {{ T("Artigos") }} <b>{{ artigos | length }}</b></a>
+        <a href="#c-videos">{{ ico.ic("youtube", 14) }} {{ T("Vídeos") }} <b>{{ videos | selectattr("tipo", "equalto", "video") | list | length }}</b></a>
+        <a href="#c-audio">{{ ico.ic("rede", 14) }} {{ T("Áudio") }} <b>1</b></a>
+        <a href="#c-redes">{{ ico.ic("fora", 14) }} {{ T("Nas redes") }}</a>
+      </nav>
+    </div>
+  </section>
+
+  {# ------------------------------------------------------------- cases #}
+  <section class="om-secao om-escuro" id="c-cases" aria-labelledby="om-t-c-cases">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <p class="om-kicker om-rv">{{ T("Cases") }}</p>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-c-cases">
+            {{ T("O trabalho") }}
+            <span class="om-leve">{{ T("com nome e assinatura.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+        </div>
+      </div>
+      <ul class="om-grade-cases">
+        {%- for c in cases[:3] %}
+        {{ grade.cartao(c) }}
+        {%- endfor %}
+      </ul>
+      <div class="om-chamadas om-chamadas-meio om-rv">
+        <a class="om-btn om-btn-vazio" href="{{ base }}/cases">{{ T("Ver todos os cases") }} ({{ cases | length }}) {{ ico.ic("seta", 15) }}</a>
+      </div>
+    </div>
+  </section>
+
+  {# ----------------------------------------------------------- artigos #}
+  <section class="om-secao om-papel" id="c-artigos" aria-labelledby="om-t-c-artigos">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <p class="om-kicker om-rv">{{ T("Artigos") }}</p>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-c-artigos">
+            {{ T("O que o grupo escreve") }}
+            <span class="om-leve">{{ T("sobre marketing e gestão.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+        </div>
+      </div>
+      <ul class="om-grade-artigos">
+        {%- for a in artigos %}
+        <li class="om-artigo om-rv">
+          <a class="om-artigo-elo" href="{{ base }}/artigo-{{ a.slug }}">
+            <time class="om-cartao-data" datetime="{{ a.iso }}">{{ ico.ic("data", 13) }}{{ a.iso if lang == "en" else a.iso[8:10] ~ "/" ~ a.iso[5:7] ~ "/" ~ a.iso[:4] }}</time>
+            <h3 class="om-artigo-t">{{ T(a.titulo) }}</h3>
+            <p class="om-cartao-resumo">{{ T(a.resumo) }}</p>
+            <span class="om-case-ver">{{ T("Ler o artigo") }} {{ ico.ic("seta", 14) }}</span>
+          </a>
+        </li>
+        {%- endfor %}
+      </ul>
+    </div>
+  </section>
+
+  {# ------------------------------------------------------------ vídeos #}
+  <section class="om-secao om-escuro" id="c-videos" aria-labelledby="om-t-c-videos">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <p class="om-kicker om-rv">{{ T("Vídeos") }}</p>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-c-videos">
+            {{ T("O canal de vídeos,") }}
+            <span class="om-leve">{{ T("produzido pelas empresas.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+        </div>
+      </div>
+      <ul class="om-grade-videos">
+        {%- for v in videos if v.tipo == "video" %}
+        <li class="om-video om-rv">
+          {#- Aba nova, no YouTube: player embutido traria iframe de
+              terceiro para dentro da peça. A capa é local. -#}
+          <a class="om-video-elo" href="https://www.youtube.com/watch?v={{ v.id }}"
+             target="_blank" rel="noopener">
+            <span class="om-cartao-arte om-video-capa">
+              <img src="/static/lab/sites/grupo-om/videos/{{ v.id }}.jpg"
+                   width="480" height="360" alt="" loading="lazy" decoding="async">
+              <span class="om-video-play" aria-hidden="true">{{ ico.ic("play", 20) }}</span>
+            </span>
+            <b>{{ T(v.titulo) }}</b>
+          </a>
+        </li>
+        {%- endfor %}
+      </ul>
+    </div>
+  </section>
+
+  {# ------------------------------------------------------------- áudio #}
+  <section class="om-secao om-escuro" id="c-audio" aria-labelledby="om-t-c-audio">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <p class="om-kicker om-rv">{{ T("Áudio") }}</p>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-c-audio">
+            {{ T("A marca também") }}
+            <span class="om-leve">{{ T("se ouve.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+        </div>
+      </div>
+      {%- for v in videos if v.tipo == "audio" %}
+      <a class="om-audio om-rv" href="https://www.youtube.com/watch?v={{ v.id }}"
+         target="_blank" rel="noopener">
+        <span class="om-cartao-arte om-video-capa">
+          <img src="/static/lab/sites/grupo-om/videos/{{ v.id }}.jpg"
+               width="480" height="360" alt="" loading="lazy" decoding="async">
+          <span class="om-video-play" aria-hidden="true">{{ ico.ic("play", 20) }}</span>
+        </span>
+        <span class="om-audio-texto">
+          <b>{{ T(v.titulo) }}</b>
+          <span>{{ T("A identidade sonora do grupo: o soundbrand oficial, publicado no canal do YouTube.") }}</span>
+          <span class="om-case-ver">{{ T("Ouvir") }} {{ ico.ic("fora", 14) }}</span>
+        </span>
+      </a>
+      {%- endfor %}
+    </div>
+  </section>
+
+  {# -------------------------------------------------------------- redes #}
+  <section class="om-secao om-escuro" id="c-redes" aria-labelledby="om-t-c-redes">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <p class="om-kicker om-rv">{{ T("Nas redes") }}</p>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-c-redes">
+            {{ T("O dia a dia") }}
+            <span class="om-leve">{{ T("é publicado lá.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+          <p class="om-texto om-rv">{{ T("Posts, reels e bastidores não têm como morar numa proposta: moram nos perfis do grupo, e é para lá que estes cartões levam.") }}</p>
+        </div>
+      </div>
+      {#- LINKEDIN PRIMEIRO, premissa do site inteiro. -#}
+      <ul class="om-pontes om-rv">
+        <li><a href="https://www.linkedin.com/company/grupo-om-marketing-comunicacao/mycompany/"
+               target="_blank" rel="noopener">{{ ico.ic("linkedin", 20) }}
+          <b>{{ T("Posts no LinkedIn") }}</b> {{ ico.ic("fora", 13) }}</a></li>
+        <li><a href="https://www.instagram.com/grupo_om/" target="_blank" rel="noopener">
+          {{ ico.ic("instagram", 20) }} <b>{{ T("Reels no Instagram") }}</b> {{ ico.ic("fora", 13) }}</a></li>
+        <li><a href="https://www.youtube.com/channel/UCDnq1psXM336KMZ1CFbPrzw"
+               target="_blank" rel="noopener">{{ ico.ic("youtube", 20) }}
+          <b>{{ T("Canal no YouTube") }}</b> {{ ico.ic("fora", 13) }}</a></li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+{% include "lab/sites/grupo-om/_pe.html" %}
+{% endblock %}
+
+{% block scripts %}{% include "lab/sites/grupo-om/_scripts.html" %}{% endblock %}

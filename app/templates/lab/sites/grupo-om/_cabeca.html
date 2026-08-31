@@ -1,0 +1,48 @@
+{# ==========================================================================
+   O `<head>` das CINCO páginas, num arquivo só.
+
+   Ele não é um `extends` porque cada uma das cinco precisa estender
+   `lab/sites/_base_redesign.html` diretamente: é aquela base que garante a
+   marca de autoria, o `noindex` do pitch e o piso de `prefers-reduced-motion`,
+   e uma corrente de heranças escondendo isso atrás de um segundo arquivo é
+   exatamente o tipo de coisa que se perde na sexta página.
+   ========================================================================== #}
+{# A peça é grafite. Sem estas duas linhas o navegador desenha a barra de
+   rolagem clara por cima dela e o Chrome do Android pinta a barra de endereço
+   de branco, que é a primeira coisa que o dono vê ao abrir o link pelo
+   WhatsApp. #}
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#313133">
+<link rel="stylesheet" href="/static/lab/sites/grupo-om.css?v={{ asset_v }}">
+{# AS DUAS LÍNGUAS DECLARADAS (item 11). `hreflang` é como o buscador aprende
+   que estas duas páginas são a mesma coisa em idiomas diferentes, em vez de
+   duas páginas concorrendo entre si. `x-default` aponta para o português, que
+   é a língua do cliente e do material: é ele que responde a quem chega sem
+   preferência declarada.
+
+   Vale mesmo nas páginas `noindex`: o dia em que o redesign virar público, o
+   `noindex` cai e estas linhas já estão certas. Uma tag que só é escrita
+   quando passa a valer é uma tag que alguém esquece de escrever. #}
+<link rel="alternate" hreflang="pt-BR" href="{{ enderecos.pt }}">
+<link rel="alternate" hreflang="en" href="{{ enderecos.en }}">
+<link rel="alternate" hreflang="x-default" href="{{ enderecos.pt }}">
+{# O wordmark oficial é a primeira coisa pintada: ele não espera o descobridor
+   de recursos achar o `<img>` no meio do corpo. É o VETOR que o Leandro guarda
+   no site dele, e não o raster: escala sem perda e pesa menos. #}
+<link rel="preload" as="image" type="image/svg+xml" href="/static/lab/sites/grupo-om/marca-grupo-om.svg">
+{# A fonte é UMA, 37 KB, e ela é pedida junto com o CSS em vez de depois dele.
+   Sem isto o navegador só descobre a Montserrat quando termina de ler a folha
+   de estilo, e a manchete de 110 px pinta uma vez na fonte do sistema antes
+   de trocar. #}
+<link rel="preload" as="font" type="font/woff2" href="/static/fonts/Montserrat.woff2" crossorigin>
+
+{# 280 bytes, síncronos, e é o que separa "movimento" de "página em branco".
+
+   A classe `om-js` é o interruptor de TODO o estado inicial de revelação, e
+   ela é posta aqui, antes da primeira pintura, para o conteúdo não aparecer,
+   sumir e voltar. Mas ela também é uma aposta: se o GSAP não chegar (rede
+   ruim, bloqueador, arquivo movido), tudo que depende dela fica invisível
+   para sempre. Por isso o relógio de 2,5 s: se o script de movimento não
+   cancelar o relógio, a classe cai sozinha e a página inteira aparece.
+   Proposta comercial não pode ficar em branco por causa de um JS. #}
+<script>(function(){var r=document.documentElement;if(!window.matchMedia||matchMedia("(prefers-reduced-motion: reduce)").matches)return;r.className+=" om-js";window.__omRelogio=setTimeout(function(){r.classList.remove("om-js");},2500);})();</script>

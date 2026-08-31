@@ -1,0 +1,161 @@
+{# ==========================================================================
+   Grupo OM: contato.
+
+   A página que justifica a proposta existir, e por isso os telefones são o
+   maior elemento tipográfico dela depois da manchete. Cada um é um `tel:` de
+   verdade: no celular, um toque disca.
+
+   O QUE ESTA PÁGINA NÃO FAZ, e as três ausências são deliberadas:
+
+   1. NÃO TEM FORMULÁRIO. Não é esquecimento: formulário no servidor do
+      Leandro coletando o cliente final de outra empresa é problema de dado
+      pessoal que ninguém precisa ter. Telefone e rede social resolvem, e
+      resolvem melhor.
+   2. NÃO PUBLICA E-MAIL NEM WHATSAPP. O material colhido não traz nenhum dos
+      dois, e inventar um mandaria o cliente do cliente para um endereço que
+      não existe.
+   3. NÃO DIZ QUAL TELEFONE É DE QUAL ENDEREÇO. São dois DDDs e dois
+      endereços, e o material não os emparelha. Escrever "Curitiba" embaixo de
+      um e "São Paulo" embaixo do outro seria adivinhar, e adivinhar em página
+      de contato é o erro mais caro que existe: o cliente liga para o lugar
+      errado. A pergunta está na seção de Pendências do relatório.
+
+   A página atual do cliente tem 154 KB de HTML e nenhum `<h1>`.
+   ========================================================================== #}
+{% extends "lab/sites/_base_redesign.html" %}
+{% set pagina = "contato" %}
+{# Esta página JÁ É o convite. Fechá-la com um botão "ver todos os contatos"
+   apontando para ela mesma seria mandar o cliente para onde ele já está. #}
+{% set sem_convite = true %}
+
+{% block titulo %}{{ T("Contato") }} | {{ r.marca }}{% endblock %}
+{% block descricao %}{{ T("Telefones, endereços e redes sociais do Grupo OM.") }}{% endblock %}
+
+{% block cabeca %}{% include "lab/sites/grupo-om/_cabeca.html" %}{% endblock %}
+
+{# ITEM 10: a faixa de copyright do Lab, com o texto novo, SUBSTITUI a marca
+   de autoria padrão da base. Ver `_autoria.html`. #}
+{% block autoria %}{% include "lab/sites/grupo-om/_autoria.html" %}{% endblock %}
+
+{% block corpo %}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+{% include "lab/sites/grupo-om/_topo.html" %}
+
+<main>
+  <section class="om-capa-interna om-escuro">
+    <div class="om-wrap">
+      <p class="om-kicker om-rv">{{ T("Contato") }}</p>
+      <h1 class="om-manchete om-split">
+        {{ T("Fale com o") }}
+        <span class="om-leve">Grupo OM.</span>
+      </h1>
+      <div class="om-fio om-fio-largo" aria-hidden="true"></div>
+      <div class="om-capa-pe">
+        <p class="om-kicker om-rv">{{ T("Sem formulário") }}</p>
+        <p class="om-declaracao om-declaracao-larga om-rv">{{ T("Os dois números abaixo são") }} <b>{{ T("links de verdade") }}</b>{{ T(": no celular, um toque disca.") }}</p>
+      </div>
+    </div>
+  </section>
+
+  {# ---------------------------------------------------------- telefones #}
+  <section class="om-secao" aria-labelledby="om-t-tels">
+    <div class="om-wrap om-assim">
+      <p class="om-kicker om-kicker-num om-rv">{{ T("2 telefones") }}</p>
+      <div>
+        <h2 class="om-titulo om-split" id="om-t-tels">
+          {{ T("Ligue agora") }}
+          <span class="om-leve">{{ T("para uma das duas centrais.") }}</span>
+        </h2>
+        <div class="om-fio" aria-hidden="true"></div>
+        <ul class="om-tels om-rv">
+          <li>
+            <a class="om-tel" href="tel:+554133621919">
+              <span class="om-tel-ic">{{ ico.ic("tel", 22) }}</span>
+              <span class="om-tel-ddd">41</span>3362-1919</a>
+          </li>
+          <li>
+            <a class="om-tel" href="tel:+551130442215">
+              <span class="om-tel-ic">{{ ico.ic("tel", 22) }}</span>
+              <span class="om-tel-ddd">11</span>3044-2215</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {# ---------------------------------------------------------- endereços #}
+  <section class="om-secao om-escuro" aria-labelledby="om-t-ends">
+    <div class="om-wrap om-assim">
+      <p class="om-kicker om-kicker-num om-rv">{{ T("2 endereços") }}</p>
+      <div>
+        <h2 class="om-titulo om-split" id="om-t-ends">
+          {{ T("Onde o grupo") }}
+          <span class="om-leve">{{ T("trabalha.") }}</span>
+        </h2>
+        <div class="om-fio" aria-hidden="true"></div>
+        <ul class="om-enderecos om-rv">
+          <li>
+            <address class="om-endereco">
+              <strong>{{ ico.ic("local", 14) }} {{ T("Endereço 1") }}</strong>
+              Rua Jaguariaíva, 596<br>
+              {{ T("5º andar") }}
+            </address>
+          </li>
+          <li>
+            <address class="om-endereco">
+              <strong>{{ ico.ic("local", 14) }} {{ T("Endereço 2") }}</strong>
+              Rua Cardoso de Melo, 1750<br>
+              Vila Olímpia
+            </address>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  {# ------------------------------------------------------------- redes
+     Perfis reais, colhidos do site. Não são recurso carregado por esta
+     página: são o endereço do próprio cliente noutro lugar da internet. O
+     link de YouTube do material aponta para um vídeo específico, e não para
+     um canal, então ficou de fora. #}
+  <section class="om-secao" aria-labelledby="om-t-redes">
+    <div class="om-wrap om-assim">
+      <p class="om-kicker om-rv">{{ T("Redes") }}</p>
+      <div>
+        <h2 class="om-titulo om-split" id="om-t-redes">
+          {{ T("O grupo,") }}
+          <span class="om-leve">{{ T("todo dia.") }}</span>
+        </h2>
+        <div class="om-fio" aria-hidden="true"></div>
+        <ol class="om-indice">
+          {#- LINKEDIN PRIMEIRO, premissa do site inteiro. -#}
+          <li class="om-rv"><a class="om-item"
+                               href="https://www.linkedin.com/company/grupo-om-marketing-comunicacao/mycompany/"
+                               target="_blank" rel="noopener">
+            <span class="om-item-n">01</span>
+            <span class="om-item-nome">LinkedIn</span>
+            <span class="om-item-ic">{{ ico.ic("linkedin", 22) }}</span>
+          </a></li>
+          <li class="om-rv"><a class="om-item" href="https://www.instagram.com/grupo_om/"
+                               target="_blank" rel="noopener">
+            <span class="om-item-n">02</span>
+            <span class="om-item-nome">Instagram</span>
+            <span class="om-item-ic">{{ ico.ic("instagram", 22) }}</span>
+          </a></li>
+          <li class="om-rv"><a class="om-item"
+                               href="https://www.facebook.com/Grupo-OM-247205285365059/"
+                               target="_blank" rel="noopener">
+            <span class="om-item-n">03</span>
+            <span class="om-item-nome">Facebook</span>
+            <span class="om-item-ic">{{ ico.ic("facebook", 22) }}</span>
+          </a></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+</main>
+
+{% include "lab/sites/grupo-om/_pe.html" %}
+{% endblock %}
+
+{% block scripts %}{% include "lab/sites/grupo-om/_scripts.html" %}{% endblock %}

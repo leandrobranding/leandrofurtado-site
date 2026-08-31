@@ -1,0 +1,179 @@
+{# ==========================================================================
+   O PAINEL ADMINISTRATIVO — pré-visualização (28/08, pedido às 14h50 para
+   apresentação às 15h). É a PROPOSTA do CMS: navegável, na identidade da
+   peça, populado com os dados REAIS do site (17 cases, artigos, vídeos,
+   selos). Os controles são maquete: nada grava, nada envia, e a faixa do
+   topo diz isso. Vender o painel como se já funcionasse seria o único jeito
+   de estragar a apresentação.
+   ========================================================================== #}
+{% extends "lab/sites/_base_redesign.html" %}
+{% set pagina = "painel" %}
+
+{% block titulo %}Painel administrativo · {{ r.marca }}{% endblock %}
+{% block descricao %}Pré-visualização do painel de controle do site do Grupo OM.{% endblock %}
+{% block cabeca %}
+<link rel="stylesheet" href="/static/lab/sites/grupo-om.css?v={{ asset_v }}">
+<style>
+  /* escopo próprio do painel; herda os tokens da peça */
+  .pn { display: grid; grid-template-columns: 240px minmax(0, 1fr); min-block-size: 100vh; background: var(--gr-fundo); color: var(--branco); }
+  @media (max-width: 61.999em) { .pn { grid-template-columns: minmax(0, 1fr); } .pn-lado { display: none; } }
+  .pn-aviso { grid-column: 1 / -1; padding: .65rem 1.25rem; text-align: center; font-size: .78rem; letter-spacing: .04em; background: var(--branco); color: var(--gr-fundo); font-weight: 600; }
+  .pn-lado { border-inline-end: 1px solid rgba(255,255,255,.1); padding: 1.5rem 1rem; display: flex; flex-direction: column; gap: .25rem; }
+  .pn-marca { display: flex; align-items: center; gap: .6rem; padding: 0 .75rem 1.25rem; }
+  .pn-marca img { inline-size: 8rem; filter: invert(1); }
+  .rd-grupo-om .pn-lado a { display: flex; align-items: center; gap: .7rem; min-block-size: 2.75rem; padding: 0 .75rem; border-radius: 10px; font-size: .85rem; text-decoration: none; color: var(--meio-escuro); }
+  .rd-grupo-om .pn-lado a:hover, .rd-grupo-om .pn-lado a.pn-on { background: rgba(255,255,255,.07); color: var(--branco); }
+  .pn-sec { margin: 1.1rem .75rem .35rem; font-size: .62rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--meio-escuro); }
+  .pn-miolo { padding: clamp(1.25rem, 3vw, 2.5rem); display: grid; gap: 1.5rem; align-content: start; }
+  .pn-topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; }
+  .pn-topo h1 { margin: 0; font-size: clamp(1.4rem, 2.4vw, 2rem); font-weight: 700; letter-spacing: -.02em; }
+  .pn-topo p { margin: .2rem 0 0; font-size: .85rem; color: var(--meio-escuro); }
+  .pn-cartoes { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
+  .pn-c { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 1.1rem 1.25rem; }
+  .pn-c b { display: block; font-size: 1.9rem; font-weight: 700; letter-spacing: -.02em; }
+  .pn-c span { font-size: .78rem; color: var(--meio-escuro); }
+  .pn-c i { display: block; margin-block-start: .5rem; font-style: normal; font-size: .72rem; color: #9fdc9f; }
+  .pn-bloco { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); border-radius: 16px; padding: 1.25rem 1.4rem; }
+  .pn-bloco h2 { margin: 0 0 1rem; font-size: 1rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+  .pn-tab { inline-size: 100%; border-collapse: collapse; font-size: .85rem; }
+  .pn-tab th { text-align: start; font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--meio-escuro); padding: .5rem .6rem; border-block-end: 1px solid rgba(255,255,255,.14); }
+  .pn-tab td { padding: .6rem; border-block-end: 1px solid rgba(255,255,255,.07); vertical-align: middle; }
+  .pn-tab img { inline-size: 64px; aspect-ratio: 16/9; object-fit: cover; border-radius: 6px; }
+  .pn-etq { display: inline-block; padding: .2rem .6rem; border-radius: 999px; font-size: .68rem; background: rgba(255,255,255,.09); color: var(--meio-claro); }
+  .pn-acao { display: inline-flex; align-items: center; min-block-size: 2rem; padding: 0 .8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,.2); background: none; color: var(--branco); font: inherit; font-size: .75rem; cursor: pointer; }
+  .pn-acao:hover { background: rgba(255,255,255,.1); }
+  .pn-campo { display: grid; gap: .3rem; margin-block-end: .9rem; }
+  .pn-campo label { font-size: .72rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--meio-escuro); }
+  .pn-campo input, .pn-campo textarea { inline-size: 100%; padding: .65rem .8rem; border-radius: 9px; border: 1px solid rgba(255,255,255,.16); background: rgba(0,0,0,.25); color: var(--branco); font: inherit; font-size: .85rem; }
+  .pn-campo small { font-size: .7rem; color: var(--meio-escuro); }
+  .pn-2col { display: grid; gap: 1.5rem; }
+  @media (min-width: 62em) { .pn-2col { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+  .pn-conex { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .8rem 0; border-block-end: 1px solid rgba(255,255,255,.08); }
+  .pn-conex:last-child { border: 0; }
+  .pn-conex b { font-size: .88rem; display: block; }
+  .pn-conex span { font-size: .74rem; color: var(--meio-escuro); font-variant-numeric: tabular-nums; }
+  .pn-ok { color: #9fdc9f; font-size: .74rem; font-weight: 600; }
+  .pn-grafico { display: flex; gap: 5px; align-items: flex-end; block-size: 90px; margin-block-start: .6rem; }
+  .pn-grafico i { flex: 1; border-radius: 3px 3px 0 0; background: rgba(255,255,255,.22); }
+  .pn-grafico i:nth-child(4n) { background: rgba(255,255,255,.45); }
+</style>
+{% endblock %}
+
+{% block corpo %}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+<div class="pn">
+  <p class="pn-aviso">Pré-visualização do painel administrativo ·&#xFE0E; proposta de redesign ·&#xFE0E; os controles ainda não gravam</p>
+
+  <aside class="pn-lado">
+    <div class="pn-marca"><img src="/static/lab/sites/grupo-om/marca-grupo-om.svg" alt="Grupo OM"></div>
+    <a href="#" class="pn-on">{{ ico.ic("caso", 16) }} Dashboard</a>
+    <p class="pn-sec">Conteúdo</p>
+    <a href="#g-cases">{{ ico.ic("caso", 16) }} Cases <span class="pn-etq">{{ cases | length }}</span></a>
+    <a href="#g-textos">{{ ico.ic("carta", 16) }} Textos e páginas</a>
+    <a href="#g-textos">{{ ico.ic("empresa", 16) }} Imagens</a>
+    <a href="#g-textos">{{ ico.ic("elo", 16) }} Links</a>
+    <p class="pn-sec">Crescimento</p>
+    <a href="#g-seo">{{ ico.ic("bandeira", 16) }} SEO</a>
+    <a href="#g-analytics">{{ ico.ic("lampada", 16) }} Analytics</a>
+    <a href="#g-analytics">{{ ico.ic("escudo", 16) }} Tag Manager</a>
+    <p class="pn-sec">Canais</p>
+    <a href="#g-canais">{{ ico.ic("linkedin", 16) }} LinkedIn</a>
+    <a href="#g-canais">{{ ico.ic("instagram", 16) }} Instagram</a>
+    <a href="#g-canais">{{ ico.ic("youtube", 16) }} YouTube</a>
+  </aside>
+
+  <main class="pn-miolo">
+    <div class="pn-topo">
+      <div>
+        <h1>Bom dia, Grupo OM</h1>
+        <p>Tudo que o site mostra é editável daqui: conteúdo, imagens, SEO e integrações.</p>
+      </div>
+      <button type="button" class="pn-acao">{{ ico.ic("fora", 14) }} Ver o site</button>
+    </div>
+
+    <div class="pn-cartoes">
+      <div class="pn-c"><b>{{ cases | length }}</b><span>cases publicados</span><i>todos com imagem e etiquetas</i></div>
+      <div class="pn-c"><b>{{ artigos | length }}</b><span>artigos no blog</span><i>último em {{ artigos[0].iso[8:10] }}/{{ artigos[0].iso[5:7] }}</i></div>
+      <div class="pn-c"><b>{{ videos | length }}</b><span>vídeos no canal</span><i>capas hospedadas no site</i></div>
+      <div class="pn-c"><b>{{ (certificacoes | length) + (premios | length) }}</b><span>selos e prêmios</span><i>certificações e conquistas</i></div>
+    </div>
+
+    <div class="pn-bloco" id="g-cases">
+      <h2>Cases <button type="button" class="pn-acao">+ Novo case</button></h2>
+      <div style="overflow-x: auto">
+      <table class="pn-tab">
+        <thead><tr><th>Capa</th><th>Título</th><th>Assina</th><th>Data</th><th>Etiquetas</th><th></th></tr></thead>
+        <tbody>
+          {%- for c in cases[:6] %}
+          <tr>
+            <td><img src="{{ c.imagem }}" alt=""></td>
+            <td><b>{{ c.titulo }}</b></td>
+            <td>{{ assinante(c.empresa).nome if assinante else c.empresa }}</td>
+            <td>{{ c.data }}</td>
+            <td>{% for e in c.etiquetas[:2] %}<span class="pn-etq">{{ e }}</span> {% endfor %}</td>
+            <td style="text-align: end"><button type="button" class="pn-acao">Editar</button></td>
+          </tr>
+          {%- endfor %}
+        </tbody>
+      </table>
+      </div>
+      <p style="margin: .8rem 0 0; font-size: .75rem; color: var(--meio-escuro)">Mostrando 6 de {{ cases | length }} ·&#xFE0E; arraste para reordenar a home</p>
+    </div>
+
+    <div class="pn-2col">
+      <div class="pn-bloco" id="g-seo">
+        <h2>SEO da home</h2>
+        <div class="pn-campo">
+          <label for="pn-title">Título (title)</label>
+          <input id="pn-title" value="Grupo OM | Marketing e comunicação" readonly>
+          <small>34 caracteres ·&#xFE0E; bom (até 60)</small>
+        </div>
+        <div class="pn-campo">
+          <label for="pn-desc">Descrição (meta description)</label>
+          <textarea id="pn-desc" rows="3" readonly>Seis empresas de comunicação integrada com planejamento único: estratégia, branding, mídia, digital e conteúdo.</textarea>
+          <small>112 caracteres ·&#xFE0E; bom (até 155)</small>
+        </div>
+        <div class="pn-campo">
+          <label for="pn-og">Imagem de compartilhamento (og:image)</label>
+          <input id="pn-og" value="/static/og/grupo-om-1200x630.webp" readonly>
+          <small>1200×630 ·&#xFE0E; aparece no WhatsApp e no LinkedIn</small>
+        </div>
+      </div>
+
+      <div class="pn-bloco" id="g-analytics">
+        <h2>Métricas e tags</h2>
+        <div class="pn-conex"><div><b>Google Analytics 4</b><span>propriedade G-XXXXXXXXXX</span></div><span class="pn-ok">Conectado</span></div>
+        <div class="pn-conex"><div><b>Google Tag Manager</b><span>contêiner GTM-XXXXXXX</span></div><span class="pn-ok">Conectado</span></div>
+        <div class="pn-conex"><div><b>Search Console</b><span>domínio verificado</span></div><span class="pn-ok">Verificado</span></div>
+        <span style="font-size: .72rem; color: var(--meio-escuro)">Visitas nos últimos 30 dias</span>
+        <div class="pn-grafico" aria-hidden="true">
+          {%- for a in [34, 48, 41, 62, 55, 47, 70, 58, 66, 74, 61, 82, 77, 90] %}<i style="block-size: {{ a }}%"></i>{% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="pn-2col">
+      <div class="pn-bloco" id="g-canais">
+        <h2>Canais conectados</h2>
+        <div class="pn-conex"><div><b>LinkedIn</b><span>/company/grupo-om-marketing-comunicacao</span></div><span class="pn-ok">Conectado</span></div>
+        <div class="pn-conex"><div><b>Instagram</b><span>@grupo_om</span></div><span class="pn-ok">Conectado</span></div>
+        <div class="pn-conex"><div><b>YouTube</b><span>Canal Grupo OM ·&#xFE0E; {{ videos | length }} vídeos no site</span></div><span class="pn-ok">Conectado</span></div>
+      </div>
+      <div class="pn-bloco" id="g-textos">
+        <h2>Edição rápida de texto</h2>
+        <div class="pn-campo">
+          <label for="pn-manchete">Manchete da home</label>
+          <input id="pn-manchete" value="Ideias que funcionam para construir marcas e mercados." readonly>
+          <small>Publicada ·&#xFE0E; última edição hoje</small>
+        </div>
+        <div class="pn-campo">
+          <label for="pn-declara">Declaração de abertura</label>
+          <textarea id="pn-declara" rows="3" readonly>Somos 6 empresas que combinam especialistas das diversas disciplinas do marketing e da comunicação, mas que trabalham de forma sinérgica, com planejamento integrado.</textarea>
+          <small>Sincroniza com a versão em inglês automaticamente</small>
+        </div>
+        <button type="button" class="pn-acao">Salvar alterações</button>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

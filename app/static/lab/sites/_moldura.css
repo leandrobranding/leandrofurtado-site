@@ -1,0 +1,52 @@
+/* A MOLDURA DO LAB em cima de um redesign, e por enquanto ela é uma peça só:
+   a aba de volta para o Lab.
+
+   POR QUE ARQUIVO, e não `<style>` inline como a faixa de autoria. A faixa é
+   garantia da §8 e não pode depender de um arquivo existir; a aba não é. E o
+   `<style>` da base se repete nas NOVE páginas do redesign: 1,4 KB inline
+   viram 12,6 KB no site, contra um pedido cacheado e minificado. Numa peça
+   cujo argumento de venda É o peso, a conta decide sozinha.
+
+   Ela veste a identidade do LEANDRO, e não a do cliente, de propósito: quem
+   lê precisa entender num relance que esta aba não faz parte do site que está
+   sendo proposto. Mesma lógica da faixa de copyright, preta em qualquer peça.
+
+   FECHADA mostra o losango e a seta. ABERTA, no hover ou no foco, o rótulo
+   desliza para fora. O texto existe no HTML o tempo todo: quem usa leitor de
+   tela ouve o rótulo sempre, e o movimento é só do olho. */
+  .rd-volta {
+    position: fixed; inset-inline-start: 0; inset-block-start: 50%;
+    z-index: 9000;
+    display: flex; align-items: center; gap: 8px;
+    max-inline-size: 44px;   /* fechada: só o losango, e 44 é o piso de alvo */
+    min-block-size: 44px;
+    padding: 14px 12px;
+    font: 700 11px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    letter-spacing: .14em; text-transform: uppercase; text-decoration: none;
+    color: #fff; background: #101014;
+    border: 1px solid #2c2c34; border-inline-start: 0;
+    border-start-end-radius: 10px; border-end-end-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .45);
+    overflow: hidden; white-space: nowrap;
+    transform: translateY(-50%);
+    transition: max-inline-size .38s cubic-bezier(.22, 1, .36, 1),
+                background-color .3s ease, border-color .3s ease;
+  }
+  .rd-volta:hover, .rd-volta:focus-visible {
+    max-inline-size: 15rem; background: #1b1b22; border-color: #4a4a52;
+  }
+  .rd-volta:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+  .rd-volta-ic { flex: none; inline-size: 18px; block-size: 18px; }
+  .rd-volta-seta { flex: none; inline-size: 14px; block-size: 14px; }
+  /* A SETA anda junto do rótulo, e não solta ao lado do losango: fechada,
+     a aba tem 42 px e uma seta solta apareceria pela metade, cortada pela
+     borda. Dentro do rótulo, ela entra e sai com ele. */
+  .rd-volta-t { flex: none; display: inline-flex; align-items: center; gap: 8px; }
+  .rd-volta:hover .rd-volta-ic { transform: rotate(45deg); }
+  .rd-volta-ic { transition: transform .38s cubic-bezier(.22, 1, .36, 1); }
+
+  @media (max-width: 30em) {
+    .rd-volta { inset-block-start: 42%; padding: 12px 13px; }
+    .rd-volta:hover, .rd-volta:focus-visible { max-inline-size: 13rem; }
+  }
+  @media print { .rd-volta { display: none; } }

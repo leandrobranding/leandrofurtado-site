@@ -8,12 +8,18 @@ from fastapi import Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 from .config import settings
+from .services import limite
 
 ph = PasswordHasher()
 
-# Rate limit simples em memória, por IP. Os dois números vêm de `config.py`,
-# que os lê do ambiente: o valor em produção não é o padrão do repositório.
-_attempts: dict[str, list[float]] = {}
+# Rate limit por IP, COMPARTILHADO entre os workers (services/limite.py). Os
+# dois números vêm de `config.py`, que os lê do ambiente: o valor em produção
+# não é o padrão do repositório.
+#
+# Era um dicionário na memória do processo até 24/08/2026. Com `--workers 2`
+# no contêiner isso dobrava o teto real sem ninguém perceber, e num limite de
+# LOGIN o efeito é direto: quem tenta adivinhar senha ganhava o dobro de
+# chances por janela.
 MAX_ATTEMPTS = settings.login_max_tentativas
 WINDOW = settings.login_janela_segundos
 
@@ -37,15 +43,11 @@ def client_ip(request: Request) -> str:
 
 
 def login_allowed(request: Request) -> bool:
-    ip = client_ip(request)
-    nowt = time.time()
-    attempts = [t for t in _attempts.get(ip, []) if nowt - t < WINDOW]
-    _attempts[ip] = attempts
-    return len(attempts) < MAX_ATTEMPTS
+    return limite.quantos(f"login:{client_ip(request)}", WINDOW) < MAX_ATTEMPTS
 
 
 def register_attempt(request: Request) -> None:
-    _attempts.setdefault(client_ip(request), []).append(time.time())
+    limite.registrar(f"login:{client_ip(request)}")
 
 
 def csrf_token(request: Request) -> str:

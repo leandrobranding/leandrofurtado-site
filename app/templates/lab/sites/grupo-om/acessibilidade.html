@@ -1,0 +1,132 @@
+{# ==========================================================================
+   Grupo OM: acessibilidade.
+
+   A terceira do item 7, e a única das três que pode ser escrita inteira sem
+   depender de ninguém: tudo que ela declara é comportamento desta peça, e
+   cada linha é conferível abrindo a página.
+
+   E ela tem um segundo trabalho, que é comercial. O cliente é uma agência que
+   mantém um Núcleo de Inclusão Geral e publica "não dá para agradar todo
+   mundo, mas dá para respeitar todo mundo". Uma proposta de site para essa
+   agência que não tivesse uma página de acessibilidade estaria contradizendo
+   o melhor argumento do próprio cliente. Esta página é o NIG aplicado ao
+   código.
+
+   O que NÃO está escrito aqui: nenhum selo de conformidade, nenhuma auditoria
+   de terceiro, nenhuma promessa de nível atingido. Declaração de
+   acessibilidade que afirma conformidade sem laudo é exatamente o tipo de
+   frase que não se sustenta quando alguém testa. Aqui está o que foi feito, o
+   alvo perseguido, e o canal para relatar o que falhar.
+   ========================================================================== #}
+{% extends "lab/sites/_base_redesign.html" %}
+{% set pagina = "politicas" %}
+
+{% block titulo %}{{ T("Acessibilidade") }} | {{ r.marca }}{% endblock %}
+{% block descricao %}{{ T("O que esta proposta faz para ser usável por teclado, por leitor de tela e por quem pediu menos movimento.") }}{% endblock %}
+
+{% block cabeca %}{% include "lab/sites/grupo-om/_cabeca.html" %}{% endblock %}
+
+{% block autoria %}{% include "lab/sites/grupo-om/_autoria.html" %}{% endblock %}
+
+{% block corpo %}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+{% include "lab/sites/grupo-om/_topo.html" %}
+
+<main>
+  <section class="om-capa-interna om-escuro">
+    <div class="om-wrap">
+      <p class="om-kicker om-rv">{{ ico.ic("acesso", 14) }} {{ T("Acessibilidade") }}</p>
+      <h1 class="om-manchete om-split"> {{ T("Respeitar todo mundo") }} <span class="om-leve">{{ T("também é código.") }}</span>
+      </h1>
+      <div class="om-fio om-fio-largo" aria-hidden="true"></div>
+      <div class="om-capa-pe">
+        <p class="om-kicker om-rv">{{ T("O alvo") }}</p>
+        <p class="om-declaracao om-declaracao-larga om-rv">{{ T("As") }} <b>{{ T("WCAG 2.1, nível AA") }}</b>{{ T(", como referência de trabalho. O que segue é o que já está feito, e o que não estiver, você nos conta.") }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="om-secao" aria-labelledby="om-t-feito">
+    <div class="om-wrap om-assim">
+      <div>
+        <p class="om-kicker om-rv">{{ T("O que já está feito") }}</p>
+        <p class="om-kicker om-kicker-num om-rv">{{ T("8 medidas") }}</p>
+      </div>
+      <div>
+        <h2 class="om-titulo om-split" id="om-t-feito"> {{ T("Oito decisões,") }} <span class="om-leve">{{ T("todas conferíveis nesta página.") }}</span>
+        </h2>
+        <div class="om-fio" aria-hidden="true"></div>
+        <ol class="om-indice">
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">01</span>
+            <span class="om-item-nome">{{ T("Um título principal por página, e a hierarquia em ordem") }}</span>
+          </div></li>
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">02</span>
+            <span class="om-item-nome">{{ T("Contraste medido: nenhum texto abaixo de 4,5 para 1") }}</span>
+          </div></li>
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">03</span>
+            <span class="om-item-nome">{{ T("Foco visível em tudo que recebe o teclado") }}</span>
+          </div></li>
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">04</span>
+            <span class="om-item-nome">{{ T("Quem pede menos movimento recebe a página parada e inteira") }}</span>
+          </div></li>
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">05</span>
+            <span class="om-item-nome">{{ T("Alvos de toque de 44 pixels, medidos em telas de 320 a 1920") }}</span>
+          </div></li>
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">06</span>
+            <span class="om-item-nome">{{ T("Texto alternativo em toda imagem que informa, e vazio na que decora") }}</span>
+          </div></li>
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">07</span>
+            <span class="om-item-nome">{{ T("A fita de logos tem os mesmos nomes em texto, logo abaixo dela") }}</span>
+          </div></li>
+          <li class="om-rv"><div class="om-item">
+            <span class="om-item-n">08</span>
+            <span class="om-item-nome">{{ T("Sem script, a página continua completa e navegável") }}</span>
+          </div></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="om-secao om-papel" aria-labelledby="om-t-movimento">
+    <div class="om-wrap om-assim">
+      <p class="om-kicker om-rv">{{ T("Movimento") }}</p>
+      <div>
+        <h2 class="om-titulo om-split" id="om-t-movimento"> {{ T("O movimento") }} <span class="om-leve">{{ T("é um convite, nunca uma condição.") }}</span>
+        </h2>
+        <div class="om-fio" aria-hidden="true"></div>
+        <p class="om-texto om-rv">{{ T("A página tem revelação por rolagem, fitas que correm e uma barra que acompanha a leitura. Nada disso é necessário para ler o conteúdo: quem liga") }} <b>{{ T("reduzir movimento") }}</b> {{ T("no sistema recebe a página inteira, parada, sem perder uma palavra.") }}</p>
+        <p class="om-texto om-rv">{{ T("A mesma decisão vale quando o navegador não executa scripts, ou quando eles não chegam: o conteúdo nasce visível, e nenhuma informação depende de uma animação para aparecer.") }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="om-secao om-escuro" aria-labelledby="om-t-relatar">
+    <div class="om-wrap om-assim">
+      <p class="om-kicker om-rv">{{ T("Encontrou uma barreira") }}</p>
+      <div>
+        <h2 class="om-titulo om-split" id="om-t-relatar"> {{ T("Conte para a gente,") }} <span class="om-leve">{{ T("que a gente conserta.") }}</span>
+        </h2>
+        <div class="om-fio" aria-hidden="true"></div>
+        <p class="om-texto om-rv">{{ T("Acessibilidade não termina numa entrega: ela é mantida. Se alguma coisa nesta página não funcionou com o seu leitor de tela, com o seu teclado ou com a sua ampliação, o telefone abaixo é o caminho mais curto.") }}</p>
+        <div class="om-chamadas om-rv">
+          <a class="om-btn om-btn-cheio" href="tel:+554133621919">
+            {{ T("Ligar para o {}").format(r.marca) }} {{ ico.ic("tel", 15) }}</a>
+          <a class="om-btn om-btn-vazio" href="{{ base }}/certificacoes#nig">
+            {{ T("Conhecer o Núcleo de Inclusão Geral") }} {{ ico.ic("seta", 15) }}</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+{% include "lab/sites/grupo-om/_pe.html" %}
+{% endblock %}
+
+{% block scripts %}{% include "lab/sites/grupo-om/_scripts.html" %}{% endblock %}

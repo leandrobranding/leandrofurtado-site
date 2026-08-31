@@ -428,7 +428,7 @@ class LangMiddleware(BaseHTTPMiddleware):
         # por cada router. 301 em GET/HEAD preserva o valor de SEO de um
         # link antigo; POST (concluir aula, sair, formulário) usa 308 para
         # não trocar o verbo nem perder o corpo no meio do redirect.
-        if request.state.lang == "en" and self._e_nodal(request.state.clean_path):
+        if request.state.lang == "en" and self._sem_en_do_site(request.state.clean_path):
             destino = request.state.clean_path
             if request.url.query:
                 destino += "?" + request.url.query
@@ -450,6 +450,35 @@ class LangMiddleware(BaseHTTPMiddleware):
     def _e_nodal(clean_path: str) -> bool:
         return clean_path == "/nodal" or clean_path.startswith("/nodal/")
 
+    @staticmethod
+    def _e_lab(clean_path: str) -> bool:
+        return clean_path == "/lab" or clean_path.startswith("/lab/")
+
+    @classmethod
+    def _sem_en_do_site(cls, clean_path: str) -> bool:
+        """Os dois produtos que NÃO são traduzidos pelo `/en` do site.
+
+        O Nodal está aqui desde a §9.4: ele só existe em português.
+
+        O LAB ENTROU EM 26/08, e por um motivo diferente e mais afiado. Um
+        redesign do Lab é uma peça feita para o cliente DELE, e a língua dele é
+        propriedade da peça, não do portfólio em volta: o redesign do Grupo OM
+        tem inglês próprio, escrito à mão, e o endereço dele é
+        `/lab/sites/grupo-om/en`.
+
+        Sem esta linha, `/en/lab/sites/grupo-om` respondia 200 e servia o
+        PORTUGUÊS, porque o `/en` do site é retirado antes do roteamento e a
+        rota do redesign nunca fica sabendo dele. Um endereço que diz "en" e
+        entrega português é pior que um 404: ele promete uma tradução que não
+        está ali, e ainda cria uma segunda URL para a mesma página, que é
+        conteúdo duplicado escrito de propósito.
+
+        O 301 resolve os dois de uma vez: `/en/lab/...` passa a apontar para
+        `/lab/...`, e quem quer inglês usa o endereço que a própria peça
+        publica.
+        """
+        return cls._e_nodal(clean_path) or cls._e_lab(clean_path)
+
     def _deve_mandar_para_ingles(self, request: Request, path: str) -> bool:
         if request.method != "GET" or request.state.lang == "en":
             return False
@@ -466,7 +495,11 @@ class LangMiddleware(BaseHTTPMiddleware):
         # estrangeiro para /en/nodal só para o redirect acima trazer de
         # volta seria um ricochete inútil (e gravaria lf_lang=en por cima
         # de um produto que nunca vai honrar esse cookie).
-        if self._e_nodal(limpo):
+        # E o Lab pela mesma lista: mandar um visitante de fora para
+        # `/en/lab/sites/grupo-om` só para o 301 acima trazer de volta seria um
+        # ricochete inútil, e gravaria `lf_lang=en` por causa de uma peça que
+        # tem o próprio seletor de idioma dentro dela.
+        if self._sem_en_do_site(limpo):
             return False
         from .services.geo import ip_do_pedido, pais_do_ip
         pais = pais_do_ip(ip_do_pedido(request))
@@ -624,6 +657,7 @@ from .routers import admin_nl as admin_nl_router  # noqa: E402
 from .routers import api as api_router  # noqa: E402
 from .routers import public as public_router  # noqa: E402
 from .lab import rotas as lab_router  # noqa: E402
+from .lab import rotas_sites as lab_sites_router  # noqa: E402
 
 if TEM_NODAL:
     from .nodal import rotas_admin as nodal_admin_router  # noqa: E402
@@ -646,6 +680,7 @@ if TEM_NODAL:
         app.include_router(nodal_publico_router.router)
         app.include_router(nodal_aluno_router.router)
 app.include_router(lab_router.router)
+app.include_router(lab_sites_router.router)
 
 
 @app.exception_handler(404)

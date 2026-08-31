@@ -117,16 +117,49 @@ body[data-page="lab"] main#main {
 body[data-page="lab"] .lab-vt-shell {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
   /* conteúdo inteiro (hero + grid + CTA) centralizado no 1fr, respiro
      simétrico em cima e embaixo (item 5 da rodada de direção de arte).
-     `overflow: hidden` aqui e em #main é o cinto e suspensório da regra
-     absoluta de zero rolagem: mesmo que um cálculo de clamp erre por
-     poucos pixels em algum navegador, o excedente é cortado em silêncio
-     em vez de nascer uma barra de rolagem. */
-  justify-content: center;
+
+     ------------------------------------------------------------------
+     ITEM 36, E DUAS DECLARAÇÕES QUE MUDARAM AQUI. As duas saem de uma
+     medição, não de gosto, e nenhuma das duas é mecanismo novo.
+
+     O QUE FOI MEDIDO. Com a fileira de Sites no ar, o conteúdo desta
+     caixa mede 846 px numa janela de 1440x900 (caixa de 843), 812 numa
+     de 800 (caixa de 743) e 755 numa de 700 (caixa de 643). Sem a
+     fileira, a mesma página cabe até 700. Com `overflow: hidden` e
+     `justify-content: center`, o excedente era cortado NAS DUAS PONTAS e
+     em silêncio: em 1440x800 a manchete do herói subia para trás do
+     cabeçalho fixo, escrevendo por cima do índice das demos, e o botão
+     "Me conta o que você precisa" saía cortado ao meio pela faixa de
+     copyright. 1440x800 é o tamanho de laptop mais comum que existe.
+
+     1. `safe center` NO LUGAR DE `center`. Um flex centralizado que
+        transborda corta o COMEÇO, e era exatamente isso que enfiava a
+        manchete atrás do cabeçalho. Com `safe`, ele volta a `flex-start`
+        quando não cabe, e o topo deixa de ser comido.
+     2. `overflow-y: auto` COM A BARRA ESCONDIDA, no lugar de
+        `overflow: hidden`. A Lei da tela cheia diz "nenhuma barra de
+        rolagem", e é o que continua valendo: não há barra. O que muda é
+        que o excesso passa a ser ALCANÇÁVEL em vez de apagado, e um
+        botão de conversão apagado é pior que um botão que exige um giro
+        de roda.
+
+     E esta não é uma leitura nova da Lei: é a que o próprio arquivo já
+     aplica no celular desde a rodada de direção de arte, em
+     `@media (max-width: 900px)`, com `.lab-vt-cta { flex-shrink: 0 }`,
+     `.lab-vt-hero { flex-shrink: 0 }` e a lista rolando por dentro com
+     `scrollbar-width: none`. O comentário de lá diz, palavra por
+     palavra: "o fecho é a última coisa a ceder espaço: quem rola é a
+     lista". Aqui a mesma decisão passa a valer em toda largura.
+     ------------------------------------------------------------------ */
+  justify-content: safe center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   gap: clamp(14px, 2.2vh, 32px);
   /* O topo reserva só a altura do cabeçalho fixo. A folga que sobra fica
      por conta do `justify-content: center`, que reparte igual em cima e
@@ -137,6 +170,27 @@ body[data-page="lab"] .lab-vt-shell {
      altura das duas aqui é o que faz o `justify-content: center` centrar no
      espaço que a pessoa realmente vê, e não no papel. */
   padding: calc(var(--a11y-h, 32px) + 74px) var(--pad) 0;
+}
+body[data-page="lab"] .lab-vt-shell::-webkit-scrollbar { display: none; }
+/* O herói e o fecho NÃO cedem altura, em largura nenhuma. Quem cede é a
+   lista, que é a única peça da página que pode ser vista pela metade sem
+   deixar de fazer o trabalho dela. As duas linhas já existiam no corte de
+   celular; aqui elas passam a valer sempre, pela mesma razão de sempre. */
+body[data-page="lab"] .lab-vt-hero,
+body[data-page="lab"] .lab-vt-cta { flex-shrink: 0; }
+/* E NADA MAIS CEDE ALTURA TAMBÉM, acima do corte de celular. Medido depois de
+   a fileira de Sites entrar: como filha de um flex em coluna, ela nascia com
+   `flex-shrink: 1` e era ESMAGADA antes de o `overflow-y` do shell fazer
+   qualquer coisa. Em 1440x800 ela media 91 px de 178, em 700 media 4 px e em
+   640 media zero: a fileira sumia da tela sem nada dizer que ela existia.
+   Com `flex: none` nada é deformado, e o que não cabe passa a ser alcançável
+   pela roda, que é a decisão do bloco acima.
+
+   O corte de 901px existe porque abaixo dele quem cede é a LISTA, de
+   propósito, e ela rola por dentro: `.lab-vt-grid` recebe `flex: 1` no
+   `@media (max-width: 900px)` desde a rodada de direção de arte. */
+@media (min-width: 901px) {
+  body[data-page="lab"] .lab-vt-shell > * { flex: none; }
 }
 /* faixa de copyright reaproveitada (`.footer-bottom` de main.css):
    ancorada na base pelo grid, não pelo fluxo normal do rodapé completo
@@ -874,4 +928,191 @@ body[data-page="lab"] .site-nav { display: flex; flex-wrap: wrap; row-gap: 6px; 
 .lab-vt-capa:has(.lab-vt-foto) .lab-vt-marca { filter: drop-shadow(0 1px 8px rgba(0, 0, 0, .5)); }
 @media (max-width: 900px) {
   .lab-vt-foto { display: none; }   /* no celular a capa some, quem conta é o ícone */
+}
+
+/* ---------------------------------------------- cortina antes/depois ---
+   Duas imagens empilhadas. A de cima é recortada por `--corte`, e o
+   `<input type="range"> `por cima controla a variável.
+
+   O controle é um input de verdade, e não uma div com arrasto em
+   JavaScript, por dois motivos: teclado funciona de graça (seta esquerda e
+   direita movem a cortina) e leitor de tela anuncia como controle. A
+   aparência dele é zerada; quem se vê é a haste. */
+.lab-vt-cortina {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #0d0d0f;
+}
+.lab-vt-cortina img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: top center;
+}
+.lab-vt-cortina-depois { clip-path: inset(0 0 0 var(--corte)); }
+.lab-vt-cortina-haste {
+  position: absolute; top: 0; bottom: 0; left: var(--corte);
+  width: 2px; margin-left: -1px; background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .35);
+  pointer-events: none;
+}
+.lab-vt-cortina-haste::after {
+  content: ""; position: absolute; top: 50%; left: 50%;
+  width: 34px; height: 34px; margin: -17px 0 0 -17px;
+  border: 2px solid #fff; border-radius: 999px;
+  background: rgba(0, 0, 0, .28);
+}
+.lab-vt-cortina-controle {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; margin: 0;
+  opacity: 0; cursor: ew-resize;
+  -webkit-appearance: none; appearance: none; background: none;
+}
+.lab-vt-cortina-controle:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* ============================================================
+   ITEM 36: A FILEIRA DE SITES, e o CSS que ela nunca teve.
+
+   A fileira existia no `vitrine.html` desde a §7 da spec de Sites e não
+   existia neste arquivo: `lab-vt-fileira`, `lab-vt-fileira-topo`,
+   `lab-vt-fileira-titulo`, `lab-vt-fileira-sub`, `lab-vt-grade`,
+   `lab-vt-card-site` e `lab-vt-capa-site` não tinham uma regra. Medido:
+   `.lab-vt-grade` computava `display: block`, `grid-template-columns: none`.
+   Na tela, a fileira era um `<h2>` na fonte do corpo, uma legenda e um nome
+   em negrito solto sobre um fio, no meio de uma página cujos outros três
+   cartões têm capa 16:9, wordmark e botão.
+
+   A MOLDURA É O CONTRATO, E EU ME ENCAIXO NELA. O cartão de site reusa
+   `.lab-vt-card`, `.lab-vt-capa`, `.lab-vt-word`, `.lab-vt-ver` e
+   `.lab-vt-tags`, que são as classes dos sistemas. O que existe aqui é só o
+   que a fileira precisa e os sistemas não têm: o cabeçalho dela, a grade
+   dela, e a capa de um cartão que pode não ter imagem nenhuma.
+
+   ELA É COMPACTA DE PROPÓSITO. Ela divide 100dvh com o herói, os três
+   sistemas e o fecho, e cada pixel que ela gasta é um pixel que o fecho
+   perde. Por isso o cabeçalho vive numa linha só e a capa tem teto de altura
+   em `vh`, que é a mesma técnica do `max-height: 34vh` da capa dos sistemas,
+   um degrau menor.
+   ============================================================ */
+.lab-vt-fileira {
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+/* Título e legenda na MESMA linha. Empilhados eles custavam 52 px de altura
+   numa página que conta pixel; lado a lado custam 24, e a hierarquia entre os
+   dois passa a ser feita por corpo e cor, que é como o resto da vitrine faz. */
+.lab-vt-fileira-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px clamp(10px, 1.4vw, 18px);
+  margin-bottom: clamp(8px, 1.1vh, 14px);
+}
+.lab-vt-fileira-titulo {
+  font-family: var(--display);
+  font-size: clamp(15px, 1.35vw, 21px);
+  font-weight: 600;
+  letter-spacing: -.01em;
+  margin: 0;
+  color: var(--ink);
+}
+.lab-vt-fileira-sub {
+  font-family: var(--sans);
+  font-size: clamp(11.5px, .85vw, 13.5px);
+  color: var(--muted);
+  margin: 0;
+}
+/* `auto-fill` com teto de quatro: com um redesign só, o cartão não estica de
+   ponta a ponta da página, e com cinco a fileira não vira uma tira de
+   miniaturas. O `minmax` é o que dá o piso de legibilidade da capa. */
+.lab-vt-grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(200px, 19vw, 268px), 1fr));
+  align-items: stretch;
+  gap: clamp(14px, 1.8vw, 28px);
+}
+/* A capa de um cartão de site. `max-height` em `vh` pelo mesmo motivo da capa
+   dos sistemas: numa tela baixa a imagem é a primeira coisa que cede altura,
+   antes de qualquer texto. */
+/* O TETO DE ALTURA DA CAPA, e o número saiu de uma conta de espaço, não de
+   gosto: numa janela de 1440x900 a fileira inteira tem 166 px de orçamento
+   antes de o fecho começar a ser empurrado para fora, e o cabeçalho dela mais
+   as etiquetas já comem 70. `11vh` dá 99 px em 900, que é o que sobra. */
+.lab-vt-capa-site,
+.lab-vt-card-site .lab-vt-cortina {
+  max-height: clamp(84px, 11vh, 150px);
+}
+.lab-vt-capa-site {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-2);
+}
+.lab-vt-capa-site img { width: 100%; height: 100%; object-fit: cover; object-position: top center; display: block; }
+/* A CAPA QUE NÃO TEM IMAGEM, e é ela que faz esta fileira funcionar no dia em
+   que o redesign entra no ar.
+
+   A cortina precisa das DUAS capturas, e uma captura é produto do serviço do
+   painel: até alguém apertar o botão, o registro não tem nenhuma. Sem esta
+   capa, o cartão nasce vazio justamente no primeiro dia, que é quando o
+   Leandro quer mandar o link.
+
+   Ela é TIPOGRÁFICA, e é assim de propósito: a vitrine é genérica sobre
+   `redesigns`, e pendurar o vetor de um cliente aqui amarraria a fileira
+   inteira a esse cliente. E ela se apaga sozinha: no dia em que as capturas
+   chegarem, a cortina entra no lugar dela sem mais uma linha de código. */
+.lab-vt-capa-tipo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  /* O respiro de baixo é MAIOR, e é reserva: `.lab-vt-ver` é absoluto no
+     canto inferior direito da capa, e sem esta faixa o "ver o redesign"
+     escreveria por cima do setor numa capa de 88 px de altura, que é o piso
+     em tela baixa. */
+  padding: clamp(12px, 1.4vw, 20px);
+  padding-bottom: clamp(30px, 3.4vw, 42px);
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(120% 160% at 0% 0%, rgba(255, 255, 255, .07), transparent 60%),
+    var(--bg-2);
+}
+.lab-vt-capa-tipo b {
+  font-family: var(--display);
+  font-size: clamp(17px, 1.7vw, 27px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  color: var(--ink);
+}
+/* NENHUMA REGRA DE `span` AQUI DENTRO, e a ausência é deliberada: havia uma,
+   e ela pintava de cinza o "ver o redesign", que também é um `<span>` e que é
+   (0,1,0) contra os (0,1,1) dela. É a mesma armadilha de especificidade que
+   já pintou de branco sobre branco a chamada principal do redesign do
+   cliente. O que a capa tipográfica mostra é só o nome; o setor é a etiqueta
+   logo abaixo do cartão. */
+.lab-vt-card-site .lab-vt-ver { z-index: 2; }
+.lab-vt-site-nome {
+  margin: clamp(8px, 1vh, 12px) 0 0;
+  font-family: var(--sans);
+  font-size: clamp(12px, .95vw, 14.5px);
+  color: var(--ink);
+}
+/* A faixa de etiquetas do cartão de site é a MESMA dos sistemas, e por isso
+   ela não é redeclarada: só o respiro encolhe, porque aqui o cartão inteiro é
+   menor. */
+.lab-vt-card-site .lab-vt-tags {
+  margin-top: clamp(7px, .8vh, 10px);
+  padding-top: clamp(7px, .8vh, 10px);
+  flex-wrap: wrap;
+}
+@media (max-width: 900px) {
+  /* No celular a fileira segue a mesma regra dos sistemas: uma coluna, e a
+     lista inteira é quem rola. */
+  .lab-vt-grade { grid-template-columns: 1fr; max-width: 560px; margin: 0 auto; }
+  .lab-vt-capa-site, .lab-vt-card-site .lab-vt-cortina { max-height: none; }
+  .lab-vt-fileira-topo { justify-content: center; text-align: center; }
 }

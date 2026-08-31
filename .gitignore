@@ -9,3 +9,7 @@ data/
 data/geo/
 preview*.log
 .superpowers/
+
+# o worktree recebe um symlink `.venv` para o ambiente do repositorio
+# principal; `.venv/` com barra nao casa com symlink.
+.venv

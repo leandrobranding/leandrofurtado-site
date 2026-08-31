@@ -1,0 +1,216 @@
+{# ==========================================================================
+   O CONVITE E O RODAPÉ. Iguais em todas as páginas.
+
+   `sem_convite` deixa a página de contato pular a seção de convite: ela já é
+   a página de contato, e um "vamos conversar" acima dos telefones seria o
+   site pedindo à pessoa que faça o que ela já está fazendo.
+
+   ------------------------------------------------------------------------
+   O QUE MUDOU EM 26/08, com os itens 21 a 25.
+
+   21. LARGURA MÁXIMA, o mesmo padrão do cabeçalho. Os dois se respondem: se o
+       cabeçalho encosta nas bordas e o rodapé não, a página parece dois
+       projetos. Por isso `om-largo` aqui e lá.
+
+   22. ENDEREÇOS COM ESTADO E LUGAR, e link para o mapa que o PRÓPRIO CLIENTE
+       publica. "Alphaville" sozinho, que é como o site dele rotula, não diz
+       cidade nem estado; os dois links de mapa dele resolvem a dúvida, e é de
+       lá que saem "Pinhais - PR" e "São Paulo - SP".
+
+       E CADA ENDEREÇO VAI COM O TELEFONE QUE É DELE. Isso fecha uma pergunta
+       aberta desde o ciclo 3: o (41) é Alphaville, o (11) é São Paulo.
+
+   23. AS CATEGORIAS MUDARAM. `GRUPO OM` com os links filhos em caixa de
+       frase, `CONTATO` com os telefones para ligar, `REDES SOCIAIS` com o
+       LinkedIn junto, e `CERTIFICAÇÕES` em imagens SOLTAS, sem caixa em
+       volta e maiores. Os PRÊMIOS receberam o mesmo tratamento, e continuam
+       um grupo separado: prêmio ganho e certificação ativa não são a mesma
+       afirmação, e juntar tudo numa fileira só apagaria a diferença.
+
+       O WHATSAPP É PENDÊNCIA, e a razão está escrita no relatório: o cliente
+       não publica número de WhatsApp nenhum, e os dois telefones dele são
+       fixos comerciais. Montar um `wa.me` em cima de um fixo entrega ao dono
+       da agência um botão que não abre nada.
+
+   24. POLÍTICAS E ACESSIBILIDADE CENTRALIZADAS, em tipografia menor. São
+       rodapé de rodapé, e disputavam peso com o índice.
+
+   25. O COPYRIGHT NUMA LINHA vive em `_autoria.html`, que é o bloco que a
+       base entrega e que o item 10 mandou substituir pela faixa do Lab.
+   ========================================================================== #}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+{% if not sem_convite %}
+<section class="om-convite" aria-labelledby="om-t-convite">
+  <div class="om-wrap om-assim">
+    <div class="om-rv">
+      {# A marca em escala grande, sem anel: o arco-íris é grafismo e nunca
+         circunda o wordmark. Correção do Leandro em 26/08. #}
+      <span class="om-convite-marca">
+        <img src="/static/lab/sites/grupo-om/marca-grupo-om.svg" width="1147" height="104"
+             alt="{{ T("Grupo OM, comunicação integrada") }}" loading="lazy" decoding="async">
+      </span>
+    </div>
+    <div>
+      <p class="om-kicker om-rv">{{ T("Vamos conversar") }}</p>
+      <h2 class="om-titulo om-split" id="om-t-convite">
+        {{ T("Ideias que funcionam") }}
+        <span class="om-leve">{{ T("começam por uma ligação.") }}</span>
+      </h2>
+      <div class="om-fio" aria-hidden="true"></div>
+      <div class="om-chamadas om-rv">
+        {#- ITEM 32: a chamada dizia "Ligar para o Grupo OM", e a coluna ao
+            lado dela é justamente a marca do Grupo OM em escala grande. Nome e
+            logo no mesmo bloco. A marca fica, porque é o gesto da seção; o
+            nome sai do botão, que passa a dizer só o que ele FAZ. De quebra,
+            a pílula encolhe: "Ligar para o Grupo OM" media 339 px e foi o
+            motivo de um conserto de largura inteiro no ciclo 3.1. -#}
+        <a class="om-btn om-btn-cheio" href="tel:+554133621919">
+          {{ T("Ligar agora") }} {{ ico.ic("seta", 15) }}
+        </a>
+        <a class="om-btn om-btn-vazio" href="{{ base }}/contato">
+          {{ T("Ver todos os contatos") }} {{ ico.ic("local", 15) }}
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<footer class="om-rodape">
+  <div class="om-largo">
+    <div class="om-rodape-grade">
+      <div class="om-rodape-sobre">
+        <span class="om-rodape-marca">
+          <img src="/static/lab/sites/grupo-om/marca-grupo-om.svg" width="1147" height="104"
+               alt="{{ T("Grupo OM, comunicação integrada") }}" loading="lazy" decoding="async">
+        </span>
+        <p class="om-texto om-rodape-texto">{{ T("Seis empresas que combinam especialistas das diversas disciplinas do marketing e da comunicação, com planejamento integrado.") }}</p>
+      </div>
+
+      <div>
+        {#- ITEM 32: este rótulo era `{{ r.marca }}`, ou seja, "GRUPO OM"
+            escrito na coluna ao lado da própria marca desenhada, na mesma
+            fileira do rodapé. Era o par que a regra manda desfazer, e o
+            rótulo nem estava trabalhando: o que ele nomeia é o índice de
+            páginas, e é isso que ele diz agora. É a mesma palavra que o menu
+            de tela cheia já usa para a mesma lista. -#}
+        <p class="om-rodape-t">{{ ico.ic("menu", 14) }} {{ T("Páginas") }}</p>
+        <nav class="om-rodape-nav" aria-label="{{ T("Páginas do site, rodapé") }}">
+          <a href="{{ base }}">{{ T("Home") }}</a>
+          <a href="{{ base }}/sobre">{{ T("O grupo") }}</a>
+          <a href="{{ base }}/servicos">{{ T("Serviços") }}</a>
+          <a href="{{ base }}/cases">{{ T("Cases") }}</a>
+          <a href="{{ base }}/conteudo">{{ T("Conteúdo") }}</a>
+          <a href="{{ base }}/certificacoes">{{ T("Certificações") }}</a>
+          <a href="{{ base }}/contato">{{ T("Contato") }}</a>
+        </nav>
+      </div>
+
+      {# ITEM 22: os dois endereços, cada um com o seu telefone e o mapa que o
+         próprio cliente publica. O mapa abre em nova aba porque ele tira a
+         pessoa da proposta, e uma proposta que a pessoa está lendo não pode
+         ser substituída por um mapa. #}
+      <div class="om-rodape-onde">
+        <p class="om-rodape-t">{{ ico.ic("tel", 14) }} {{ T("Contato") }}</p>
+        <address class="om-onde">
+          <b>{{ T("Alphaville, Pinhais - PR") }}</b>
+          <span>{{ T("Rua Jaguariaíva, 596, 5º andar") }}</span>
+          <a href="tel:+554133621919">{{ ico.ic("tel", 14) }} (41) 3362-1919</a>
+          <a href="https://www.google.com.br/maps/place/Rua+Jaguaria%C3%ADva,+596+-+Alphaville,+Pinhais+-+PR,+83327-076/@-25.3927918,-49.1630936,17z/data=!3m1!4b1!4m5!3m4!1s0x94dceedfc690f5ed:0x7e9d3be9276af4e!8m2!3d-25.3927967!4d-49.1608995"
+             target="_blank" rel="noopener">{{ ico.ic("local", 14) }} {{ T("Ver no mapa") }}</a>
+        </address>
+        <address class="om-onde">
+          <b>{{ T("Vila Olímpia, São Paulo - SP") }}</b>
+          <span>{{ T("Rua Cardoso de Melo, 1750") }}</span>
+          <a href="tel:+551130442215">{{ ico.ic("tel", 14) }} (11) 3044-2215</a>
+          <a href="https://www.google.com.br/maps/place/Av.+Dr.+Cardoso+de+Melo,+1750+-+61+-+Itaim+Bibi,+S%C3%A3o+Paulo+-+SP,+04548-005/@-23.5958589,-46.6923768,17z/data=!3m1!4b1!4m5!3m4!1s0x94ce57380062d25b:0xa37d9ae92ccf783f!8m2!3d-23.5958589!4d-46.6898019"
+             target="_blank" rel="noopener">{{ ico.ic("local", 14) }} {{ T("Ver no mapa") }}</a>
+        </address>
+      </div>
+
+      <div>
+        <p class="om-rodape-t">{{ ico.ic("rede", 14) }} {{ T("Redes sociais") }}</p>
+        <nav class="om-redes" aria-label="{{ T("Redes sociais do Grupo OM") }}">
+          {#- LINKEDIN PRIMEIRO, e é premissa do site inteiro (Leandro, 27/08).
+              A ordem de uma lista de redes não é neutra: a primeira é a que
+              recebe o clique de quem só quer conferir se a empresa é séria, e
+              para uma agência B2B essa rede é o LinkedIn. -#}
+          <a href="https://www.linkedin.com/company/grupo-om-marketing-comunicacao/mycompany/"
+             target="_blank" rel="noopener">{{ ico.ic("linkedin", 15) }} LinkedIn</a>
+          <a href="https://www.instagram.com/grupo_om/" target="_blank" rel="noopener">
+            {{ ico.ic("instagram", 15) }} Instagram</a>
+          <a href="https://www.facebook.com/Grupo-OM-247205285365059/"
+             target="_blank" rel="noopener">{{ ico.ic("facebook", 15) }} Facebook</a>
+          <a href="https://www.youtube.com/channel/UCDnq1psXM336KMZ1CFbPrzw"
+             target="_blank" rel="noopener">{{ ico.ic("youtube", 15) }} YouTube</a>
+        </nav>
+      </div>
+    </div>
+
+    {# ITEM 23: OS SELOS, EM IMAGENS SOLTAS, SEM CAIXA EM VOLTA E MAIORES.
+       Eles vivem numa faixa de papel porque metade dos arquivos é tinta
+       escura (Cannes, Colunistas, AMPRO) e os dois de parceria já vêm com
+       fundo claro assado no bitmap: sobre o grafite do rodapé, uns sumiriam e
+       os outros virariam retângulos brancos. A faixa é a superfície da seção,
+       e não uma caixa por selo, que é o que o item pediu para tirar.
+
+       DOIS GRUPOS ROTULADOS, e não uma fileira só: prêmio ganho e
+       certificação ativa não são a mesma afirmação. #}
+    <div class="om-selario">
+      <div>
+        <p class="om-rodape-t">{{ ico.ic("escudo", 14) }} {{ T("Certificações") }}</p>
+        <ul class="om-selos-soltos">
+          {%- for arquivo, nome, w, h in certificacoes %}
+          <li><img src="/static/lab/sites/grupo-om/{{ arquivo }}" width="{{ w }}" height="{{ h }}"
+                   alt="{{ nome }}" loading="lazy" decoding="async"></li>
+          {%- endfor %}
+        </ul>
+      </div>
+      <div>
+        <p class="om-rodape-t">{{ ico.ic("premio", 14) }} {{ T("Prêmios") }}</p>
+        <ul class="om-selos-soltos">
+          {%- for arquivo, nome, w, h in premios %}
+          <li><img src="/static/lab/sites/grupo-om/{{ arquivo }}" width="{{ w }}" height="{{ h }}"
+                   alt="{{ nome }}" loading="lazy" decoding="async"></li>
+          {%- endfor %}
+        </ul>
+      </div>
+    </div>
+
+    {# ITEM 24: as três políticas, centralizadas e menores. Rodapé de rodapé. #}
+    {# 27/08: O PÉ DO RODAPÉ SEGUE O PADRÃO DO MENU DE TELA CHEIA — mesma
+       gramática, mesmos três moradores: as políticas, o texto legal com a
+       razão social das seis empresas (a frase é a que o PRÓPRIO cliente
+       publica na política de privacidade dele; não há CNPJ em lugar nenhum
+       do site dele e por isso não há CNPJ aqui), e a assinatura de quem fez.
+       Dois lugares, um padrão: quem viu o menu reconhece o rodapé. #}
+    {#- A ORDEM É A DO MENU DE TELA CHEIA, e foi pedida assim (27/08): o
+        texto legal à ESQUERDA com as políticas logo abaixo dele, e a
+        assinatura no canto DIREITO — recuada o bastante para nunca brigar
+        com o botão de voltar ao topo, que é fixo no mesmo canto. -#}
+    <div class="om-rodape-legal">
+      {#- `om-texto` aqui não é estilo, é CLASSIFICAÇÃO: esta frase é prosa
+         publicada pelo cliente (a razão social das seis S.A. da política de
+         privacidade dele), e é assim que a varredura do item 32 distingue
+         prosa citada de rótulo colado num desenho. -#}
+      <p class="om-texto om-rodape-juridico">{{ T("O Grupo OM é formado pela conjugação de esforços das empresas OpusMúltipla Comunicação Integrada S.A., Brainbox Design Estratégico S.A., Senso Estratégia Multicanais S.A., Tailor Media Branded Content S.A., Housecricket Inteligência Digital S.A. e D’OM Soluções Improváveis S.A.") }}</p>
+      <nav class="om-legal-nav" aria-label="{{ T("Políticas e acessibilidade") }}">
+        <a href="{{ base }}/politica-de-privacidade">
+          {{ ico.ic("escudo", 13) }} {{ T("Política de Privacidade") }}</a>
+        <a href="{{ base }}/politica-de-cookies">
+          {{ ico.ic("cookie", 13) }} {{ T("Política de Cookies") }}</a>
+        <a href="{{ base }}/acessibilidade">
+          {{ ico.ic("acesso", 13) }} {{ T("Acessibilidade") }}</a>
+      </nav>
+      <p class="om-rodape-agua">
+        <svg viewBox="0 0 100 100" class="om-menu-agua-glifo" aria-hidden="true">
+          <polygon fill="currentColor" points="57.6 73.8 30.6 73.8 30.6 35.7 40 35.7 40 63.9 59.5 63.9 57.6 73.8"/>
+          <polygon fill="currentColor" points="64.9 54.5 49.4 54.5 49.4 45.1 66.6 45.1 64.9 54.5"/>
+          <polygon fill="currentColor" points="67.6 35.7 49.4 35.7 49.4 26.3 69.4 26.3 67.6 35.7"/>
+        </svg>
+        <span>{{ T("Desenvolvido e certificado por") }}
+          <a href="https://leandrofurtado.com.br" target="_blank" rel="noopener">Leandro Furtado</a></span>
+      </p>
+    </div>
+  </div>
+</footer>

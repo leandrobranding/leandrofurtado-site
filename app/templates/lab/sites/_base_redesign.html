@@ -1,0 +1,145 @@
+{# ============================================================
+   Base MÍNIMA de toda página de redesign.
+
+   Não confunda com `lab/_base_demo.html`. Aquela existe para os SISTEMAS
+   parecerem parte do universo do Leandro: cabeçalho do site, faixa de
+   copyright, marca do Lab. Um redesign precisa do oposto, parecer o site
+   do CLIENTE, e por isso não herda nada daquilo.
+
+   O que esta base faz é garantir o piso da §8 da spec, que nenhuma página
+   pode esquecer:
+
+     1. `<meta name="author">` e a marca de autoria visível no rodapé. A
+        página está no domínio do Leandro, com a marca de outra empresa, e
+        pode vazar do link: ela precisa dizer sem ambiguidade que é uma
+        proposta, e não o site oficial daquele negócio.
+     2. `noindex` sempre que a resposta sai pelo endereço do token, ou
+        enquanto o redesign é `pitch` (o contexto traz isso pronto em
+        `noindex`; ver `app/lab/rotas_sites.py::_servir`).
+     3. `prefers-reduced-motion` desligando o que se move, sem depender de
+        cada CSS lembrar.
+
+   O resto é livre. Cada redesign escreve o `corpo` que quiser, carrega o
+   CSS que quiser pelo bloco `cabeca`, e pode usar GSAP, ScrollTrigger,
+   SplitText e Lenis de `/static/vendor/` (§3 da spec).
+
+   Contexto exigido: `r`, o registro `Redesign`, e `noindex` (bool), a
+   decisão de indexabilidade já resolvida por `_servir` — o template não
+   decide sozinho a partir de `r.estado`.
+   ============================================================ #}
+<!doctype html>
+{# `lang_html` vem de `rotas_sites.py::_servir` e vale "pt-BR" ou "en". O
+   `default` é o que mantém esta base servindo redesigns que não são
+   bilíngues: eles nunca põem a variável no contexto e continuam em pt-BR.
+
+   ISTO NÃO É COSMÉTICO. `<html lang>` é o que faz o leitor de tela trocar de
+   voz: uma página em inglês servida como `pt-BR` é lida com a pronúncia
+   portuguesa palavra por palavra, e vira ruído. É também o que o buscador lê
+   para saber que existem duas versões, e o que decide a hifenização. #}
+<html lang="{{ lang_html | default("pt-BR") }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}{{ r.marca }}{% endblock %}</title>
+<meta name="description" content="{% block descricao %}{{ r.setor }}{% endblock %}">
+
+{# A autoria também é legível por máquina, não só pela pessoa. #}
+<meta name="author" content="Leandro Furtado">
+<meta name="robots" content="{{ 'noindex, nofollow' if noindex else 'index, follow' }}">
+
+{# ------------------------------------------------ a volta para o Lab --
+   Uma aba colada na borda esquerda, na altura dos olhos. Ela mora nesta BASE,
+   e não no CSS da marca do cliente, pelo mesmo motivo da faixa de autoria: é
+   moldura do Lab, não peça do Grupo OM. Todo redesign que nascer depois ganha
+   o caminho de volta sem ninguém lembrar de escrevê-lo.
+
+   Ela veste a identidade do LEANDRO, e não a do cliente, e isso é deliberado:
+   quem lê precisa entender num relance que esta aba não faz parte do site que
+   está sendo proposto. Mesma lógica da faixa de copyright.
+
+   FECHADA ela mostra o losango e a seta. ABERTA, no hover ou no foco, o
+   rótulo desliza para fora. O texto existe no HTML o tempo todo: quem usa
+   leitor de tela ouve o rótulo sempre, e o movimento é só do olho.
+
+   ESTA NOTA É UM COMENTÁRIO JINJA, e não um comentário de CSS, de propósito:
+   comentário dentro de `<style>` viaja pelo fio em toda página. Um ciclo
+   anterior já entregou 10,7 KB de comentário interno ao cliente por causa
+   disso, e o `<style>` desta base se repete nas nove páginas. #}
+<style>
+  /* Piso de movimento: vale para toda página de redesign, e nenhum CSS de
+     marca precisa lembrar de escrever isto. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  .rd-autoria {
+    display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline;
+    justify-content: center; padding: 22px 18px;
+    font: 400 12px/1.5 system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: #101014; color: #9a9aa2; text-align: center;
+  }
+  .rd-autoria a { color: #fff; text-decoration: none; border-bottom: 1px solid #4a4a52; }
+  .rd-autoria a:hover { border-bottom-color: #fff; }
+
+</style>
+<link rel="stylesheet" href="/static/lab/sites/_moldura.css?v={{ asset_v }}">
+{% block cabeca %}{% endblock %}
+</head>
+<body class="rd-body rd-{{ r.slug }}">
+{% block corpo %}{% endblock %}
+
+{# A VOLTA PARA O LAB. Fica fora do `{% block corpo %}` de propósito: nenhuma
+   página de redesign precisa lembrar de incluí-la, e nenhuma consegue tirá-la
+   sem mexer nesta base.
+
+   O losango é o MESMO glifo da marca do Lab em `app/templates/_cabecalho.html`,
+   copiado como caminho e não importado: este template não estende `base.html`
+   e não alcança a macro de lá. Se o glifo mudar no site, muda aqui também.
+
+   O endereço é `/lab`, e é interno: nada de host externo, e o link continua
+   valendo no link privado do pitch, onde ele é o único caminho que o cliente
+   tem para ver o resto do trabalho. #}
+{% block volta_lab %}
+<a class="rd-volta" href="/lab" aria-label="{{ T("Voltar para o Lab de Demos de Leandro Furtado") if T is defined else "Voltar para o Lab de Demos de Leandro Furtado" }}">
+  <svg class="rd-volta-ic" viewBox="0 0 24 24" aria-hidden="true">
+    <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd"
+          d="M12 2 22 12 12 22 2 12 12 2Zm0 5.2L7.2 12 12 16.8 16.8 12 12 7.2Z"/>
+  </svg>
+  <span class="rd-volta-t">
+    <svg class="rd-volta-seta" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M19 12H5m0 0 6-6m-6 6 6 6"/>
+    </svg>{{ T("Voltar para o Lab") if T is defined else "Voltar para o Lab" }}</span>
+</a>
+{% endblock %}
+
+{# A marca de autoria. Discreta, no fim, e nunca ausente: a §8 chama isso de
+   inegociável, e o teste `test_toda_pagina_de_redesign_tem_marca_de_autoria`
+   quebra se alguém tirar.
+
+   É UM BLOCO, e não texto fixo, desde 26/08. O Leandro pediu (item 10) que a
+   peça do Grupo OM feche com a MESMA faixa de copyright que o Lab usa no site
+   inteiro, com um texto que faz três coisas de uma vez: diz quem fez, diz que
+   não é o site oficial, e converte. Nada disso enfraquece a garantia da §8, e
+   o que a §8 exige continua valendo para quem NÃO sobrescreve: o padrão
+   abaixo é o de sempre.
+
+   Regra para quem sobrescrever: a substituição precisa dizer as duas coisas
+   inegociáveis, autoria e "não é o site oficial". O `<meta name="author">` do
+   `<head>` fica fora do bloco de propósito, para que nenhuma sobrescrita
+   consiga tirá-lo. #}
+{% block autoria %}
+<footer class="rd-autoria">
+  <span>Proposta de redesign criada por
+    <a href="https://leandrofurtado.com.br" rel="noopener">Leandro Furtado</a>.
+  </span>
+  <span>Não é o site oficial de {{ r.marca }}.</span>
+</footer>
+{% endblock %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

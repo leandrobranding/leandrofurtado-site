@@ -1,0 +1,27 @@
+{# A página de UM case. Ela é uma casca de propósito: o `extends` é literal,
+   como nas outras doze páginas da peça, e todo o desenho mora em
+   `_corpo_case.html`. Dezoito cases com marcação copiada seriam dezoito
+   lugares para uma correção ficar para trás.
+
+   O TEXTO NÃO ESTÁ AQUI. Título, resumo, data, assunto, ficha e imagem saem
+   de `app/lab/cases_grupo_om.py`, que é a mesma fonte que alimenta a grade e
+   o filtro do servidor. #}
+{% extends "lab/sites/_base_redesign.html" %}
+{% set pagina = "cases" %}
+{% set caso = "memes-unidos" %}
+{% set c = por_slug[caso] %}
+
+{% block titulo %}{{ T(c.titulo) }} | {{ r.marca }}{% endblock %}
+{% block descricao %}{{ T(c.resumo) }}{% endblock %}
+
+{% block cabeca %}{% include "lab/sites/grupo-om/_cabeca.html" %}{% endblock %}
+
+{% block autoria %}{% include "lab/sites/grupo-om/_autoria.html" %}{% endblock %}
+
+{% block corpo %}
+{% include "lab/sites/grupo-om/_topo.html" %}
+{% include "lab/sites/grupo-om/_corpo_case.html" %}
+{% include "lab/sites/grupo-om/_pe.html" %}
+{% endblock %}
+
+{% block scripts %}{% include "lab/sites/grupo-om/_scripts.html" %}{% endblock %}

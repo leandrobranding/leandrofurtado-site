@@ -1,0 +1,87 @@
+{# ==========================================================================
+   Grupo OM: os SERVIÇOS — a página que faltava (Leandro, 27/08).
+
+   O site atual tem um menu SERVIÇOS com cinco LPs, e a peça só tinha os sete
+   nomes na home. Esta página traz as cinco, com o que é delas: o TÍTULO e a
+   CHAMADA de cada LP verbatim, a lista de SOLUÇÕES verbatim, e — o que as
+   LPs do cliente prometem no "cases que provam" — um case REAL da peça
+   comprovando cada serviço. A relação serviço→case é a mesma do hover da
+   home, justificada em `conteudo_grupo_om.py` e `cases_grupo_om.py`.
+
+   NADA AQUI FOI ESCRITO POR NÓS além da moldura. Serviço inventado numa
+   proposta é o mesmo erro que cliente inventado.
+   ========================================================================== #}
+{% extends "lab/sites/_base_redesign.html" %}
+{% set pagina = "servicos" %}
+
+{% block titulo %}{{ T("Serviços") }} | {{ r.marca }}{% endblock %}
+{% block descricao %}{{ T("Os cinco serviços do Grupo OM, com as soluções de cada um e o case que o comprova.") }}{% endblock %}
+
+{% block cabeca %}{% include "lab/sites/grupo-om/_cabeca.html" %}{% endblock %}
+{% block autoria %}{% include "lab/sites/grupo-om/_autoria.html" %}{% endblock %}
+
+{% block corpo %}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+{% include "lab/sites/grupo-om/_topo.html" %}
+
+<main>
+  <section class="om-capa-interna om-escuro">
+    <div class="om-wrap">
+      <p class="om-kicker om-rv">{{ T("Serviços") }}</p>
+      <h1 class="om-manchete om-split">
+        {{ T("Cinco frentes,") }}
+        <span class="om-leve">{{ T("um planejamento só.") }}</span>
+      </h1>
+      <div class="om-fio om-fio-largo" aria-hidden="true"></div>
+      <div class="om-capa-pe">
+        <p class="om-kicker om-rv">{{ T("Como ler esta página") }}</p>
+        <p class="om-declaracao om-declaracao-larga om-rv">{{ T("Cada serviço traz as soluções que o grupo publica e") }} <b>{{ T("um case real que o comprova") }}</b>{{ T(": promessa aqui vem com prova ao lado.") }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="om-secao om-escuro" aria-label="{{ T("Serviços") }}">
+    <div class="om-wrap">
+      <ol class="om-frentes">
+        {%- for s in servicos %}
+        {%- set c = por_slug[s.caso] %}
+        <li class="om-frente om-rv">
+          <div class="om-frente-texto">
+            <p class="om-item-n">{{ "%02d" | format(loop.index) }}</p>
+            <h2 class="om-frente-t">{{ T(s.titulo) }}</h2>
+            {%- if s.chamada %}
+            <p class="om-frente-chamada">{{ T(s.chamada) }}</p>
+            {%- endif %}
+            {#- As soluções são rótulo, não link: mesma regra das etiquetas
+                de case (item 19). -#}
+            <ul class="om-etiquetas">
+              {%- for sol in s.solucoes %}
+              <li>{{ T(sol) }}</li>
+              {%- endfor %}
+            </ul>
+          </div>
+          {#- O CASE QUE COMPROVA, com o cartão inteiro da grade: mesma
+              imagem, mesma assinatura, mesmo destino. -#}
+          <a class="om-frente-prova" href="{{ base }}/case/{{ c.slug }}">
+            <span class="om-frente-prova-r">{{ ico.ic("caso", 13) }} {{ T("O case que comprova") }}</span>
+            <span class="om-cartao-arte"><img src="{{ c.imagem }}" width="960" height="540"
+                 alt="" loading="lazy" decoding="async"></span>
+            <b>{{ T(c.titulo) }}</b>
+            <span class="om-case-ver">{{ T("Ver o case") }} {{ ico.ic("seta", 14) }}</span>
+          </a>
+        </li>
+        {%- endfor %}
+      </ol>
+
+      <div class="om-chamadas om-chamadas-meio om-rv">
+        <a class="om-btn om-btn-cheio" href="{{ base }}/contato">{{ T("Falar com o Grupo OM") }} {{ ico.ic("tel", 15) }}</a>
+        <a class="om-btn om-btn-vazio" href="{{ base }}/cases">{{ T("Ver todos os cases") }} ({{ cases | length }}) {{ ico.ic("seta", 15) }}</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+{% include "lab/sites/grupo-om/_pe.html" %}
+{% endblock %}
+
+{% block scripts %}{% include "lab/sites/grupo-om/_scripts.html" %}{% endblock %}

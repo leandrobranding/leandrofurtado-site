@@ -1,0 +1,32 @@
+{# ==========================================================================
+   A ASSINATURA DE UM DEPOIMENTO, com LUGAR RESERVADO PARA A FOTO (item 20).
+
+   NÃO EXISTE FOTO NENHUMA. O site do cliente publica os três depoimentos com
+   nome e cargo, sem retrato, e desenhar um rosto seria pior do que não ter.
+   O que existe é o ESPAÇO, dimensionado para a foto entrar depois sem o bloco
+   mudar de tamanho: quadrado fixo, `aspect-ratio: 1`, mesma medida do `<img>`
+   que um dia ocupa o lugar.
+
+   ITEM 33: DENTRO DELE, UM ÍCONE DE PESSOA, e não mais o monograma das
+   iniciais. O monograma era tipografia fingindo ser imagem: duas letras num
+   círculo lêem como avatar de aplicativo, e num depoimento de cliente elas
+   sugerem que existe uma foto que não carregou. Um ícone de pessoa diz
+   exatamente o que aquele espaço é. Ele é da mesma família dos outros
+   dezenove da peça: caixa de 24, traço 1.6, `currentColor`, sem
+   preenchimento.
+
+   Está em Pendências: os retratos dependem de o Leandro pedir ao cliente.
+
+   O ÍCONE É `aria-hidden`, e a razão é a mesma de antes: ele não acrescenta
+   nada ao que o elemento ao lado já diz, que é o nome inteiro e o cargo.
+   ========================================================================== #}
+{% import "lab/sites/grupo-om/_icones.html" as ico with context %}
+{%- macro assina_voz(nome, cargo) -%}
+<figcaption class="om-assina">
+  <span class="om-retrato">{{ ico.ic("pessoa", 22) }}</span>
+  <span class="om-assina-quem">
+    <b>{{ nome }}</b>
+    <span>{{ T(cargo) }}</span>
+  </span>
+</figcaption>
+{%- endmacro -%}

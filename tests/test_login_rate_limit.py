@@ -7,6 +7,7 @@ Sobe o app de verdade com TestClient e base_url="https://testserver": o
 cookie de sessão sai Secure fora de debug, e sobre HTTP puro o httpx não
 guarda o cookie (mesmo cuidado de tests/test_tracking.py).
 """
+from app.services import limite
 import re
 
 from starlette.testclient import TestClient
@@ -24,7 +25,7 @@ def _csrf(html: str) -> str:
 
 
 def test_rate_limit_do_login_admin_bloqueia_apesar_do_xff_rotativo():
-    auth_module._attempts.clear()
+    limite.limpar()
     ip_real = "203.0.113.55"
 
     with TestClient(_app, base_url="https://testserver") as client:
@@ -60,7 +61,7 @@ def test_rate_limit_do_login_admin_nao_bloqueia_ip_real_diferente():
     """Controle: um IP real diferente (último item do XFF diferente) não
     herda o bloqueio do teste anterior, provando que o rate limit segue o
     IP de verdade e não algum estado global."""
-    auth_module._attempts.clear()
+    limite.limpar()
     ip_real = "203.0.113.56"
 
     with TestClient(_app, base_url="https://testserver") as client:

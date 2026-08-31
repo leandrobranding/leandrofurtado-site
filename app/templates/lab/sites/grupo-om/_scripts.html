@@ -1,0 +1,15 @@
+{# ==========================================================================
+   A pilha de movimento das cinco páginas: GSAP, ScrollTrigger, SplitText e
+   Lenis, a mesma do tema que o Leandro escolheu como referência. Tudo de
+   `/static/vendor/`, nada de CDN, nada de build.
+
+   `defer` em TODOS: eles baixam em paralelo com o HTML e executam na ordem,
+   depois que o documento está pronto. Nenhum bloqueia a primeira pintura, e é
+   por isso que o wordmark e a manchete de 110 px aparecem antes de os 139 KB
+   de JS chegarem.
+   ========================================================================== #}
+<script defer src="/static/vendor/gsap.min.js"></script>
+<script defer src="/static/vendor/ScrollTrigger.min.js"></script>
+<script defer src="/static/vendor/SplitText.min.js"></script>
+<script defer src="/static/vendor/lenis.min.js"></script>
+<script defer src="/static/lab/sites/grupo-om.js?v={{ asset_v }}"></script>

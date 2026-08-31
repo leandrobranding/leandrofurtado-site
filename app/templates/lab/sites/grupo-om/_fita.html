@@ -1,0 +1,107 @@
+{# ==========================================================================
+   O MURO DE CLIENTES: as 28 marcas, em duas fitas correndo em sentidos
+   opostos.
+
+   É o coração da proposta. O site atual do Grupo OM tem estes logos
+   escondidos atrás de um carrossel que ninguém espera terminar; aqui eles
+   sangram de ponta a ponta, em cor cheia, num plano de papel.
+
+   A LISTA ABAIXO É A ÚNICA FONTE. As duas fitas, a cópia decorativa de cada
+   uma e o parágrafo de nomes em texto saem todos deste mesmo `set`. Na
+   versão anterior a fita e a lista de nomes eram dois blocos escritos à mão,
+   e a única coisa que impedia as duas de divergirem era um teste. Aqui elas
+   não podem divergir: são o mesmo dado, lido três vezes.
+
+   REGRA QUE MANDA (§4.1 da spec): para uma marca entrar nesta lista, o logo
+   dela precisa ter sido BAIXADO antes, e o nome escrito precisa ser o nome
+   daquele arquivo. Nenhum cliente aqui é um nome que alguém digitou.
+
+   E o arquivo baixado não basta sozinho: `logo-digital-premium.webp` está no
+   repositório e NÃO está nesta lista. "Digital Premium" tem cara de selo ou
+   de certificação de parceria, não de marca atendida, e ninguém conseguiu
+   confirmar o que é. Numa fita cuja única função é provar quem o grupo
+   atende, um item que talvez não seja cliente custa a credibilidade da fita
+   inteira. Voltou para a seção de Pendências, à espera do Leandro.
+
+   Cada tupla é (arquivo, nome, ajuste óptico, largura, altura). O ajuste é a
+   altura em que aquele desenho parece do mesmo tamanho dos vizinhos: um selo
+   redondo e um logotipo deitado de 10:1 na mesma altura de caixa não parecem
+   do mesmo tamanho, parecem um o dobro do outro.
+   ========================================================================== #}
+{% set fita_a = [
+  ("logo-burger-king.webp", "Burger King", "selo", 318, 341),
+  ("logo-starbucks.webp", "Starbucks", "", 320, 90),
+  ("logo-subway.webp", "Subway", "", 360, 89),
+  ("logo-popeyes.webp", "Popeyes", "alto", 360, 292),
+  ("logo-grupo-boticario.webp", "Grupo Boticário", "alto", 360, 150),
+  ("logo-continental.webp", "Continental", "baixo", 360, 65),
+  ("logo-frimesa.webp", "Frimesa", "alto", 360, 211),
+  ("logo-caloi.webp", "Caloi", "", 360, 109),
+  ("logo-cummins.webp", "Cummins", "alto", 360, 202),
+  ("logo-corteva.webp", "Corteva Agriscience", "baixo", 360, 75),
+  ("logo-volvo.webp", "Volvo", "fino", 360, 36),
+  ("logo-servopa.webp", "Consórcio Servopa", "", 260, 77),
+  ("logo-unicharm.webp", "Unicharm", "selo", 360, 337),
+  ("logo-dsm-firmenich.webp", "dsm-firmenich", "alto", 360, 132)
+] %}
+{% set fita_b = [
+  ("logo-uninter.webp", "Uninter", "baixo", 360, 69),
+  ("logo-max-atacadista.webp", "Max Atacadista", "alto", 360, 197),
+  ("logo-daju.webp", "Daju", "alto", 360, 147),
+  ("logo-jacomar.webp", "Jacomar", "alto", 360, 136),
+  ("logo-oticas-carol.webp", "Óticas Carol", "baixo", 360, 68),
+  ("logo-shmueller.webp", "Shopping Mueller", "", 360, 111),
+  ("logo-cvale.webp", "C.Vale", "alto", 360, 159),
+  ("logo-inpev.webp", "inpEV", "", 360, 104),
+  ("logo-fujioka.webp", "Fujioka Distribuidor", "alto", 360, 206),
+  ("logo-hebron.webp", "Hebron", "alto", 360, 150),
+  ("logo-oab-esa.webp", "OAB Nacional e ESA", "alto", 360, 127),
+  ("logo-ocp.webp", "OCP Brasil", "", 360, 84),
+  ("logo-vero.webp", "Vero", "alto", 360, 138)
+] %}
+
+{# A cópia existe para o laço não ter emenda, e ela é DECORATIVA: o `<ul>` é
+   `aria-hidden` e cada imagem lá dentro tem `alt` vazio. Sem essa separação o
+   leitor de tela anunciaria vinte e oito marcas duas vezes. #}
+{% macro tira(marcas, direcao) -%}
+<div class="om-fita">
+  <div class="om-fita-trilho" data-fita="{{ direcao }}">
+    <ul class="om-fita-lista">
+      {%- for arq, nome, ajuste, w, h in marcas %}
+      <li><img src="/static/lab/sites/grupo-om/{{ arq }}" width="{{ w }}" height="{{ h }}"{% if ajuste %} data-alt="{{ ajuste }}"{% endif %} alt="{{ nome }}" loading="lazy" decoding="async"></li>
+      {%- endfor %}
+    </ul>
+    <ul class="om-fita-lista om-fita-copia" aria-hidden="true">
+      {%- for arq, nome, ajuste, w, h in marcas %}
+      <li><img src="/static/lab/sites/grupo-om/{{ arq }}" width="{{ w }}" height="{{ h }}"{% if ajuste %} data-alt="{{ ajuste }}"{% endif %} alt="" loading="lazy" decoding="async"></li>
+      {%- endfor %}
+    </ul>
+  </div>
+</div>
+{%- endmacro %}
+
+<section class="om-secao om-papel" id="clientes" aria-labelledby="om-t-clientes">
+  <div class="om-wrap om-assim">
+    <div>
+      <p class="om-kicker om-rv">{{ T("Clientes") }}</p>
+      <p class="om-kicker om-kicker-num om-rv">{{ (fita_a + fita_b) | length }} {{ T("marcas") }}</p>
+    </div>
+    <div>
+      <h2 class="om-titulo om-split" id="om-t-clientes">
+        {{ T("Marcas atendidas") }}
+        <span class="om-leve">{{ T("pelas empresas do grupo.") }}</span>
+      </h2>
+      <div class="om-fio" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  {{ tira(fita_a, -1) }}
+  {{ tira(fita_b, 1) }}
+
+  {# A fita corre, e o que corre não é lido por buscador, por leitor de tela
+     nem no papel. Os mesmos nomes vão em texto, na mesma ordem, e como saem
+     da mesma lista nunca podem divergir da fita. #}
+  <div class="om-wrap">
+    <p class="om-lista-nomes">{{ (fita_a + fita_b) | map(attribute=1) | join(", ") }}.</p>
+  </div>
+</section>

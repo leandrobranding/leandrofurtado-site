@@ -1,0 +1,140 @@
+{# ==========================================================================
+   Grupo OM: a página do grupo.
+
+   O MOVIMENTO DESTA PÁGINA é o wordmark em escala display, ~180 px, ocupando
+   a largura inteira com um kicker de 14 px empilhado acima. É o gesto mais
+   forte do tema que o Leandro escolheu como referência, e ele serve
+   perfeitamente a um nome de duas palavras curtas. Aqui o wordmark É o `h1`:
+   a página fala do grupo, e o nome do grupo é o título dela.
+
+   A página atual do cliente (`/sobre-o-grupo/`) tem 206 KB de HTML e nenhum
+   `<h1>`, e nunca diz QUAIS são as seis empresas. Esta diz, e diz porque os
+   seis vetores estão no repositório.
+   ========================================================================== #}
+{% extends "lab/sites/_base_redesign.html" %}
+{% set pagina = "sobre" %}
+
+{% block titulo %}{{ T("O grupo") }} | {{ r.marca }}{% endblock %}
+{% block descricao %}{{ T("Seis empresas que combinam especialistas das diversas disciplinas do marketing e da comunicação, com planejamento integrado.") }}{% endblock %}
+
+{% block cabeca %}{% include "lab/sites/grupo-om/_cabeca.html" %}{% endblock %}
+
+{# ITEM 10: a faixa de copyright do Lab, com o texto novo, SUBSTITUI a marca
+   de autoria padrão da base. Ver `_autoria.html`. #}
+{% block autoria %}{% include "lab/sites/grupo-om/_autoria.html" %}{% endblock %}
+
+{% block corpo %}
+{% import "lab/sites/grupo-om/_voz.html" as voz with context %}
+{% include "lab/sites/grupo-om/_topo.html" %}
+
+<main>
+  <section class="om-capa-interna om-escuro">
+    <div class="om-wrap">
+      <p class="om-kicker om-rv">{{ T("Quem somos") }}</p>
+      <h1 class="om-wordmark om-split">Grupo OM</h1>
+      <div class="om-fio om-fio-largo" aria-hidden="true"></div>
+      <div class="om-capa-pe">
+        <p class="om-kicker om-rv">{{ T("Em uma frase") }}</p>
+        <p class="om-declaracao om-declaracao-larga om-rv">{{ T("Somos") }} <b>{{ T("6 empresas") }}</b>
+          {{ T("que combinam especialistas das diversas disciplinas do marketing e da comunicação, mas que trabalham de forma sinérgica, com planejamento integrado.") }}</p>
+      </div>
+    </div>
+  </section>
+
+  {# --------------------------------------------------------- o que fazemos #}
+  <section class="om-secao" aria-labelledby="om-t-fazemos">
+    <div class="om-wrap om-assim">
+      <p class="om-kicker om-rv">{{ T("O que fazemos") }}</p>
+      <div>
+        <h2 class="om-titulo om-split" id="om-t-fazemos">
+          {{ T("Campanhas completas,") }}
+          <span class="om-leve">{{ T("on e off line.") }}</span>
+        </h2>
+        <div class="om-fio" aria-hidden="true"></div>
+        <p class="om-texto om-rv">{{ T("Analisamos mercados e desenvolvemos campanhas completas de comunicação, em todas as plataformas, on e off line.") }}</p>
+        <p class="om-texto om-rv">{{ T("Nosso principal objetivo é") }} <b>{{ T("gerar ideias que funcionam") }}</b> {{ T("para ajudar a construir marcas e mercados.") }}</p>
+      </div>
+    </div>
+  </section>
+
+  {# ------------------------------------------------------------- as seis
+     A pergunta que o site atual não responde em nenhuma das cinco páginas:
+     quais são as seis. Em papel, porque os seis vetores são tinta grafite. #}
+  <section class="om-secao om-papel" id="empresas" aria-labelledby="om-t-empresas">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <p class="om-kicker om-kicker-num om-rv">{{ T("6 empresas") }}</p>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-empresas">
+            {{ T("As seis empresas") }}
+            <span class="om-leve">{{ T("que formam o grupo.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+        </div>
+      </div>
+      {% include "lab/sites/grupo-om/_empresas.html" %}
+      <ul class="om-numeros om-rv">
+        <li>
+          <span class="om-num-v" data-conta="6">6</span>
+          <span class="om-num-t">{{ T("empresas, com planejamento integrado") }}</span>
+        </li>
+        <li>
+          <span class="om-num-v" data-conta="47">47</span>
+          <span class="om-num-t">{{ T("mercados, em todos os continentes") }}</span>
+        </li>
+        <li>
+          <span class="om-num-v" data-conta="27">27</span>
+          <span class="om-num-t">{{ T("marcas com logo na home") }}</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  {# ----------------------------------------------------------- depoimentos
+     Os TRÊS depoimentos de cliente que o site publica, com nome e cargo. Os
+     de funcionário que também estão lá ficaram de fora: são marca
+     empregadora, e não venda. Cada citação foi cortada em fim de frase, nunca
+     no meio: publicar meia frase seria pôr palavra na boca de uma pessoa com
+     nome e sobrenome. #}
+  <section class="om-secao om-escuro" aria-labelledby="om-t-vozes">
+    <div class="om-wrap">
+      <div class="om-assim om-cabeca">
+        <p class="om-kicker om-rv">{{ T("Depoimentos") }}</p>
+        <div>
+          <h2 class="om-titulo om-split" id="om-t-vozes">
+            {{ T("O que dizem") }}
+            <span class="om-leve">{{ T("os clientes.") }}</span>
+          </h2>
+          <div class="om-fio" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <figure class="om-voz-destaque om-rv">
+        <blockquote>
+          <p class="om-citacao om-citacao-larga">{{ T("O Grupo teve a competência de captar a nossa origem como produtor, nosso envolvimento com a natureza, nosso cooperativismo e associativismo.") }}</p>
+        </blockquote>
+        {{ voz.assina_voz("Elias José Zydek", "Diretor-executivo da Frimesa") }}
+      </figure>
+
+      <ul class="om-vozes">
+        <li>
+          <figure class="om-voz om-rv">
+            <blockquote><p>{{ T("O Grupo OM é uma referência. Nós somos muito fãs do trabalho que é realizado por eles. Que alegria saber que somos importantes para o Grupo e que fazemos parte dessa história, assim como eles fazem parte da nossa!") }}</p></blockquote>
+            {{ voz.assina_voz("Fernanda Salgueiro", "Gerente de Marketing do Hospital Pequeno Príncipe") }}
+          </figure>
+        </li>
+        <li>
+          <figure class="om-voz om-rv">
+            <blockquote><p>{{ T("O Grupo OM nos oferece, por meio de suas empresas, um trabalho diferenciado, fortemente embasado em dados, estratégico e muito bem planejado. Por isso, os resultados aparecem. Compartilham conosco informações relevantes que nos ajudam na tomada de decisão. Uma relação de respeito e amizade.") }}</p></blockquote>
+            {{ voz.assina_voz("Daniela Baruch", "Superintendente do Shopping Mueller") }}
+          </figure>
+        </li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+{% include "lab/sites/grupo-om/_pe.html" %}
+{% endblock %}
+
+{% block scripts %}{% include "lab/sites/grupo-om/_scripts.html" %}{% endblock %}

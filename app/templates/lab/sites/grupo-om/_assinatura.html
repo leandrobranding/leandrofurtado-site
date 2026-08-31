@@ -1,0 +1,29 @@
+{# ==========================================================================
+   A ASSINATURA: a marca de quem assina o case, e SÓ ela.
+
+   ITEM 32, e é a razão de este arquivo ter uma macro em vez de duas: **ou é o
+   nome, ou é a logo, nunca os dois**. Havia aqui uma macro `assina()` que
+   punha o logo e, ao lado, o nome em texto; era a mesma coisa dita duas vezes
+   ao lado de si mesma, e é exatamente o que o item manda tirar do site
+   inteiro. O nome não some da página: ele vive no `alt`, que é o que o leitor
+   de tela lê e o buscador indexa, e vive por extenso na FICHA do case, que é
+   um lugar sem logo nenhum.
+
+   As medidas saem de `app/lab/cases_grupo_om.py`, e não de um dicionário
+   escrito aqui: elas são as do arquivo, e um `width`/`height` errado num
+   `<img>` é reserva de espaço errada, que é salto de layout no celular.
+
+   `grande` é só escala. O lockup do próprio Grupo OM é quase 11:1; numa
+   altura igual à das outras marcas ele mediria 400 px e viraria o dono da
+   linha, e por isso as duas variantes limitam largura E altura ao mesmo
+   tempo, com as duas medidas do arquivo em `auto`.
+   ========================================================================== #}
+{%- macro marca(chave, grande=false) -%}
+{%- set e = assinante(chave) -%}
+{#- A classe da empresa (`om-as-<chave>`) existe para a régua ÓPTICA do CSS:
+    marcas de proporções muito diferentes não podem dividir uma altura só,
+    e a correção é por empresa. -#}
+<img class="om-assinatura-marca{% if grande %} om-assinatura-grande om-as-{{ chave }}{% endif %}"
+     src="/static/lab/sites/grupo-om/{{ e.arquivo }}"
+     width="{{ e.w }}" height="{{ e.h }}" alt="{{ e.nome }}" loading="lazy" decoding="async">
+{%- endmacro -%}

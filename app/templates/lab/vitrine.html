@@ -240,6 +240,96 @@
   </div>
 </section>
 
+{#
+  A segunda fileira (§7 da spec de Sites). Só existe quando há redesign
+  público: sem eles, nada é renderizado, e a vitrine fica exatamente como
+  estava. Nada de "em breve" aqui, porque fileira vazia anuncia promessa que
+  ninguém pediu.
+
+  A diferença de gramática em relação aos sistemas é a CORTINA: no cartão de
+  site a imagem não é uma captura, são duas, e o visitante arrasta para ver o
+  site atual da marca virar o do Leandro. É a peça mais imediatamente
+  compreensível do Lab, e ela vive só aqui, nunca no pitch (§5).
+#}
+{% if redesigns %}
+{#
+  ITEM 36 (27/08). A fileira existia e não tinha CSS nenhum: nem
+  `lab-vt-fileira`, nem `lab-vt-grade`, nem `lab-vt-card-site` tinham uma
+  regra em vitrine.css. Medido, `.lab-vt-grade` computava `display: block`, e
+  na tela isto era um `<h2>` na fonte do corpo com um nome em negrito solto
+  embaixo, no meio de uma página cujos outros três cartões têm capa 16:9,
+  wordmark e botão. O CSS entrou; a marcação mudou em três pontos, e só.
+
+  1. A CAPA EXISTE SEMPRE, em três estados: cortina (duas capturas), imagem
+     estática (uma) e uma capa TIPOGRÁFICA quando não há nenhuma. A cortina só
+     existe depois que alguém aperta "capturar" no painel, e sem o terceiro
+     estado o cartão nascia vazio justamente no primeiro dia, que é quando o
+     link é mandado.
+  2. A LEGENDA SÓ PROMETE O ARRASTO QUANDO HÁ ARRASTO. Ela dizia "Arraste para
+     comparar" com nada para arrastar.
+  3. O CARTÃO GANHOU O "ver o redesign", que é a mesma chamada de canto que
+     os cartões de sistema já têm. A moldura deles é o contrato: eu me encaixo
+     nela em vez de escrever um segundo sistema parecido ao lado.
+#}
+{% set com_cortina = redesigns | selectattr("antes_shot") | selectattr("depois_shot") | list %}
+<section class="lab-vt-fileira" data-fileira="sites" aria-labelledby="lab-vt-sites-titulo">
+  <header class="lab-vt-fileira-topo">
+    <h2 id="lab-vt-sites-titulo" class="lab-vt-fileira-titulo">Sites</h2>
+    <p class="lab-vt-fileira-sub">{% if com_cortina %}Homes refeitas do meu jeito. Arraste para comparar.{% else %}Homes refeitas do meu jeito, no ar para clicar.{% endif %}</p>
+  </header>
+
+  <div class="lab-vt-grade">
+    {% for r in redesigns %}
+    <a class="lab-vt-card lab-vt-card-site" href="/lab/sites/{{ r.slug }}" data-reveal
+       aria-label="{{ r.marca }}. Abrir o redesign.">
+      {% if r.antes_shot and r.depois_shot %}
+      {# A cortina precisa das DUAS capturas. Com uma só ela mostraria o
+         mesmo dos dois lados, que é pior que não existir. #}
+      <div class="lab-vt-cortina" style="--corte: 50%">
+        <img class="lab-vt-cortina-antes" src="/media/{{ r.antes_shot }}"
+             alt="Site atual de {{ r.marca }}" loading="lazy" decoding="async">
+        <img class="lab-vt-cortina-depois" src="/media/{{ r.depois_shot }}"
+             alt="A home de {{ r.marca }} refeita por Leandro Furtado"
+             loading="lazy" decoding="async">
+        <span class="lab-vt-cortina-haste" aria-hidden="true"></span>
+        <input class="lab-vt-cortina-controle" type="range" min="0" max="100" value="50"
+               aria-label="Comparar o site atual de {{ r.marca }} com o redesign">
+      </div>
+      {% elif r.depois_shot %}
+      <div class="lab-vt-capa-site">
+        <img src="/media/{{ r.depois_shot }}" alt="A home de {{ r.marca }} refeita"
+             loading="lazy" decoding="async">
+        <span class="lab-vt-ver" aria-hidden="true">ver o redesign <i>→︎</i></span>
+      </div>
+      {% else %}
+      {# SEM CAPTURA NENHUMA. A capa é tipográfica, e ela é genérica de
+         propósito: a vitrine vale para qualquer redesign, e pendurar o vetor
+         de um cliente aqui amarraria a fileira a esse cliente. `aria-hidden`
+         porque o nome e o setor já estão escritos abaixo, em texto, e no
+         `aria-label` da própria âncora. #}
+      {#- SÓ O NOME. O setor já é a etiqueta logo abaixo, e escrevê-lo aqui
+          também punha a mesma frase duas vezes num cartão de 291 px. -#}
+      <div class="lab-vt-capa-site lab-vt-capa-tipo" aria-hidden="true">
+        <b>{{ r.marca }}</b>
+        <span class="lab-vt-ver">ver o redesign <i>→︎</i></span>
+      </div>
+      {% endif %}
+
+      {#- O NOME EMBAIXO SÓ QUANDO A CAPA É IMAGEM. Na capa tipográfica o nome
+          JÁ É a capa, em tipo display, e repeti-lo dez pixels abaixo seria
+          dizer duas vezes a mesma coisa num cartão de 291 px. É a mesma regra
+          do item 32 aplicada aqui: ou é o nome, ou é o desenho. -#}
+      {% if r.depois_shot %}<p class="lab-vt-site-nome"><strong>{{ r.marca }}</strong></p>{% endif %}
+      <p class="lab-vt-tags">
+        <span class="lab-vt-estado lab-vt-estado-ativo"><i aria-hidden="true"></i>redesign</span>
+        {% if r.setor %}<span class="lab-vt-tag">{{ r.setor }}</span>{% endif %}
+      </p>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
 <section class="lab-vt-cta">
   <div class="lab-vt-cta-col lab-vt-cta-tit">
     <p class="lab-vt-cta-frase display" data-reveal>O Lab é a minha sala de demonstrações.</p>

@@ -61,3 +61,18 @@
     window.setInterval(troca, INTERVALO);
   }, ESPERA_INICIAL);
 })();
+
+/* Cortina antes/depois: o input já guarda o valor e já responde a teclado
+   e a arrasto. Isto só copia o valor dele para a variável de CSS.
+
+   Sem JavaScript a cortina fica parada em 50%, que é um estado honesto:
+   metade de cada site aparece, e a comparação continua legível. */
+document.querySelectorAll(".lab-vt-cortina").forEach(function (caixa) {
+  var controle = caixa.querySelector(".lab-vt-cortina-controle");
+  if (!controle) return;
+  function aplicar() { caixa.style.setProperty("--corte", controle.value + "%"); }
+  controle.addEventListener("input", aplicar);
+  // O cartão inteiro é um link: arrastar a cortina não pode navegar.
+  controle.addEventListener("click", function (e) { e.preventDefault(); });
+  aplicar();
+});

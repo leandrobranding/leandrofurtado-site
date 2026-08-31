@@ -62,9 +62,18 @@ async def vitrine(request: Request, db: Session = Depends(get_db)) -> HTMLRespon
     # Import tardio pelo mesmo motivo do `_tela_da_demo`: evitar ciclo entre
     # `app.main` (que importa este router) e este módulo.
     from ..main import render
+    from ..models import Redesign
     from ..routers.public import base_ctx
 
-    return render(request, "lab/vitrine.html", base_ctx(db))
+    # Só `publico`: `pitch` é proposta para uma pessoa (§6) e `aprovado`
+    # migrou para o portfólio como `Case`.
+    redesigns = (
+        db.query(Redesign)
+        .filter(Redesign.estado == "publico")
+        .order_by(Redesign.criado_em.desc())
+        .all()
+    )
+    return render(request, "lab/vitrine.html", {**base_ctx(db), "redesigns": redesigns})
 
 
 async def _tela_da_demo(demo: str, request: Request, db: Session) -> HTMLResponse:
